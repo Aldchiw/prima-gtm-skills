@@ -83,6 +83,19 @@ An account can be excluded for either reason — a genuine Notion Disqualify/Dis
 hit, or the out-of-scope rule above. Prefix `exclusion_reason` accordingly ("ICP disqualified: ..."
 vs "Out of scope: ...") so a human can tell which kind of exclusion it is at a glance.
 
+### Third exclusion reason: existing customer
+
+An account that's already a Prima customer must never enter the cold-outbound pipeline — mark it
+`excluded = yes`, `exclusion_reason` prefixed "Existing customer: ..." (a third category, alongside
+the two above). **There is no live source of truth for "who's already a customer" today** — this
+repo has no connected system that lists current Prima customers, so this exclusion can currently
+only be applied when a human explicitly flags an account as an existing customer (e.g. Aldahir
+naming one directly), never inferred or guessed from signals like an account seeming
+"already-engaged." Don't skip checking for this just because there's no live source — ask the user
+if an account might already be a customer when it's unclear, the same way you'd ask for Notion
+criteria if the connector were unavailable. See `SPRINT2_GABY_REVIEW.md` at the repo root for this
+gap logged as a pending item (a real customer, Antora Energy, surfaced it during Sprint 2 testing).
+
 ## Input
 
 A CSV (or a list pasted inline) of accounts, one per row, identified by **domain** and/or

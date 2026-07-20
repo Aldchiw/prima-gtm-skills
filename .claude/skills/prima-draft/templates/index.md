@@ -3,15 +3,26 @@
 One row per template. This file is the lookup table `prima-draft` reads to pick a template — don't
 open every template file to check applicability, check here first.
 
+## Matching rule
+
+`committee_role` is a **list**, not a single string — a template can legitimately serve more than
+one committee role (e.g. `T-4C-founder-v1` covers both "Founder / CEO" and "VP Engineering / Head
+of Manufacturing" with the same peer-to-peer tone). A match means the contact's `committee_role`
+(from `prima-committee`, always a single role) **appears in** the template's list — never require
+the two to be equal as whole strings, and never fuse multiple roles into one list entry just to
+force a match. If no template's list contains the contact's exact role, that's when the
+sub-segment-level fallback below applies — a match found via the list still counts as a real match,
+not a fallback.
+
 `status` values: `seed-v1-unvalidated` (written to unblock Sprint 2, no real reply data yet) →
 `validated` (Gaby/Aldahir reviewed it and/or it has real reply data behind it) → `retired`
 (superseded by a newer version, kept for historical `template_id` traceability — never delete a
 template file once it's been used in a real draft).
 
-| template_id | sub_segment | committee_role | signal_type_fit | status | file |
+| template_id | sub_segment | committee_role (list) | signal_type_fit | status | file |
 |---|---|---|---|---|---|
 | T-4B-plantpurchasing-v1 | `4B` | Plant Purchasing Manager / Procurement Manager | `capacity_expansion`, `job_opening`, `customs` | `seed-v1-unvalidated` | `T-4B-plantpurchasing-v1.md` |
-| T-4C-founder-v1 | `4C` | Founder / CEO / VP Engineering / Head of Manufacturing | `funding`, `job_opening`, `capacity_expansion`, `customs` | `seed-v1-unvalidated` | `T-4C-founder-v1.md` |
+| T-4C-founder-v1 | `4C` | Founder / CEO; VP Engineering / Head of Manufacturing | `funding`, `job_opening`, `capacity_expansion`, `customs` | `seed-v1-unvalidated` | `T-4C-founder-v1.md` |
 
 ## Versioning rule
 
@@ -42,9 +53,13 @@ price angle outright. This is a tone call for Gaby, not something to silently pa
 default is to dial that angle down further. Candidate fix for a `v2` of either template once she's
 weighed in; don't bump the version pre-emptively.
 
-Only 2 templates exist today, one per supported sub-segment (`4B`, `4C`), each covering just the
-sub-segment's primary entry-point role. A contact whose `committee_role` doesn't match any row's
-`committee_role` exactly still gets drafted — `prima-draft` falls back to the closest
-sub-segment-level template rather than refusing to draft. Log which `template_id` was used either
-way; a visible gap (same template reused across very different roles) is the signal that a new,
-more specific template should be added here — don't treat the fallback as good enough forever.
+Only 2 templates exist today, one per supported sub-segment (`4B`, `4C`). `T-4B-plantpurchasing-v1`
+covers only 4B's primary entry-point role (Plant Purchasing Manager / Procurement Manager) — 4B's
+other two roles (Supply Chain Director/VP Operations, Plant Manager/Director of Manufacturing) have
+no dedicated template yet. `T-4C-founder-v1` covers 2 of 4C's 3 roles (Founder/CEO and VP
+Engineering/Head of Manufacturing) via its `committee_role` list — only COO/Head of Operations is
+uncovered there. A contact whose `committee_role` isn't in any template's list still gets drafted —
+`prima-draft` falls back to the closest sub-segment-level template rather than refusing to draft.
+Log which `template_id` was used either way (and whether it was a list match or a fallback); a
+visible gap (same template reused via fallback across very different roles) is the signal that a
+new, more specific template should be added here — don't treat the fallback as good enough forever.

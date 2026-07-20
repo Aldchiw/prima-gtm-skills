@@ -1,7 +1,9 @@
 ---
 template_id: T-4C-founder-v1
 sub_segment: 4C
-committee_role: Founder / CEO / VP Engineering / Head of Manufacturing
+committee_role:
+  - Founder / CEO
+  - VP Engineering / Head of Manufacturing
 signal_type_fit: funding, job_opening, capacity_expansion, customs
 status: seed-v1-unvalidated
 created: 2026-07-20

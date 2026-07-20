@@ -17,6 +17,16 @@ Cada punto: **qué skill**, **qué quedó provisional**, **qué decisión falta*
   one, leave blank and flag for the user").
   **Falta decidir:** cuál es el entry point real para cuentas 4D, o confirmar que 4D sigue fuera de
   scope indefinidamente.
+- **CRÍTICO, gap de arquitectura:** no existe ninguna fuente de verdad conectada de "quién ya es
+  cliente de Prima". Se agregó una tercera categoría de exclusión ("Existing customer: ...") a
+  `prima-icp-check` el 2026-07-20, pero hoy solo se puede aplicar cuando un humano marca la cuenta
+  manualmente — no hay lista/CRM que el sistema pueda consultar en vivo. Esto se descubrió porque
+  **Antora Energy** (que clasificaría como `4C`) resultó ser cliente real de Prima y casi entra al
+  pipeline de outbound frío durante la investigación de títulos de `prima-committee`. Quedó anotada
+  como exclusión hardcoded en memoria de este repo mientras tanto.
+  **Falta decidir:** qué sistema (CRM, hoja de cuentas activas, Notion, otro) se conecta como fuente
+  de verdad de clientes existentes, para que esta exclusión deje de depender de que un humano
+  reconozca el nombre por casualidad.
 
 ## `prima-signal-scan`
 
@@ -41,12 +51,17 @@ Cada punto: **qué skill**, **qué quedó provisional**, **qué decisión falta*
 
 ## `prima-committee`
 
-- **Provisional:** el mapeo sub-segmento → roles del comité (4B → Plant Purchasing/Supply Chain
-  Director/Plant Manager; 4C → Founder-CEO/VP Engineering/COO) está hardcoded en el SKILL.md pero
-  **nunca se confirmó rol por rol** con Aldahir — se aprobó solo como "hardcodéalo, misma excepción
-  que 4A-D".
-  **Falta decidir:** validar cada rol de la tabla contra comités reales conforme se acumulen
-  corridas.
+- **Actualizado 2026-07-20:** el mapeo de roles se reescribió como un **diccionario de títulos
+  objetivo** (no lista de contactos), anclado en evidencia real de 7 cuentas de referencia (Powell,
+  Delta Star, Trystar, Hammond para 4B; Mainspring, Antora, un 4C de battery storage adicional),
+  reordenado en dos niveles: **PRIORIDAD ALTA** (supply chain/purchasing/sourcing — quien realmente
+  compra fabricación) y **PRIORIDAD SECUNDARIA** (ejecutivos — CEO/COO/VP Eng, solo contacto #2/#3 o
+  fallback). Cada título queda marcado evidencia real vs. inferido.
+  **Sigue provisional:** ni Gaby ni Aldahir han validado el diccionario completo todavía — se
+  aprobó la estructura (ALTA/SECUNDARIA) pero no cada título individual.
+  **Falta decidir:** validar el diccionario conforme se acumulen corridas reales; confirmar el
+  título exacto de 2 entradas marcadas "función real, título inferido" (Head of Supply Chain / Head
+  of Manufacturing) antes de usarlas verbatim.
 - **Provisional:** solo `4B`/`4C` están soportados; `4A`/`4D` devuelven
   `SUB_SEGMENT_NOT_SUPPORTED`.
   **Falta decidir:** definir los roles de comité para 4A/4D antes de extender la skill (depende
@@ -101,6 +116,32 @@ Cada punto: **qué skill**, **qué quedó provisional**, **qué decisión falta*
   deliberadamente este archivo con esa página (no inferir el cambio a mitad de una corrida).
 
 ---
+
+## Hallazgos de verificación técnica (2026-07-20, post-cierre)
+
+Una pasada de verificación sobre las 7 skills (frontmatter, referencias cruzadas, consistencia de
+esquemas entre skills consecutivas) encontró 3 cosas. Van uno por uno:
+
+1. **[CORREGIDO]** `T-4C-founder-v1`'s `committee_role` fusionaba dos roles de la tabla de
+   `prima-committee` ("Founder / CEO" + "VP Engineering / Head of Manufacturing") en un solo string,
+   por lo que ningún contacto real habría hecho match exacto contra ese template — siempre caía en
+   fallback sin que la documentación lo reflejara. Corregido: `committee_role` ahora es una lista
+   por template (ver `templates/index.md` → "Matching rule"), y un match contra cualquier elemento
+   de la lista cuenta como match real, no fallback.
+2. **[ABIERTO]** Dos mensajes de estado internos están en español dentro de archivos que son 100%
+   inglés en todo lo demás: la nota de `NO_HOOK` en `prima-hook/SKILL.md` y la razón de `NO_DRAFT`
+   en `prima-draft/SKILL.md`. No necesariamente es un error — puede ser intencional que las notas
+   internas (para uso de Aldahir/Gaby) queden en español mientras el copy al prospecto es en
+   inglés — pero no está declarado como regla en ningún lado, a diferencia de la regla de idioma que
+   sí existe para los templates. **Falta decidir:** si se unifica a inglés (consistencia con el
+   resto del archivo) o se declara explícitamente que las notas internas siguen el idioma de
+   operación (español) y el copy al prospecto sigue el idioma del destinatario.
+3. **[ABIERTO]** `prima-email-waterfall` describe su umbral de muestra (≤20 sin gate de aprobación)
+   como "el mismo protocolo de muestra usado en otras partes de este pipeline" — pero ninguna de las
+   otras 6 skills de este repo define ese umbral. La referencia es correcta en espíritu (viene de
+   una convención de Aldahir fuera de estos 7 archivos), pero alguien que solo lea estas skills no
+   encontraría dónde vive esa convención. **Falta decidir:** documentar el protocolo de muestra en
+   un solo lugar citable (¿el Ejecutable Maestro v2?) en vez de solo referenciarlo de pasada.
 
 ## Resumen para la conversación con Gaby
 

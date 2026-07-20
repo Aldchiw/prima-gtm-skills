@@ -14,8 +14,10 @@ template from the versioned library in `templates/`.
 Templates live as separate files in `templates/`, indexed by `templates/index.md`. `prima-draft`
 never invents email structure on the fly — it always selects an existing template and fills it.
 See `templates/index.md` for the current library, the versioning rule (never mutate a template
-once it's been used in a real draft — new revision = new `template_id`), and the coverage-gap
-fallback rule (closest sub-segment-level template if no exact `committee_role` match exists yet).
+once it's been used in a real draft — new revision = new `template_id`), the matching rule
+(`committee_role` is a list per template — a contact matches if its role appears in that list, not
+by whole-string equality), and the coverage-gap fallback rule (closest sub-segment-level template if
+the contact's role isn't in any template's list yet).
 
 Only 2 seed templates exist as of 2026-07-20 (`T-4B-plantpurchasing-v1`, `T-4C-founder-v1`) —
 both marked `seed-v1-unvalidated`. Treat them as a starting point to unblock Sprint 2, not a

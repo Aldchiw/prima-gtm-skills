@@ -45,6 +45,14 @@ email-waterfall → hook → draft → guardrail-audit before anything is sent.
 | `prima-draft` | Generates 3 email drafts (E1/E2/E3) per contact under the message guardrails: 6-8 lines, signal first, "reliable supply" narrative (not cheap pricing), 10,000 tons/month, zero customer name-drops, zero unvalidated certifications, zero AI-sounding language. Always output marked as BORRADOR (draft). |
 | `prima-guardrail-audit` | Final auditor — checks every draft against the full guardrail list and marks PASS or lists violations. Runs unconditionally before any email goes out; no exceptions. |
 
+## Output files
+
+A full pipeline run for a contact lands in two append-only local CSVs under `output/` —
+`accounts_processed.csv` (the rich working file, one row per contact) and `tracker_light.csv` (a
+minimal outreach log for Aldahir's own Google Sheet). See `output/README.md` for the exact schema
+and which skill produces each column. Neither file connects to Sheets/Canva/Slack automatically —
+that's a manual step Aldahir does afterward.
+
 ## Working conventions
 
 - Treat `prima-signal-scan` and `prima-hook` outputs as strictly evidence-based: an empty result is
