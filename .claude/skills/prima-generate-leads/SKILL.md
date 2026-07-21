@@ -139,7 +139,30 @@ Two files, same as every other batch, **not** a third format:
   orchestrator's runs: **exactly one row per company** (the single contact selected above), not one
   row per contact. This differs from a hand-run batch where multiple contacts per company might all
   make it into `leads_final.csv` — for `prima-generate-leads`, N companies always means N rows.
-  Same 10 columns, same order, as already defined in `output/README.md`.
+  Same 12 columns, same order, as already defined in `output/README.md` (the last 2, `stage` and
+  `contact_count`, are manual sales-tracking fields — see the hard rule right below, never skip it).
+
+### Hard rule: merge `stage`/`contact_count`, never reset them (added 2026-07-21)
+
+`leads_final.csv` is regenerated from scratch every run — but `stage` and `contact_count` are
+**manual fields a human fills in by hand in Sheets** between runs (see `output/README.md`). A naive
+full rewrite would blow that away every time this skill runs. **Before writing the new file, always**:
+
+1. Read whatever `output/leads_final.csv` currently contains (if it exists) and build a map of
+   `account_name -> {stage, contact_count}` from it.
+2. Compute the fresh one-row-per-company list as normal (discovery + pipeline + contact selection).
+3. For each row in the fresh list, look it up by `account_name` in that old map:
+   - **Found (an account that already existed):** carry its `stage` and `contact_count` forward
+     unchanged. Never overwrite real sales progress with `Not Contacted`/`0`, no exceptions.
+   - **Not found (a genuinely new account this run discovered):** only then default to
+     `Not Contacted` / `0`.
+4. Write the merged result.
+
+**Known limitation, not fully solved:** the match key is `account_name` (exact string), since
+`leads_final.csv` doesn't carry `domain`. If an account's `account_name` string changes between runs
+for the same underlying company (e.g. a rename), the merge won't recognize it as the same row and will
+incorrectly default it — treat that as a real bug to catch by eye (compare row counts before/after: a
+sudden jump in "new" accounts that weren't actually new is the tell), not a silently-accepted risk.
 
 ## What the vendor sees at the end — plain language, not a data dump
 

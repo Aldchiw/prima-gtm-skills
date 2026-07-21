@@ -77,11 +77,11 @@ blank for it rather than set to either value.
 
 ## `leads_final.csv` — the clean actionable view (added 2026-07-21)
 
-A distilled, read-only export derived from `accounts_processed.csv` — **not** a third source of truth,
-just the subset that's actually ready to act on, reshaped for handing to Sheets/Aldahir directly. Only
-this file's 10 columns, in this order: `account_name`, `scope_tier`, `signal_summary`,
-`signal_source_url`, `contact_name`, `contact_title`, `linkedin_url`, `contact_email`, `email_status`,
-`best_channel`.
+A distilled export derived from `accounts_processed.csv` — **not** a third source of truth,
+just the subset that's actually ready to act on, reshaped for handing to Sheets/Aldahir directly. This
+file's 12 columns, in this order: `account_name`, `scope_tier`, `signal_summary`, `signal_source_url`,
+`contact_name`, `contact_title`, `linkedin_url`, `contact_email`, `email_status`, `best_channel`,
+`stage`, `contact_count`.
 
 - One row per **actionable contact** — a contact only makes it in if it has a `linkedin_url` and/or a
   `contact_email`. Placeholder rows (no named contact, or a named contact with neither) are dropped
@@ -101,6 +101,31 @@ this file's 10 columns, in this order: `account_name`, `scope_tier`, `signal_sum
   within a tier.
 - Regenerated (not appended) after each batch — it's a full derived snapshot of whatever's currently
   actionable in `accounts_processed.csv`, not an append-only log like the other two files.
+
+### `stage` / `contact_count` — manual sales-tracking columns (added 2026-07-21)
+
+These two are **not derived from any skill** and never auto-populated or inferred from other columns —
+they're pure manual-capture fields for whoever is actually working the leads (Aldahir or another
+vendor) to update by hand in Sheets as outreach progresses.
+
+- `stage` — one of exactly: `Not Contacted` (default) · `Contacted (E1)` · `Follow-up (E2/E3)` ·
+  `Replied` · `Meeting Booked` · `RFQ Sent` · `Not Interested` · `Cooldown`. In Sheets this column
+  should carry a dropdown (data validation, reject-invalid) restricted to that exact list. A plain CSV
+  can't encode data validation or bold formatting — apply the dropdown and header bold by hand in
+  Sheets after importing (`Datos` → `Validación de datos` → `Lista de elementos` with the 8 values
+  above, in that order; select "Rechazar la entrada" so invalid values are blocked).
+- `contact_count` — an integer `0`–`5` (default `0`), same manual-dropdown treatment (`Datos` →
+  `Validación de datos` → `Lista de elementos`: `0, 1, 2, 3, 4, 5`, reject invalid).
+
+**Fixed 2026-07-21 (was a standing risk):** `leads_final.csv` is regenerated from scratch (not
+appended) on every new `prima-generate-leads` batch, but the regeneration step now **merges by
+`account_name`** before writing — an account that already had a row keeps its existing `stage`/
+`contact_count` untouched; only a genuinely new account gets the `Not Contacted`/`0` defaults. This is
+now a hard rule documented in `prima-generate-leads/SKILL.md` — verified 2026-07-21 by simulating
+manual progress on two rows and confirming a full regeneration preserved both instead of resetting
+them. Known limitation: the match is by `account_name` text (this file doesn't carry `domain`), so if
+an account's display name changes between runs it won't be recognized as the same row — see the
+skill's own note on catching that by eye if it ever happens.
 
 ### Cómo llevar `leads_final.csv` a mi Google Sheet
 
