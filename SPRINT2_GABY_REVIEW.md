@@ -203,6 +203,17 @@ esquemas entre skills consecutivas) encontró 3 cosas. Van uno por uno:
    encontraría dónde vive esa convención. **Falta decidir:** documentar el protocolo de muestra en
    un solo lugar citable (¿el Ejecutable Maestro v2?) en vez de solo referenciarlo de pasada.
 
+## Mejoras futuras del pipeline (no bloqueantes)
+
+- **Nivel B — automatizar escritura directa a Google Sheets vía API (evita el import manual).**
+  Hoy (2026-07-21) usamos Nivel A: Aldahir importa `output/leads_final.csv` a mano a un Sheet fijo
+  (`Archivo` → `Importar` → `Subir` → insertar hoja nueva con fecha — procedimiento documentado en
+  `output/README.md`). **Prerequisito antes de automatizar:** que el formato de `leads_final.csv`
+  esté estable — en particular, que ya incluya la columna de desenlace/status para la métrica reina
+  (respondió / no respondió / reunión agendada, o como se defina) antes de conectar la API. Automatizar
+  un formato que todavía va a cambiarle columnas sería trabajo desperdiciado — mejor esperar a que el
+  flujo esté probado con varios batches reales primero.
+
 ## Resumen para la conversación con Gaby
 
 De las 8, los que más necesitan su ojo directo son **`prima-draft`** (templates sin validar + el

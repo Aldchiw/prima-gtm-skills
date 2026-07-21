@@ -102,6 +102,23 @@ this file's 10 columns, in this order: `account_name`, `scope_tier`, `signal_sum
 - Regenerated (not appended) after each batch — it's a full derived snapshot of whatever's currently
   actionable in `accounts_processed.csv`, not an append-only log like the other two files.
 
+### Cómo llevar `leads_final.csv` a mi Google Sheet
+
+Nivel A (manual, el que usamos por ahora — el Nivel B, escritura automática vía API de Google Sheets,
+queda como mejora futura, ver `SPRINT2_GABY_REVIEW.md`):
+
+1. Abre el Google Sheet fijo donde vives el tracking de leads.
+2. `Archivo` → `Importar`.
+3. Pestaña `Subir` → arrastra o selecciona `output/leads_final.csv`.
+4. En "Ubicación de importación" elige **Insertar nueva hoja**.
+5. Nombra la hoja nueva con la fecha del batch (ej. `leads_2026-07-21`) — no sobreescribas una hoja
+   existente, cada batch va en su propia hoja para no perder el historial.
+6. Tipo de separador: detectar automáticamente (es coma).
+7. Importar.
+
+Siempre el mismo procedimiento, siempre hoja nueva con fecha — así el Sheet fijo acumula un historial
+de batches en vez de perder el anterior.
+
 ## `tracker_light.csv` — the outreach log
 
 A minimal log of who got contacted, for Aldahir's own Google Sheet. Nothing else — resist adding
