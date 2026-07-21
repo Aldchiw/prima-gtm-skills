@@ -75,6 +75,33 @@ prepare material — only the draft itself waits for a human to confirm scope di
 should already show up as `excluded = yes` upstream, so `needs_manual_scope_confirmation` is left
 blank for it rather than set to either value.
 
+## `leads_final.csv` — the clean actionable view (added 2026-07-21)
+
+A distilled, read-only export derived from `accounts_processed.csv` — **not** a third source of truth,
+just the subset that's actually ready to act on, reshaped for handing to Sheets/Aldahir directly. Only
+this file's 10 columns, in this order: `account_name`, `scope_tier`, `signal_summary`,
+`signal_source_url`, `contact_name`, `contact_title`, `linkedin_url`, `contact_email`, `email_status`,
+`best_channel`.
+
+- One row per **actionable contact** — a contact only makes it in if it has a `linkedin_url` and/or a
+  `contact_email`. Placeholder rows (no named contact, or a named contact with neither) are dropped
+  entirely — this file has no "empty" rows by design.
+- `contact_email` is populated only when the source `email_status` was `VERIFIED`; `FOUND_UNVERIFIED`
+  emails are dropped from this file's `contact_email` column on purpose (never sendable) — those
+  contacts still appear here via `linkedin_url` with `email_status = "solo LinkedIn"`.
+- `email_status` here is simplified to two values: `VERIFIED` / `solo LinkedIn` (collapses
+  `accounts_processed.csv`'s `FOUND_UNVERIFIED`/`NOT_FOUND` into "no usable email, use LinkedIn instead").
+- `best_channel` is derived: `email` if `VERIFIED`, else `LinkedIn`.
+- `contact_title` and `linkedin_url` are cleaned of the internal provenance/attribution notes that
+  `accounts_processed.csv` carries (e.g. "-- [DEEPLINE, ai_ark_people_search] found where WebSearch
+  could not...") — just the title/URL itself. `signal_summary` is shortened to one clause per account.
+  The full detail always still lives in `accounts_processed.csv`; nothing here is a new fact, only a
+  trimmed presentation of one.
+- Sorted by `scope_tier` (`tier_1` before `tier_2`/`tier_3`), then `VERIFIED` before `solo LinkedIn`
+  within a tier.
+- Regenerated (not appended) after each batch — it's a full derived snapshot of whatever's currently
+  actionable in `accounts_processed.csv`, not an append-only log like the other two files.
+
 ## `tracker_light.csv` — the outreach log
 
 A minimal log of who got contacted, for Aldahir's own Google Sheet. Nothing else — resist adding
