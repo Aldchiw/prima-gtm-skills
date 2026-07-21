@@ -1,10 +1,10 @@
 # Sprint 2 — pendientes provisionales/sin validar (para revisión de Gaby)
 
-Las 7 skills del pipeline de Data Centers ya existen y el flujo end-to-end fue probado en seco
-(`prima-committee` → `prima-email-waterfall` → `prima-hook` → `prima-draft` → `prima-guardrail-audit`,
-2026-07-20). Nada de esto se ha corrido con gasto real todavía. Este documento junta **todo** lo que
-quedó marcado como provisional/hardcoded-sin-confirmar en las 7 skills, para que Gaby (y Aldahir)
-lo revisen antes de la primera corrida real.
+Las 8 skills del pipeline de Data Centers ya existen (`prima-scope-score` se sumó el 2026-07-20) y
+el flujo end-to-end fue probado en seco (`prima-committee` → `prima-email-waterfall` → `prima-hook`
+→ `prima-draft` → `prima-guardrail-audit`, 2026-07-20). Nada de esto se ha corrido con gasto real
+todavía. Este documento junta **todo** lo que quedó marcado como provisional/hardcoded-sin-confirmar
+en las 8 skills, para que Gaby (y Aldahir) lo revisen antes de la primera corrida real.
 
 Cada punto: **qué skill**, **qué quedó provisional**, **qué decisión falta**.
 
@@ -14,36 +14,45 @@ Cada punto: **qué skill**, **qué quedó provisional**, **qué decisión falta*
 
 Surgió el 2026-07-20 durante la primera corrida en modo generador (descubrimiento de cuentas nuevas
 vía señal, no lista dada): de 4 cuentas nuevas encontradas con señal real y fit de ICP en papel
-(Stryten Energy, Eos Energy, Moment Energy, Enercon Engineering), **ninguna llegó calificada**. Se
-intentó confirmar vía WebSearch el criterio "Equipment Procurement Scope" de Notion (¿subcontratan
-fabricación estructural de acero/enclosures, o son 100% in-house?) para las 4:
+(Stryten Energy, Eos Energy, Moment Energy, Enercon Engineering), **ninguna se pudo confirmar
+calificada vía WebSearch**. Se intentó confirmar el criterio "Equipment Procurement Scope" de Notion
+(¿subcontratan fabricación estructural de acero/enclosures, o son 100% in-house?) para las 4:
 
 - **Enercon Engineering** — único caso con evidencia clara, y fue **descalificante**: su propio
   sitio dice explícitamente que son "vertically integrated" y mantienen la fabricación in-house
   para "eliminar errores de terceros." Cumplía TODO el resto del perfil (señal real, tamaño,
   producto, geografía) — y aun así se cae. **Esto es la prueba de que el scope no se puede inferir
   de los otros criterios del ICP** — hay que verificarlo directamente, cuenta por cuenta.
-- **Stryten, Eos, Moment Energy** — sin evidencia verificable ni a favor ni en contra. Quedaron
-  `procurement_scope_status = not_confirmed` en `output/accounts_processed.csv`: candidatos
-  calientes, no descartados, pero tampoco calificados para pasar a `prima-committee`/`prima-draft`
-  todavía (ver la regla dura documentada en `output/README.md`).
+- **Stryten, Eos, Moment Energy** — sin evidencia verificable ni a favor ni en contra.
 
-**Falta decidir con Gaby: qué fuente SÍ puede confirmar este criterio, ya que WebSearch mostró que
-no es confiable para esto específicamente.** Opciones a evaluar:
+**Actualización 2026-07-20 (mismo día): se diseñó y aplicó `prima-scope-score`** — en vez de un
+flag binario confirmado/no-confirmado, un score 0-100% ponderado (tipo de producto 45 / expansión
+de capacidad 35 / evidencia de equipo sourcing 20, pesos aprobados por Aldahir) con dos overrides
+duros (in-house confirmado → descalifica sin importar el resto; Import Genius confirmado → califica
+sin importar el resto) y una regla anti-quema (P1 nunca llega a `prima-draft` solo por tener buen
+score — requiere confirmación manual; P2/P3 el tier decide solo). Ver
+`.claude/skills/prima-scope-score/SKILL.md` y `output/README.md`. Las 4 cuentas de esta corrida ya
+están recalculadas en `output/accounts_processed.csv` con `outsourcing_score`/`scope_tier`.
+
+**Esto NO resuelve la pregunta original — solo la vuelve manejable.** El score es una herramienta de
+priorización sobre la incertidumbre, no un sustituto de confirmación real. **Sigue faltando decidir
+con Gaby: qué fuente SÍ puede confirmar este criterio de verdad.** Opciones a evaluar:
 
 1. **Import Genius (aduanas)** — si una cuenta ya importa componentes de fabricación (acero,
    enclosures) desde México/otros países, eso confirma outsourcing directamente. Mismo mecanismo
-   que ya usa `prima-signal-scan` para su señal de `customs`, aplicado aquí como verificación de
-   scope en vez de señal de apertura.
+   que ya usa `prima-signal-scan` para su señal de `customs`, y ya diseñado como uno de los dos
+   overrides duros de `prima-scope-score` — falta conseguir el acceso/dato real.
 2. **Llamada de Inside Job** — verificación humana directa preguntando al prospecto o a alguien
    cercano a la cuenta.
 3. **LinkedIn del equipo de supply chain** — si la cuenta tiene roles de "Commodity Manager" o
    "Strategic Sourcing" enfocados en fabricación externa (no solo materia prima/componentes
-   electrónicos), eso es indicio indirecto pero más fuerte que nada.
+   electrónicos), eso es indicio indirecto pero más fuerte que nada — ya parcialmente incorporado
+   como la señal de menor peso (20 pts) en el score.
 
-Sin esto resuelto, el modo generador puede seguir encontrando cuentas con señal real, pero no debe
-escalarse a volumen (20+) hasta tener una manera confiable de cerrar este gate — de lo contrario el
-output son candidatos en limbo, no leads listos.
+Los pesos, cortes de tier (65%/35%), y la tabla de tipo-de-producto de `prima-scope-score` son
+**provisionales** — Aldahir aprobó la lógica y los números iniciales el 2026-07-20, pero nada de
+esto se ha corrido contra datos reales de confirmación todavía. Ajustar conforme se acumule
+evidencia real de qué cuentas efectivamente subcontratan.
 
 ## `prima-icp-check`
 
@@ -83,6 +92,22 @@ output son candidatos en limbo, no leads listos.
   **Falta decidir:** si `capacity_expansion` necesita una ventana de vigencia propia (probablemente
   más larga que la de `job_opening`, dado que un anuncio de expansión envejece distinto a una
   vacante).
+
+## `prima-scope-score` (nueva, 2026-07-20)
+
+- **Provisional, todo:** pesos (producto 45 / capacidad 35 / equipo sourcing 20), cortes de tier
+  (`tier_1` ≥65%, `tier_2` 35-64%, `tier_3` <35%), y la tabla de tipo-de-producto — todos aprobados
+  por Aldahir en diseño, ninguno corrido contra datos reales de confirmación todavía. Ver la
+  Decisión Crítica arriba para el contexto completo.
+- **Vertical-específica, no portable tal cual:** la tabla de tipo-de-producto solo cubre Power &
+  Electrical Distribution / Energy Storage (verticales de Aldahir). Si Manu clona el repo, necesita
+  su propia tabla para Cooling & Thermal Management / Test & Commissioning antes de poder usar esta
+  skill — no la reutilices con las categorías de Aldahir.
+  **Falta decidir:** si/cuándo Manu construye su propia versión, y si eso pasa en este mismo repo
+  (archivo separado, mismo patrón) o en un fork.
+- **Falta decidir:** qué fuente confirma el override positivo (Import Genius) en la práctica — el
+  mecanismo ya está diseñado, pero depende del mismo acceso a Import Genius que `prima-signal-scan`
+  ya necesita para su señal de `customs` (manual, vía Ivan/Zadrac).
 
 ## `prima-committee`
 
@@ -180,8 +205,10 @@ esquemas entre skills consecutivas) encontró 3 cosas. Van uno por uno:
 
 ## Resumen para la conversación con Gaby
 
-De los 7, los que más necesitan su ojo directo son **`prima-draft`** (templates sin validar + el
-sesgo hacia lenguaje de precio) y **`prima-committee`** (mapeo de roles sin confirmar). Los de
-`prima-signal-scan`/`prima-hook` (ventanas de freshness) probablemente se resuelven solos con más
-corridas reales, no necesitan una decisión de Gaby hoy — pero vale la pena que los conozca ya que
-alimentan directamente lo que `prima-draft` termina escribiendo.
+De las 8, los que más necesitan su ojo directo son **`prima-draft`** (templates sin validar + el
+sesgo hacia lenguaje de precio), **`prima-committee`** (mapeo de roles sin confirmar), y la
+**Decisión Crítica de `prima-scope-score`** al inicio de este documento (qué fuente confirma
+procurement scope de verdad — el diseño del score ya está aplicado, pero no reemplaza la pregunta
+original). Los de `prima-signal-scan`/`prima-hook` (ventanas de freshness) probablemente se
+resuelven solos con más corridas reales, no necesitan una decisión de Gaby hoy — pero vale la pena
+que los conozca ya que alimentan directamente lo que `prima-draft` termina escribiendo.

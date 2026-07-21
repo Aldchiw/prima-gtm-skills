@@ -22,7 +22,10 @@ Canva/Slack/wherever, by hand, after the fact.
 | `vertical_owner` | `prima-icp-check` | |
 | `excluded` | `prima-icp-check` | if `yes`, the row stops here — no contact/signal/draft columns apply |
 | `exclusion_reason` | `prima-icp-check` | |
-| `procurement_scope_status` | discovery research (WebSearch, manual verification, or a future dedicated source — see below) | `confirmed_outsources`\|`not_confirmed`\|`disqualified_inhouse` — whether there's actual evidence this account subcontracts structural fabrication (steel/enclosures), not just that it fits the rest of the ICP profile |
+| `outsourcing_score` | `prima-scope-score` | `0`–`100` — see below |
+| `scope_tier` | `prima-scope-score` | `confirmed_outsources`\|`tier_1`\|`tier_2`\|`tier_3`\|`disqualified_inhouse` — see below |
+| `score_rationale` | `prima-scope-score` | one line citing every factor behind the score — never a bare number |
+| `needs_manual_scope_confirmation` | `prima-scope-score` | `TRUE`/`FALSE`/blank — only meaningful when `priority = P1`; see below |
 | `signal_type` | `prima-signal-scan` | the account's top/strongest verified signal |
 | `signal_summary` | `prima-signal-scan` | |
 | `signal_date` | `prima-signal-scan` | |
@@ -41,26 +44,35 @@ Canva/Slack/wherever, by hand, after the fact.
 This file does **not** carry the actual draft subject/body text — just status/tracking columns.
 The email content itself lives wherever `prima-draft` printed or saved it during that run.
 
-### `procurement_scope_status` — the gate before anything else runs
+### `outsourcing_score` / `scope_tier` / `score_rationale` / `needs_manual_scope_confirmation` — the probability gate
 
-This is Notion's own "Equipment Procurement Scope" qualification criterion (does the account
-actually subcontract structural fabrication, or manufacture 100% in-house?), tracked explicitly
-because it turned out to be the single most important — and least WebSearch-verifiable — gate in
-the whole pipeline. Discovered 2026-07-20 during a generator-mode research run: 4 new accounts
-(Stryten Energy, Eos Energy, Moment Energy, Enercon Engineering) all matched every other ICP
-criterion, but only one — Enercon — had a confirmable answer on this specific question, and it was
-a **disqualifying** one (explicitly 100% in-house/vertically integrated, confirmed on the
-company's own site). The other 3 stayed `not_confirmed`: real signal, real ICP fit on paper, but no
-verifiable evidence either way on outsourcing. See `SPRINT2_GABY_REVIEW.md` for the open decision on
-how to actually confirm this going forward (WebSearch alone hasn't been reliable for it).
+These four come from `prima-scope-score` (added 2026-07-20, replacing an earlier binary
+`procurement_scope_status` field). They estimate Notion's own "Equipment Procurement Scope"
+criterion — does the account actually subcontract structural fabrication, or manufacture 100%
+in-house? — as a probability instead of a yes/no, because hard public confirmation is rare. See
+`.claude/skills/prima-scope-score/SKILL.md` for the full weighting (product type 45 / capacity
+expansion 35 / sourcing-team evidence 20) and the two hard overrides that dominate it.
 
-**Hard flow rule: no account may move to "qualified / ready for `prima-draft`" status without
-`procurement_scope_status = confirmed_outsources`.** A `not_confirmed` account is a **hot candidate
-pending scope verification** — real enough to keep on the list, not real enough to write to. Never
-run `prima-committee`/`prima-hook`/`prima-draft` against a `not_confirmed` or `disqualified_inhouse`
-row. Promote a row to `confirmed_outsources` only when there's actual verifiable evidence of
-subcontracted fabrication (not inferred from scale, growth signals, or "likely" language) — then,
-and only then, does it proceed further down the pipeline.
+**Why a score instead of a binary:** discovered 2026-07-20 during a generator-mode research run — 4
+new accounts (Stryten Energy, Eos Energy, Moment Energy, Enercon Engineering) all matched every
+other ICP criterion, but a plain confirmed/not-confirmed flag left all but one stuck in the same
+"not confirmed" bucket with no way to prioritize among them. Enercon is the case that proves the
+override matters: it would have scored 70% (`tier_1`) on the weighted signals alone, and only the
+negative override (its own site confirms 100% in-house/vertically integrated) caught the
+disqualification. See `SPRINT2_GABY_REVIEW.md` for the still-open question of what source can
+actually *confirm* this (WebSearch alone hasn't been reliable for it) — the score is a
+prioritization tool for that gap, not a replacement for real confirmation.
+
+**Hard flow rule (the anti-burn rule): a `priority = P1` account never reaches `prima-draft` on
+tier/score alone.** `needs_manual_scope_confirmation = TRUE` for any P1 account whose `scope_tier`
+isn't already `confirmed_outsources` — the actual block is enforced in `prima-draft`'s dependency
+table (see that `SKILL.md`), not here; this column is just the signal that gate should be checked.
+`prima-committee`/`prima-hook`/`prima-email-waterfall` can still run on a P1 in this state — they
+prepare material — only the draft itself waits for a human to confirm scope directly.
+`priority = P2`/`P3` accounts are never subject to this rule; their tier decides on its own. A
+`scope_tier = disqualified_inhouse` row is blocked for every priority, no exceptions — that override
+should already show up as `excluded = yes` upstream, so `needs_manual_scope_confirmation` is left
+blank for it rather than set to either value.
 
 ## `tracker_light.csv` — the outreach log
 

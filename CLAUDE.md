@@ -29,16 +29,17 @@ UI-based workflow nodes.
 
 ## The 5-layer pipeline
 
-Data → Signals → Enrichment → Execution → Measurement. The 7 skills map onto this pipeline roughly in
-the order listed below — a typical account moves through icp-check → signal-scan → committee →
-email-waterfall → hook → draft → guardrail-audit before anything is sent.
+Data → Signals → Enrichment → Execution → Measurement. The 8 skills map onto this pipeline roughly in
+the order listed below — a typical account moves through icp-check → signal-scan → scope-score →
+committee → email-waterfall → hook → draft → guardrail-audit before anything is sent.
 
-## The 7 skills
+## The 8 skills
 
 | Skill | Purpose |
 |---|---|
 | `prima-icp-check` | Validates an account (domain or name in) against the Notion ICP: sub-segment (4A/4B/4C/4D), priority (P1/P2/P3), vertical owner (Aldahir vs Manu), and exclusions. Outputs classification + reason in columns. |
 | `prima-signal-scan` | Given a domain, scans 5 sources for verifiable signals: plant purchasing/supply chain/procurement job openings, capacity-expansion announcements, recent funding (Series B/C), target titles via Sales Navigator, and imports from Mexico (Import Genius). Outputs a dated, sourced signal list — empty if nothing verifiable turns up. **Never fabricates a signal.** |
+| `prima-scope-score` | Estimates the probability (0-100, tiered) that an account actually subcontracts structural fabrication rather than manufacturing 100% in-house — Notion's "Equipment Procurement Scope" criterion, which is rarely publicly confirmable. Two hard overrides (confirmed in-house / confirmed Import Genius import) dominate the weighted score. Sets a P1 anti-burn flag so high-value accounts never reach a draft on score alone. Vertical-specific (Aldahir's product-type weight table only) — not portable to Manu's verticals as-is. |
 | `prima-committee` | Identifies the buying committee — the 2-3 right contacts per account based on sub-segment (e.g. 4B → plant purchasing; 4C → founder/VP Engineering). |
 | `prima-email-waterfall` | Waterfalls across data providers to find and verify a contact's email: falls through to the next provider on failure until a verified hit, or leaves the field empty if none succeed. |
 | `prima-hook` | Pulls a specific, verifiable, sourced (URL-backed) fact from the account's site/news to open the email with — the first-line signal. **Never invents a claim.** |
