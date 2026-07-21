@@ -35,6 +35,7 @@ Canva/Slack/wherever, by hand, after the fact.
 | `contact_name` | `prima-committee` | |
 | `contact_title` | `prima-committee` | |
 | `priority_tier` | `prima-committee` | `ALTA`\|`SECUNDARIA` |
+| `linkedin_url` | `prima-committee` (added 2026-07-21) | the contact's LinkedIn profile URL, when found. If two different tools return two different handles for what looks like the same person, record both with a note rather than guessing which is current — don't silently pick one. |
 | `contact_email` | `prima-email-waterfall` | blank unless `email_status = VERIFIED` — see that skill's rule against treating `FOUND_UNVERIFIED`/personal emails as usable |
 | `email_status` | `prima-email-waterfall` | `VERIFIED`\|`FOUND_UNVERIFIED`\|`NOT_FOUND`\|`NOT_APPLICABLE` |
 | `template_id` | `prima-draft` | same across E1/E2/E3 — one contact's 3 drafts always come from one template |
