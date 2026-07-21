@@ -10,6 +10,41 @@ Cada punto: **qué skill**, **qué quedó provisional**, **qué decisión falta*
 
 ---
 
+## 🔴 Decisión crítica: cómo confirmar Procurement Scope (WebSearch no puede)
+
+Surgió el 2026-07-20 durante la primera corrida en modo generador (descubrimiento de cuentas nuevas
+vía señal, no lista dada): de 4 cuentas nuevas encontradas con señal real y fit de ICP en papel
+(Stryten Energy, Eos Energy, Moment Energy, Enercon Engineering), **ninguna llegó calificada**. Se
+intentó confirmar vía WebSearch el criterio "Equipment Procurement Scope" de Notion (¿subcontratan
+fabricación estructural de acero/enclosures, o son 100% in-house?) para las 4:
+
+- **Enercon Engineering** — único caso con evidencia clara, y fue **descalificante**: su propio
+  sitio dice explícitamente que son "vertically integrated" y mantienen la fabricación in-house
+  para "eliminar errores de terceros." Cumplía TODO el resto del perfil (señal real, tamaño,
+  producto, geografía) — y aun así se cae. **Esto es la prueba de que el scope no se puede inferir
+  de los otros criterios del ICP** — hay que verificarlo directamente, cuenta por cuenta.
+- **Stryten, Eos, Moment Energy** — sin evidencia verificable ni a favor ni en contra. Quedaron
+  `procurement_scope_status = not_confirmed` en `output/accounts_processed.csv`: candidatos
+  calientes, no descartados, pero tampoco calificados para pasar a `prima-committee`/`prima-draft`
+  todavía (ver la regla dura documentada en `output/README.md`).
+
+**Falta decidir con Gaby: qué fuente SÍ puede confirmar este criterio, ya que WebSearch mostró que
+no es confiable para esto específicamente.** Opciones a evaluar:
+
+1. **Import Genius (aduanas)** — si una cuenta ya importa componentes de fabricación (acero,
+   enclosures) desde México/otros países, eso confirma outsourcing directamente. Mismo mecanismo
+   que ya usa `prima-signal-scan` para su señal de `customs`, aplicado aquí como verificación de
+   scope en vez de señal de apertura.
+2. **Llamada de Inside Job** — verificación humana directa preguntando al prospecto o a alguien
+   cercano a la cuenta.
+3. **LinkedIn del equipo de supply chain** — si la cuenta tiene roles de "Commodity Manager" o
+   "Strategic Sourcing" enfocados en fabricación externa (no solo materia prima/componentes
+   electrónicos), eso es indicio indirecto pero más fuerte que nada.
+
+Sin esto resuelto, el modo generador puede seguir encontrando cuentas con señal real, pero no debe
+escalarse a volumen (20+) hasta tener una manera confiable de cerrar este gate — de lo contrario el
+output son candidatos en limbo, no leads listos.
+
 ## `prima-icp-check`
 
 - **Provisional:** el entry point/comité del sub-segmento `4D` (niche custom, low volume) nunca se

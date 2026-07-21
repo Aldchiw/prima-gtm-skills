@@ -22,6 +22,7 @@ Canva/Slack/wherever, by hand, after the fact.
 | `vertical_owner` | `prima-icp-check` | |
 | `excluded` | `prima-icp-check` | if `yes`, the row stops here — no contact/signal/draft columns apply |
 | `exclusion_reason` | `prima-icp-check` | |
+| `procurement_scope_status` | discovery research (WebSearch, manual verification, or a future dedicated source — see below) | `confirmed_outsources`\|`not_confirmed`\|`disqualified_inhouse` — whether there's actual evidence this account subcontracts structural fabrication (steel/enclosures), not just that it fits the rest of the ICP profile |
 | `signal_type` | `prima-signal-scan` | the account's top/strongest verified signal |
 | `signal_summary` | `prima-signal-scan` | |
 | `signal_date` | `prima-signal-scan` | |
@@ -39,6 +40,27 @@ Canva/Slack/wherever, by hand, after the fact.
 
 This file does **not** carry the actual draft subject/body text — just status/tracking columns.
 The email content itself lives wherever `prima-draft` printed or saved it during that run.
+
+### `procurement_scope_status` — the gate before anything else runs
+
+This is Notion's own "Equipment Procurement Scope" qualification criterion (does the account
+actually subcontract structural fabrication, or manufacture 100% in-house?), tracked explicitly
+because it turned out to be the single most important — and least WebSearch-verifiable — gate in
+the whole pipeline. Discovered 2026-07-20 during a generator-mode research run: 4 new accounts
+(Stryten Energy, Eos Energy, Moment Energy, Enercon Engineering) all matched every other ICP
+criterion, but only one — Enercon — had a confirmable answer on this specific question, and it was
+a **disqualifying** one (explicitly 100% in-house/vertically integrated, confirmed on the
+company's own site). The other 3 stayed `not_confirmed`: real signal, real ICP fit on paper, but no
+verifiable evidence either way on outsourcing. See `SPRINT2_GABY_REVIEW.md` for the open decision on
+how to actually confirm this going forward (WebSearch alone hasn't been reliable for it).
+
+**Hard flow rule: no account may move to "qualified / ready for `prima-draft`" status without
+`procurement_scope_status = confirmed_outsources`.** A `not_confirmed` account is a **hot candidate
+pending scope verification** — real enough to keep on the list, not real enough to write to. Never
+run `prima-committee`/`prima-hook`/`prima-draft` against a `not_confirmed` or `disqualified_inhouse`
+row. Promote a row to `confirmed_outsources` only when there's actual verifiable evidence of
+subcontracted fabrication (not inferred from scale, growth signals, or "likely" language) — then,
+and only then, does it proceed further down the pipeline.
 
 ## `tracker_light.csv` — the outreach log
 
