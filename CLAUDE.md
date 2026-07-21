@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 `prima-gtm-skills` holds reusable Claude Code skills for Prima's GTM channel targeting **Data Centers**
 (Power & Electrical, and Energy Storage sub-verticals). It is not a traditional software repo — there is
-no build, lint, or test tooling. The "code" is 7 Markdown skill files that Claude executes directly,
+no build, lint, or test tooling. The "code" is 9 Markdown skill files that Claude executes directly,
 operating on local CSVs via natural-language instructions in the terminal plus pay-per-use provider APIs.
 
 This is the **terminal-first** replacement for a Clay-style enrichment UI: classification, signal
@@ -29,14 +29,18 @@ UI-based workflow nodes.
 
 ## The 5-layer pipeline
 
-Data → Signals → Enrichment → Execution → Measurement. The 8 skills map onto this pipeline roughly in
-the order listed below — a typical account moves through icp-check → signal-scan → scope-score →
-committee → email-waterfall → hook → draft → guardrail-audit before anything is sent.
+Data → Signals → Enrichment → Execution → Measurement. The first 8 skills map onto this pipeline
+roughly in the order listed below — a typical account moves through icp-check → signal-scan →
+scope-score → committee → email-waterfall → hook → draft → guardrail-audit before anything is sent.
+The 9th skill, `prima-generate-leads`, is an orchestrator wrapping the first five of those stages
+into one command for a non-technical vendor — it stops before hook/draft/audit, since it produces a
+qualified contactable lead list, not outbound copy.
 
-## The 8 skills
+## The 9 skills
 
 | Skill | Purpose |
 |---|---|
+| `prima-generate-leads` | The single-command entry point ("genera 20 leads de Power & Electrical") a vendor uses without knowing the pipeline underneath — discovers N new companies signal-first, then runs icp-check → signal-scan → scope-score → committee → email-waterfall on each, and writes one clean row per company to `leads_final.csv`. Only Aldahir's two verticals; reports real cost and an honest shortfall if N isn't reached — never pads the output. |
 | `prima-icp-check` | Validates an account (domain or name in) against the Notion ICP: sub-segment (4A/4B/4C/4D), priority (P1/P2/P3), vertical owner (Aldahir vs Manu), and exclusions. Outputs classification + reason in columns. |
 | `prima-signal-scan` | Given a domain, scans 5 sources for verifiable signals: plant purchasing/supply chain/procurement job openings, capacity-expansion announcements, recent funding (Series B/C), target titles via Sales Navigator, and imports from Mexico (Import Genius). Outputs a dated, sourced signal list — empty if nothing verifiable turns up. **Never fabricates a signal.** |
 | `prima-scope-score` | Estimates the probability (0-100, tiered) that an account actually subcontracts structural fabrication rather than manufacturing 100% in-house — Notion's "Equipment Procurement Scope" criterion, which is rarely publicly confirmable. Two hard overrides (confirmed in-house / confirmed Import Genius import) dominate the weighted score. Sets a P1 anti-burn flag so high-value accounts never reach a draft on score alone. Vertical-specific (Aldahir's product-type weight table only) — not portable to Manu's verticals as-is. |
@@ -50,9 +54,13 @@ committee → email-waterfall → hook → draft → guardrail-audit before anyt
 
 A full pipeline run for a contact lands in two append-only local CSVs under `output/` —
 `accounts_processed.csv` (the rich working file, one row per contact) and `tracker_light.csv` (a
-minimal outreach log for Aldahir's own Google Sheet). See `output/README.md` for the exact schema
-and which skill produces each column. Neither file connects to Sheets/Canva/Slack automatically —
-that's a manual step Aldahir does afterward.
+minimal outreach log for Aldahir's own Google Sheet). A third file, `leads_final.csv`, is a
+regenerated (not append-only) distilled view derived from `accounts_processed.csv` — the clean,
+actionable export handed to Sheets. See `output/README.md` for the exact schema and which skill
+produces each column, and its "Cómo llevar leads_final.csv a mi Google Sheet" section for the manual
+import steps. None of these files connect to Sheets/Canva/Slack automatically — that's a manual step
+Aldahir does afterward (an automated Google Sheets API write is a logged future improvement in
+`SPRINT2_GABY_REVIEW.md`, not built yet).
 
 ## Working conventions
 
