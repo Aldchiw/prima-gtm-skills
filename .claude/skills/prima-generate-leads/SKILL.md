@@ -100,6 +100,36 @@ resetting when a tier change happens.
    rule above either.
 3. Feed every surviving candidate into Step 1.
 
+**How to actually run the dedup check — command shape matters, not just logic (added 2026-07-22).**
+This project's `.claude/settings.local.json` pre-approves specific literal command prefixes (`grep`,
+`wc`, `cat`, `head`, `tail`, `cut`, `deepline`, etc.) so a live run doesn't stop for permission prompts.
+That pre-approval matches on how the command **starts** — a command that starts with a variable
+assignment (`F="path"; grep ...`) or command substitution (`off=$(grep ... | head ...)`) does not match
+any of those prefixes, no matter how broad the allowlist gets, because the command as a whole doesn't
+begin with the allowed word. Confirmed the hard way, 2026-07-22 — this is what caused the mid-demo
+approval prompts during dedup checks that day.
+
+**Always check dedup with a direct, single-purpose command — the literal path written inline, no
+intermediate variable, no `$(...)` wrapping the whole check:**
+
+```
+grep -ci "Company Name" "output/accounts_processed.csv"
+```
+
+not
+
+```
+F="output/accounts_processed.csv"
+grep -ci "Company Name" "$F"
+```
+
+Same result, same logic, same file — only the shape changes. This applies to every dedup check in
+Step 0 (against `accounts_processed.csv` and against the cached Notion tracked-list content) and to
+any other read-only inspection during a run (`wc -l`, `cat`, `head`, `tail` on output files) — never
+introduce a variable or subshell just to save a few characters of typing. If a check genuinely needs
+byte-offset slicing or multi-step piping that can't be written as one direct command, do it with
+`Read`/`Grep` (the dedicated tools, not `Bash`) instead of a Bash one-liner with variables.
+
 ### Circuit breaker — one, across the whole cascade
 
 Stop discovery and report honestly (see "If N isn't reached" below) once **either**:
