@@ -73,6 +73,41 @@ Stop discovery and report honestly (see "If N isn't reached" below) once **eithe
 Never pad past this ceiling by loosening ICP/exclusion criteria to manufacture a hit — a shortfall is
 a valid, expected outcome some runs, not a bug to hide.
 
+### PENDING IMPROVEMENT — signal cascade for Step 0 (designed 2026-07-22, not implemented)
+
+**Do not build this yet — this is the target design for a future change, written down so it doesn't
+get lost, not something to act on today.** The problem it's meant to fix: Step 0 today runs a single
+WebSearch pass mixing all signal categories together (capacity-expansion news, funding, job openings)
+and just stops — reporting a shortfall — once dedup exhausts what that pass turns up. Confirmed real
+case, 2026-07-22: a "genera 3 leads de Power & Electrical" run returned **0 of 3** because 33 of the
+41 accounts already in `accounts_processed.csv` were discovered via `capacity_expansion` alone (80%
+of the tracker) — that well was dry, and the run had no fallback, so it just reported the shortfall
+instead of trying a different signal category. `job_opening` and `customs` (Import Genius) have
+**never** been used as a discovery signal in this repo's history — 0 of 41 tracked accounts came from
+either.
+
+**Target behavior:** Step 0 tries signal categories in priority order, strongest-first, and only
+drops to the next tier when the current tier stops producing enough *new* (non-duplicate) candidates
+to plausibly reach N — not when it hits zero, and not as a blanket first pass across every signal type
+at once like today.
+
+1. `capacity_expansion` (news of a new/expanded plant) — strongest signal, tried first, same as today.
+2. `funding` (Series B/C, PE recapitalization/roll-up) — already validated as productive in real runs
+   (Ayr Energy, CORE Transformers, DG Matrix, Exowatt, ARC Clean Technology, Amperesand all came from
+   this tier) — drop to this tier once (1) isn't yielding enough new candidates.
+3. `job_opening` (active postings for plant purchasing / sourcing / supply chain roles at electrical
+   or storage equipment manufacturers) — untapped; a real buying-intent signal even with zero press
+   coverage of any physical expansion.
+4. `customs` (Mexico→US import records via Import Genius, per `prima-signal-scan`'s own source list) —
+   untapped; the only signal type that's directly, positively correlated with actually outsourcing
+   fabrication rather than just growing.
+
+Each tier still runs through the same dedup, ICP, scope-score, committee, and email-waterfall steps
+already defined below — this only changes what Step 0 searches for and when it moves on, not anything
+downstream. The circuit breaker above (N reached, or 3×N evaluated) still applies across the whole
+cascade, not per tier — don't let this turn into 4 separate circuit breakers stacked on top of each
+other.
+
 ## Steps 1-5 — run each existing skill exactly as it defines itself
 
 | Step | Skill | Notes for this orchestrator |
@@ -163,6 +198,81 @@ full rewrite would blow that away every time this skill runs. **Before writing t
 for the same underlying company (e.g. a rename), the merge won't recognize it as the same row and will
 incorrectly default it — treat that as a real bug to catch by eye (compare row counts before/after: a
 sudden jump in "new" accounts that weren't actually new is the tell), not a silently-accepted risk.
+
+## Presentation mode — default, silent execution
+
+This is the intended way a non-technical vendor experiences this skill — the one-line invocation
+("genera 5 leads de Power & Electrical") is the whole interaction; everything else in this section
+is about what does **not** get shown, not new logic. This doesn't change Steps 0-5 or the merge rule
+above — it changes what surfaces to the screen while they run.
+
+**Run every internal step silently.** While discovery and Steps 1-5 execute, do not narrate or print:
+- Which company is currently being processed, or the running list of candidates evaluated.
+- Which Deepline provider was called for a given step (`ai_ark_people_search`, `hunter_email_finder`,
+  `company_titles`, etc.) or its raw response.
+- Any CSV dump, `Format-List`/table printout, or raw row-by-row view of `accounts_processed.csv`
+  or `leads_final.csv` while building them.
+- Raw verification strings from a provider (e.g. "Hunter source_type=generated,
+  verification.status=valid...") — that detail lives in the file, not on screen.
+- Per-account skip/no-match rows from `prima-committee` (`SUB_SEGMENT_NOT_SUPPORTED`,
+  `ROLE_NOT_FOUND`, `SKIPPED_EXCLUDED`, `SKIPPED_UNKNOWN`) or from any other step's own status
+  vocabulary. These are real, correct outcomes — they just aren't vendor-facing; they stay in the
+  CSV and in the shortfall/P1 blocks of the final message where they're already accounted for.
+
+**The only output during the run is a minimal progress indicator** — short, plain-language, no
+technical nouns:
+
+```
+Buscando empresas...
+Verificando contactos...
+Listo.
+```
+
+Three lines like this (or similarly minimal phrasing) is the ceiling — not a per-company tick, not a
+per-step breakdown, not a percentage. Its only job is confirming the run is alive, not reporting on
+it.
+
+**The only real output is the final vendor-facing block**, defined in the next section, shown once,
+in full, isolated — nothing printed before it lingers on screen mixed in with it, and nothing prints
+after it.
+
+**Known technical noise — silence it at the call site, every time.** Every `deepline` CLI invocation
+on Windows currently prints a startup block to **stderr** — "Deepline skills changed; syncing agent
+skills...", a Node `DEP0190` deprecation warning, and `SDK skills sync failed: failed to start npx:
+spawn npx ENOENT` followed by a 300+ character suggested manual command. Confirmed root cause
+(2026-07-21/22): `deepline` decides whether to re-sync by checking its own internal state file
+(`~/.local/deepline/code-deepline-com/sdk-cli/compat-cache.json`, field `skills.local.version`) against
+the remote skills hash — that local marker can only be written by `deepline`'s own internal sync path,
+which is the same path broken by the Windows `npx` spawn bug. Manually running the equivalent
+`npx skills add ...` command from outside `deepline` installs the skill files correctly but does
+**not** update that marker, so `deepline` keeps declaring the skills changed and keeps retrying (and
+failing) the same broken internal sync on every single call — installing the skills yourself does not
+fix this. It is confirmed cosmetic — stdout carries the real response cleanly every time, verified by
+capturing the two streams separately; no output has ever been affected — but it prints in red to
+whatever terminal is running the command, so anyone driving `prima-generate-leads` (this repo's
+assistant, or a human typing `deepline` directly) must append a stderr redirect:
+
+- Bash tool / Git Bash: `2>/dev/null`
+- PowerShell tool: `2>$null`
+
+**This applies to every `deepline` call this skill makes, automatically, with no exception** — not just
+during a demo. The assistant running this skill appends the redirect itself on every `deepline`
+invocation; the user never has to type anything for calls the assistant makes on their behalf. The one
+case this doesn't cover: a human typing a `deepline` command directly into their own terminal (not
+through this skill) has to add the redirect themselves, or they'll see the noise. Drop this rule the
+day Deepline ships a fix for the Windows sync bug (tracked as a pending report — see below) — don't
+carry a stale workaround once the root cause is gone.
+
+**Pending, not yet done:** report this bug to Deepline via `deepline feedback` (or the
+`deepline-feedback` skill) — the local-workaround above unblocks this repo's own use, but the actual
+fix has to happen in Deepline's CLI.
+
+**Exception — real failures.** If something genuinely fails in a way that blocks completion
+(a required tool is unreachable, a file can't be read/written, etc.), surface that — but in plain
+language a vendor can act on, not a stack trace or a raw error string. E.g. "No pude leer el archivo
+de leads anterior — avísame antes de que siga" rather than a dumped exception. A partial/expected
+outcome (shortfall in N, a P1 needing manual confirmation) is **not** a failure — that's already
+handled by the normal final-message blocks below and never triggers this exception path.
 
 ## What the vendor sees at the end — plain language, not a data dump
 
