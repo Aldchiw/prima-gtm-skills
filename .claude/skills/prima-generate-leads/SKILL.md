@@ -49,64 +49,67 @@ that produces a real, verified signal and passes ICP but where `prima-committee`
 `prima-email-waterfall` can't surface even a LinkedIn profile does **not** count toward N — keep
 discovering until N real ones are reached, or the circuit breaker below trips.
 
-## Step 0 — Discover candidate companies (signal-first, not in a given list)
+## Step 0 — Discover candidate companies via a signal cascade (signal-first, not in a given list)
 
 This is the one step with no dedicated skill of its own yet — it's the same generator-mode process
 used in Sprint 2's 20-account discovery, applied continuously here instead of as a one-off batch.
 
-1. WebSearch for Data Centers-relevant signals in the requested vertical — capacity-expansion
-   announcements, funding/grant news (Series B/C sweet spot), plant/procurement job openings — the
-   same signal categories `prima-signal-scan` formally verifies in Step 2, used here just to surface
-   **candidate company names** worth running through the full pipeline.
+**Why a cascade, not one mixed pass:** a single WebSearch pass mixing every signal category together
+stops being useful once the strongest category is saturated for a given vertical — confirmed real
+case, 2026-07-22: a "genera 3 leads de Power & Electrical" run returned 0 of 3 because 33 of the 41
+accounts already in `accounts_processed.csv` at that point were discovered via `capacity_expansion`
+alone (80% of the tracker). That run had no fallback, so it reported a shortfall instead of trying a
+different signal category that was still fresh. The cascade below exists so Step 0 tries the next
+category automatically instead of giving up.
+
+### The cascade, in order
+
+Try signal categories strongest-first. Only drop to the next tier when the current one stops
+producing enough *new* (non-duplicate) candidates to plausibly reach N — not the instant it hits
+zero, and not as one blanket pass across every category at once.
+
+1. **`capacity_expansion`** (news of a new/expanded plant) — strongest signal, tried first.
+2. **`funding`** (Series B/C, PE recapitalization/roll-up) — validated as productive in real runs
+   (Ayr Energy, CORE Transformers, DG Matrix, Nostromo Energy, EnerVenue, Exowatt, ARC Clean
+   Technology, Amperesand all came from this tier).
+3. **`job_opening`** (active postings for plant purchasing / sourcing / supply chain roles at
+   electrical or storage equipment manufacturers) — the mechanism (WebSearch) works, but as of
+   2026-07-22 it has never once produced a discovery (0 of 41 tracked accounts) — attempt it anyway
+   per the drop rule below, don't skip it outright, but expect it to drop through most runs.
+4. **`customs`** (Mexico→US import records, per `prima-signal-scan`'s own source list) — **skip this
+   tier entirely, don't spend any search attempts on it**, unless an actual Import Genius (or
+   equivalent trade-data) tool is connected in the session. Confirmed 2026-07-22 via
+   `deepline tools search`: no atomic tool matches import/customs/trade in this environment. This is a
+   different failure mode than `job_opening`'s — `job_opening` has a working search mechanism that
+   just hasn't paid off yet; `customs` currently has no mechanism to try at all. Re-check tool
+   availability each run rather than assuming this stays permanently unavailable — the day an
+   Import Genius tool is connected, this tier becomes real and should be attempted like the others.
+
+**Drop-to-next-tier rule:** within a tier, after **3 consecutive WebSearch queries produce zero new
+(non-duplicate) candidates**, drop to the next tier. Don't wait for a larger cumulative count of empty
+searches, and don't drop after just one empty search either — 3 is the threshold, applied per tier,
+resetting when a tier change happens.
+
+1. WebSearch for Data Centers-relevant signals in the requested vertical, within the current cascade
+   tier's signal category — surfacing **candidate company names** worth running through the full
+   pipeline, same as `prima-signal-scan` formally verifies in Step 2.
 2. **Dedup before spending any more effort on a candidate:** check it isn't already on Notion's
    "Data Centers GTM" tracked-account list and isn't already a row in `output/accounts_processed.csv`
    from a prior run. A company that's already tracked/processed doesn't count as a new discovery,
-   even if it would otherwise qualify.
+   even if it would otherwise qualify — and doesn't count as a "new candidate" for the drop-to-next-tier
+   rule above either.
 3. Feed every surviving candidate into Step 1.
 
-### Circuit breaker (provisional, adjust as real runs accumulate)
+### Circuit breaker — one, across the whole cascade
 
 Stop discovery and report honestly (see "If N isn't reached" below) once **either**:
 - N companies with an actionable contact are reached, **or**
-- 3×N distinct candidates have been evaluated through the full pipeline without reaching N.
+- 3×N distinct candidates have been evaluated through the full pipeline, **summed across all cascade
+  tiers together** — not 3×N per tier. A run that drops through all 4 tiers without reaching either
+  threshold reports a shortfall covering the whole cascade, not one shortfall message per tier.
 
 Never pad past this ceiling by loosening ICP/exclusion criteria to manufacture a hit — a shortfall is
 a valid, expected outcome some runs, not a bug to hide.
-
-### PENDING IMPROVEMENT — signal cascade for Step 0 (designed 2026-07-22, not implemented)
-
-**Do not build this yet — this is the target design for a future change, written down so it doesn't
-get lost, not something to act on today.** The problem it's meant to fix: Step 0 today runs a single
-WebSearch pass mixing all signal categories together (capacity-expansion news, funding, job openings)
-and just stops — reporting a shortfall — once dedup exhausts what that pass turns up. Confirmed real
-case, 2026-07-22: a "genera 3 leads de Power & Electrical" run returned **0 of 3** because 33 of the
-41 accounts already in `accounts_processed.csv` were discovered via `capacity_expansion` alone (80%
-of the tracker) — that well was dry, and the run had no fallback, so it just reported the shortfall
-instead of trying a different signal category. `job_opening` and `customs` (Import Genius) have
-**never** been used as a discovery signal in this repo's history — 0 of 41 tracked accounts came from
-either.
-
-**Target behavior:** Step 0 tries signal categories in priority order, strongest-first, and only
-drops to the next tier when the current tier stops producing enough *new* (non-duplicate) candidates
-to plausibly reach N — not when it hits zero, and not as a blanket first pass across every signal type
-at once like today.
-
-1. `capacity_expansion` (news of a new/expanded plant) — strongest signal, tried first, same as today.
-2. `funding` (Series B/C, PE recapitalization/roll-up) — already validated as productive in real runs
-   (Ayr Energy, CORE Transformers, DG Matrix, Exowatt, ARC Clean Technology, Amperesand all came from
-   this tier) — drop to this tier once (1) isn't yielding enough new candidates.
-3. `job_opening` (active postings for plant purchasing / sourcing / supply chain roles at electrical
-   or storage equipment manufacturers) — untapped; a real buying-intent signal even with zero press
-   coverage of any physical expansion.
-4. `customs` (Mexico→US import records via Import Genius, per `prima-signal-scan`'s own source list) —
-   untapped; the only signal type that's directly, positively correlated with actually outsourcing
-   fabrication rather than just growing.
-
-Each tier still runs through the same dedup, ICP, scope-score, committee, and email-waterfall steps
-already defined below — this only changes what Step 0 searches for and when it moves on, not anything
-downstream. The circuit breaker above (N reached, or 3×N evaluated) still applies across the whole
-cascade, not per tier — don't let this turn into 4 separate circuit breakers stacked on top of each
-other.
 
 ## Steps 1-5 — run each existing skill exactly as it defines itself
 
@@ -286,6 +289,7 @@ RESULTADO
 - {N_logrado} de {N_solicitado} empresas con contacto accionable
 - {n_verified} con email verificado — listas para escribir directo
 - {n_linkedin_only} solo con LinkedIn (sin email confirmado) — contáctalas por ahí primero
+- Por señal: {desglose_por_tier}
 
 Archivo: output/leads_final.csv (impórtalo a tu Sheet — pasos en output/README.md)
 
@@ -301,6 +305,13 @@ Esta corrida: ${costo_real} · Saldo Deepline: {saldo_creditos} créditos
 "— no se completó el número pedido, ver abajo" when it isn't. No emoji, no tables, no technical
 column names — this message is for someone who has never opened `accounts_processed.csv` and never
 will.
+
+`{desglose_por_tier}` is a plain count per cascade tier that actually produced a counted lead, e.g.
+"2 por funding, 1 por capacity_expansion" — only list tiers with at least one, in the order the
+cascade tried them, and skip this line entirely if every lead came from the first tier (no cascade
+behavior to show, don't clutter the message for a normal run). Never mention `job_opening` or
+`customs` in this line unless one of them actually produced a counted lead — dropping through a tier
+empty is cascade *mechanics*, not a result the vendor needs in their face.
 
 ## If N isn't reached — say so, honestly, with reasons
 
