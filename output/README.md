@@ -26,10 +26,11 @@ Canva/Slack/wherever, by hand, after the fact.
 | `scope_tier` | `prima-scope-score` | `confirmed_outsources`\|`tier_1`\|`tier_2`\|`tier_3`\|`disqualified_inhouse` — see below |
 | `score_rationale` | `prima-scope-score` | one line citing every factor behind the score — never a bare number |
 | `needs_manual_scope_confirmation` | `prima-scope-score` | `TRUE`/`FALSE`/blank — only meaningful when `priority = P1`; see below |
-| `signal_type` | `prima-signal-scan` | the account's top/strongest verified signal |
+| `signal_type` | `prima-signal-scan` | the account's top/strongest verified signal; blank when `signal_status = NO_SIGNAL` |
 | `signal_summary` | `prima-signal-scan` | |
 | `signal_date` | `prima-signal-scan` | |
 | `signal_source_url` | `prima-signal-scan` | renamed from that skill's `source_url` to avoid clashing with `hook_source_url` below |
+| `signal_status` | `prima-generate-leads` (Tier 0 only, added 2026-07-22, revised same day) | `VERIFIED`\|`NO_SIGNAL` — only meaningful for candidates discovered via Tier 0's firmographic search (`ai_ark_company_search`); blank for rows from the WebSearch cascade, where surfacing a candidate at all already implies a signal exists. `NO_SIGNAL` means the candidate passed ICP and scope-score but `prima-signal-scan` found no current, citable signal. **This is a label, not a gate** — a `NO_SIGNAL` row still goes through `prima-committee`/`prima-email-waterfall` and still lands in `leads_final.csv` exactly like a `VERIFIED` row once it has a contact; the original 2026-07-22 design stopped `NO_SIGNAL` rows before contact search, but that gate was removed the same day once Aldahir clarified fit alone (ICP + scope-score) is what should decide whether a lead is worth contacting, not whether a signal happened to exist too. See `prima-generate-leads/SKILL.md`'s Tier 0 section for the current rule. |
 | `hook_fact` | `prima-hook` | the specific fact actually used to open the draft(s) |
 | `hook_source_url` | `prima-hook` | |
 | `contact_name` | `prima-committee` | |

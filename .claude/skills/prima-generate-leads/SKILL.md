@@ -49,20 +49,85 @@ that produces a real, verified signal and passes ICP but where `prima-committee`
 `prima-email-waterfall` can't surface even a LinkedIn profile does **not** count toward N — keep
 discovering until N real ones are reached, or the circuit breaker below trips.
 
-## Step 0 — Discover candidate companies via a signal cascade (signal-first, not in a given list)
+## Step 0 — Discover candidate companies: firmographic search first, signal cascade as fallback (added 2026-07-22)
 
 This is the one step with no dedicated skill of its own yet — it's the same generator-mode process
 used in Sprint 2's 20-account discovery, applied continuously here instead of as a one-off batch.
+It now has two sources, run in this order, not as alternatives to pick between per run:
 
-**Why a cascade, not one mixed pass:** a single WebSearch pass mixing every signal category together
-stops being useful once the strongest category is saturated for a given vertical — confirmed real
-case, 2026-07-22: a "genera 3 leads de Power & Electrical" run returned 0 of 3 because 33 of the 41
-accounts already in `accounts_processed.csv` at that point were discovered via `capacity_expansion`
-alone (80% of the tracker). That run had no fallback, so it reported a shortfall instead of trying a
-different signal category that was still fresh. The cascade below exists so Step 0 tries the next
-category automatically instead of giving up.
+1. **Tier 0 — firmographic company search** (`ai_ark_company_search` via Deepline). Cheap ($0.002/
+   result) and fast — one call can return up to 100 candidates regardless of whether any of them has
+   a news-worthy event right now. This is a pure ICP-fit filter (industry/size/location) — it knows
+   nothing about signals or data centers, so every candidate it returns still has to clear a real
+   `prima-icp-check` pass before it's treated as anything more than a raw name. See "Tier 0" below.
+2. **Tiers 1-4 — the WebSearch signal cascade** (unchanged from 2026-07-22's design) — the fallback
+   when Tier 0's pool is exhausted (deduped out) or doesn't reach N. See "The cascade" below.
 
-### The cascade, in order
+Both sources feed the exact same downstream pipeline (Steps 1-5) and the exact same circuit breaker —
+Tier 0 isn't a separate track with its own rules, it's just a faster way to produce the same kind of
+candidate name the cascade already produces.
+
+## Tier 0 — firmographic company search (`ai_ark_company_search`)
+
+Run this first, before touching WebSearch. One call, ranked by cheapest/fastest-to-exhaust-first:
+
+1. Call `deepline tools execute ai_ark_company_search` with `account.industries` (SMART/text mode)
+   matched to the requested vertical, `account.location` set to United States, and a reasonable
+   `account.employeeSize` range (50–1000 is a sane default — wide enough to catch scale-ups and
+   established manufacturers, narrow enough to skip both pre-revenue shells and Fortune 500
+   incumbents that are almost always `disqualified_inhouse` anyway). Redirect stderr per the standing
+   Deepline noise rule (`2>/dev/null`).
+2. **Industry filter mapping, by vertical** — use the `industries` text filter, NOT the `naics` field:
+
+   | Vertical | `industries` search terms | NAICS (documented intent — see caveat below) |
+   |---|---|---|
+   | Energy Storage | `"battery manufacturing"`, `"energy storage"` | `335911` (Storage Battery Manufacturing) |
+   | Power & Electrical Distribution | `"electrical equipment manufacturing"`, `"switchgear"`, `"transformer manufacturing"` | `335313` (Switchgear/Switchboard) + `335311` (Power/Distribution/Specialty Transformer) |
+
+   **NAICS caveat, confirmed 2026-07-22, don't re-litigate this without re-testing first:** the
+   `naics` field is real and populated on individual company profiles (seen on Giga Energy's and
+   Pennsylvania Transformer Technology's own records), but filtering *search* by `naics` returned
+   **zero** results for both `335911` and the broader `335` in direct testing, while `industries`
+   text search against the same companies worked fine. Treat `naics` as a format bug to revisit later,
+   not a working filter today — always use `industries` text mode unless a future session re-tests
+   `naics` and finds the correct format.
+3. **Dedup exactly like the cascade does** — check every returned candidate against Notion's tracked
+   list and `output/accounts_processed.csv` before spending any more effort on it (same rule, same
+   command-shape convention, as the cascade's own dedup step below).
+4. **Feed every surviving candidate into `prima-icp-check` — the real one, no shortcut (hard rule,
+   added 2026-07-22, corrects a real mistake made the same day).** `industries`/NAICS have no idea
+   what a data center is or what counts as Category 4 — `prima-icp-check`'s formal criteria (Notion's
+   categories/segments, existing-customer exclusion, disqualification signals) is what actually does
+   that filtering for Tier 0, so it matters more here than for cascade-sourced candidates, not less.
+   **Do not replace this with an eyeballed "obviously wrong category" pass** — a real run on 2026-07-22
+   filtered 12 of 30 raw candidates that way (skipped anything that looked like a distributor/developer/
+   consumer-electronics/research-org name at a glance) instead of running them through
+   `prima-icp-check` itself, and that's exactly the shortcut this rule exists to stop. Batching many
+   candidates through `prima-icp-check` at once for efficiency is fine; skipping the check itself for
+   any of them is not — a candidate dropped without a real ICP pass doesn't count as "evaluated" for
+   the circuit breaker, it's a process gap to go back and close.
+5. **The signal branch — informational only, does not gate anything downstream (revised 2026-07-22,
+   Aldahir's second pass).** For every candidate that passes ICP *and* clears `prima-scope-score`
+   (unchanged — `disqualified_inhouse` still excludes here exactly like it does for the cascade), run
+   `prima-signal-scan` to tag it, then **always continue to `prima-committee` → `prima-email-waterfall`
+   regardless of the result:**
+   - **Found a real, current signal** → tag `signal_status = VERIFIED`, `prima-scope-score` runs in
+     full (signal-freshness weighted in as usual).
+   - **No real signal found** → tag `signal_status = NO_SIGNAL`, `prima-scope-score` runs in
+     **partial** mode (product-type + sourcing-team-evidence weights only — no freshness weight to
+     compute without a dated signal). **This no longer stops the candidate.** Fit is fit — if ICP and
+     scope-score both say yes, find its contact the same as any other candidate.
+
+   Both outcomes count toward N and land in `leads_final.csv` once a contact is found — `signal_status`
+   is a column you can see, not a gate you have to clear. The only things that still stop a candidate
+   before committee/waterfall are the ones that already stopped it before this change: failing
+   `prima-icp-check`, or `prima-scope-score` returning `disqualified_inhouse`. **Never blur `VERIFIED`
+   and `NO_SIGNAL` into one unlabeled bucket in the data or the final message** — the distinction is
+   still worth showing, it just isn't a filter anymore. The P1 anti-burn gate
+   (`needs_manual_scope_confirmation`) is completely unaffected by any of this — it only ever blocked
+   `prima-draft`, which this skill never reaches, signal or no signal.
+
+## The cascade — tiers 1-4, unchanged, now the fallback behind Tier 0
 
 Try signal categories strongest-first. Only drop to the next tier when the current one stops
 producing enough *new* (non-duplicate) candidates to plausibly reach N — not the instant it hits
@@ -130,16 +195,23 @@ introduce a variable or subshell just to save a few characters of typing. If a c
 byte-offset slicing or multi-step piping that can't be written as one direct command, do it with
 `Read`/`Grep` (the dedicated tools, not `Bash`) instead of a Bash one-liner with variables.
 
-### Circuit breaker — one, across the whole cascade
+### Circuit breaker — one, across Tier 0 and the whole cascade together
 
 Stop discovery and report honestly (see "If N isn't reached" below) once **either**:
-- N companies with an actionable contact are reached, **or**
-- 3×N distinct candidates have been evaluated through the full pipeline, **summed across all cascade
-  tiers together** — not 3×N per tier. A run that drops through all 4 tiers without reaching either
-  threshold reports a shortfall covering the whole cascade, not one shortfall message per tier.
+- N companies with an actionable contact are reached — `signal_status` (`VERIFIED` or `NO_SIGNAL`)
+  makes no difference to this count as of 2026-07-22 (revised — see Tier 0's signal-branch rule
+  above); fit is fit, either status counts the same toward N, **or**
+- 3×N distinct candidates have been evaluated through the full pipeline, **summed across Tier 0 and
+  all 4 cascade tiers together** — not a separate 3×N per tier and not a separate one for Tier 0. A
+  candidate only counts toward this evaluated-count once it's actually cleared a real
+  `prima-icp-check` pass (see the hard rule against eyeballed filtering above) — one that never got a
+  real ICP pass doesn't count as evaluated, it's a gap to close, not a data point. A run that exhausts
+  Tier 0 and drops through all 4 cascade tiers without reaching either threshold reports one shortfall
+  covering everything, not one message per tier.
 
-Never pad past this ceiling by loosening ICP/exclusion criteria to manufacture a hit — a shortfall is
-a valid, expected outcome some runs, not a bug to hide.
+Never pad past this ceiling by loosening ICP/exclusion criteria to manufacture a hit, and never pad it
+by skipping a real `prima-icp-check` pass to wave a candidate through faster either — a shortfall is a
+valid, expected outcome some runs, not a bug to hide.
 
 ## Steps 1-5 — run each existing skill exactly as it defines itself
 
@@ -320,6 +392,7 @@ RESULTADO
 - {n_verified} con email verificado — listas para escribir directo
 - {n_linkedin_only} solo con LinkedIn (sin email confirmado) — contáctalas por ahí primero
 - Por señal: {desglose_por_tier}
+- {n_con_senal} con señal vigente, {n_sin_senal} fit-only sin señal — ambas accionables
 
 Archivo: output/leads_final.csv (impórtalo a tu Sheet — pasos en output/README.md)
 
@@ -341,7 +414,13 @@ will.
 cascade tried them, and skip this line entirely if every lead came from the first tier (no cascade
 behavior to show, don't clutter the message for a normal run). Never mention `job_opening` or
 `customs` in this line unless one of them actually produced a counted lead — dropping through a tier
-empty is cascade *mechanics*, not a result the vendor needs in their face.
+empty is cascade *mechanics*, not a result the vendor needs in their face. `Tier 0` counts as its own
+entry here too when it contributed a lead, e.g. "1 por Tier 0 (firmográfico), 1 por funding".
+
+`{n_con_senal}` / `{n_sin_senal}` is the `signal_status` breakdown — **revised 2026-07-22, no longer a
+separate non-counting bucket** (that was the original Option C design; Aldahir's follow-up removed the
+gate: fit-only leads are now full leads, just labeled). Both numbers must sum to `{N_logrado}` exactly.
+Skip this line only if every lead in the batch has the same `signal_status` (no distinction to show).
 
 ## If N isn't reached — say so, honestly, with reasons
 
@@ -352,8 +431,8 @@ reached, the deliverable has fewer than N rows and the summary says exactly that
 NO SE ALCANZARON LAS {N_solicitado} — se quedó en {N_logrado} empresas reales. Por qué:
 - {n} ya estaban en el tracker o en corridas anteriores (no cuentan como nuevas)
 - {n} se excluyeron (cliente existente / fuera de Categoría 4 / confirmado 100% in-house)
-- {n} tenían señal real y pasaron ICP, pero ni Deepline ni WebSearch encontraron un contacto de
-  sourcing localizable — ni LinkedIn ni email
+- {n} pasaron ICP y scope-score, pero ni Deepline ni WebSearch encontraron un contacto de sourcing
+  localizable — ni LinkedIn ni email (esto aplica igual con o sin señal — la señal ya no decide esto)
 Ninguna de las {N_logrado} de arriba se rellenó para completar el número — son las reales.
 ```
 
