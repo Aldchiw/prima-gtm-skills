@@ -156,6 +156,14 @@ This isn't unique to Applied Digital — treat it as the general rule whenever a
 reading during step 1 describes a landlord/operator split, a parent/spin-out split, or any other
 case where the same domain covers two entities with different Equipment Procurement Scope.
 
+## Producto ancla (Eje 3)
+
+Al clasificar la cuenta, determina qué familia(s) de producto Prima le corresponden según QUÉ FABRICA la cuenta, mapeando su categoría contra el Application Index de `reference/prima-catalog.md` (sección B.1). Carga los item numbers en `anchor_products`.
+
+Esto es la ruta para cuentas SIN señal (fit-only). Una cuenta con señal recibe su producto ancla más adelante, de `prima-hook`, derivado de la señal específica; una cuenta fit-only nunca llega a `prima-hook`, así que su ancla se calcula aquí, desde su clasificación ICP. Ambas rutas leen el mismo catálogo y producen el mismo tipo de dato — la diferencia es sólo el disparador (señal vs. clasificación).
+
+Nunca adivines. Si la clasificación no deja claro qué fabrica la cuenta, pon `anchor_products` en `UNCLEAR` y déjalo así. Un ancla equivocada es peor que ninguna — le daría al bot de outreach un producto falso que Prima supuestamente le fabricaría.
+
 ## Output schema (stable — downstream skills depend on this)
 
 Return the same rows the user gave you, with these columns added (in this order):
@@ -165,6 +173,7 @@ Return the same rows the user gave you, with these columns added (in this order)
 | `sub_segment` | `4A` \| `4B` \| `4C` \| `4D` \| `UNKNOWN` |
 | `priority` | `P1` \| `P2` \| `P3` \| `UNKNOWN` |
 | `vertical_owner` | `Aldahir` \| `Manu` \| `UNKNOWN` |
+| `anchor_products` | Prima catalog item(s) que esta cuenta probablemente necesita, según QUÉ FABRICA, mapeado vía el Application Index de `reference/prima-catalog.md` (ej. "1.1 switchboard skids; 3.5 switchgear enclosures") — o `UNCLEAR` si no se puede determinar qué fabrica la cuenta. Base del gancho para cuentas fit-only sin señal. |
 | `excluded` | `yes` \| `no` |
 | `exclusion_reason` | text, blank if `excluded = no` |
 | `reasoning` | free text — the classification rationale |
