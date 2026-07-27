@@ -63,6 +63,7 @@ drafts would open on the same Jacintoport capacity-expansion fact, phrased three
   it in.
 - Zero AI-sounding language — no "I hope this finds you well," no generic filler, no em-dash-laden
   LLM cadence. Read like a person who read the source, not a model that summarized it.
+- Product anchor — when the draft references what Prima would fabricate for this account, name the specific catalog product from the hook's `anchor_products` field (e.g. "switchboard skids," "battery casings"), not generic "structural steel." If `anchor_products` is `UNCLEAR`, keep the fabrication reference general rather than guessing a product — never name a product the hook didn't establish.
 
 ## BORRADOR / audit gating — a state the system enforces, not a label a human could lose
 
