@@ -55,6 +55,14 @@ For each candidate, write one line explaining why it ranked where it did (e.g. "
 outranks per standing rule" / "more recent and more specific than #2" / "only other eligible
 signal").
 
+## Anchoring to a Prima product
+
+After ranking, map each hook to the Prima product(s) it implies, using the Application Index in `reference/prima-catalog.md` (section B.1). Match the account's signal/scope to a row in that index and carry the item numbers into `anchor_products`.
+
+This is NOT a new discovery pass — it maps an already-verified signal against a static reference table. It never fetches anything about the account.
+
+Never guess. If the verified signal doesn't make clear what the account builds, set `anchor_products` to `UNCLEAR` and leave it at that. A wrong product anchor is worse than none — it would hand `prima-draft` a false claim about what Prima would fabricate.
+
 ## Output schema
 
 | Column | Values |
@@ -66,6 +74,7 @@ signal").
 | `source_url` | the exact URL — inherited from signal-scan, possibly the specific page/paragraph read deeper for detail |
 | `signal_type` | inherited from signal-scan's vocabulary: `job_opening` \| `capacity_expansion` \| `funding` \| `grant` \| `customs` (never `target_title`) |
 | `relevance_note` | half-line on why this matters for Prima (e.g. "new capacity = likely need for structural/enclosure fabrication") — gives `prima-draft` the angle, not the phrasing |
+| `anchor_products` | Prima catalog item(s) el signal implica, del Application Index de reference/prima-catalog.md (ej. "1.1 switchboard skids; 3.5 switchgear enclosures") — o `UNCLEAR` si el signal no deja claro qué fabrica la cuenta |
 | `rank_reason` | one line on why this hook ranked where it did |
 | `status` | `HOOK_FOUND` \| `NO_HOOK` |
 
