@@ -1,0 +1,14 @@
+# Credentials
+.env
+*.env
+.env.*
+*.key
+*.pem
+credentials.json
+secrets.*
+
+# Typical junk
+node_modules/
+__pycache__/
+.DS_Store
+*.log
