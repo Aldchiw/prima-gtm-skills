@@ -1,3 +1,15 @@
+## 2026-07-27 · cuenta: personal
+**Avancé — sprint técnico del catálogo (COMPLETO):**
+- prima-hook: agregué columna anchor_products + sección "Anchoring to a Prima product". Mapea la señal contra el Application Index del catálogo (B.1); UNCLEAR si la señal no dice qué fabrica. Commit 16d79e7.
+- prima-draft: agregué guardrail "Product anchor" — usa el producto de anchor_products en vez de "structural steel" genérico; general si UNCLEAR. Commit 806f7d0.
+- Decisión de diseño: el Eje 3 (producto ancla) vive en prima-hook, NO en icp-check (cada skill un trabajo).
+- PROBADO con Stryten Energy (4B, energy storage): ancló correcto a "1.3 BESS skids + 3.6 battery casings" respetando la nota validada de Energy Storage. Sin inventar.
+- Push 0b18424..806f7d0. Backups .bak borrados.
+**Pendiente:**
+- prima-icp-check: nombrar los 3 ejes explícitos (cosmético, opcional, no urgente).
+- Frontera "Backup power/generators" Power vs Cooling (con Gaby). No bloquea.
+**Sigue:** Probar el flujo completo hook→draft y ver un email real con producto anclado.
+
 ## 2026-07-26 · cuenta: personal
 **Avancé:**
 - Seguridad pre-acceso Mike (CTO): repo limpio de credenciales (working tree + historial completo). Credencial Deepline vive fuera del repo (~/.local/deepline). Creé .gitignore preventivo. Commit 3f2cc75.
