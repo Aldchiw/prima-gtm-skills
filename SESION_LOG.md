@@ -1,3 +1,15 @@
+## 2026-07-27 (sesión 2) · cuenta: personal
+**Avancé — anchor_products para cuentas fit-only:**
+- Problema detectado: los fit-only (pasan ICP pero NO_SIGNAL) quedaban SIN producto ancla, porque el Eje 3 vivía solo en prima-hook y hook las marca NO_HOOK. El bot de Zadrac necesita ese dato como base del correo fit-only.
+- Fix: agregué anchor_products a prima-icp-check (columna + sección "Producto ancla (Eje 3)"). Se calcula desde QUÉ FABRICA la cuenta vía catálogo B.1, independiente de la señal. UNCLEAR si no se sabe qué fabrica. Commit f418466.
+- Ahora hay 2 rutas al mismo dato: cuenta CON señal → ancla desde prima-hook (por la señal); cuenta SIN señal → ancla desde icp-check (por clasificación). Documentado en la skill para que no se confunda.
+- PROBADO con A123 Systems (4C, P1, fit-only, NO_SIGNAL): clasificó completo y ancló a "1.3 BESS skids + 3.6 battery casings" derivado de qué fabrica, sin inventar. Sigue protegida por el gate anti-quema P1.
+- Push 566fb1c..f418466. Backup borrado.
+**Pendiente:**
+- Frontera "Backup power/generators" Power vs Cooling (con Gaby). No bloquea.
+- Definir formalmente el gate de fit-only con Zadrac (cómo su bot consume anchor_products sin disparar P1 en automático).
+**Sigue:** Probar flujo completo hook→draft con email real, o coordinar con Zadrac el consumo de anchor_products.
+
 ## 2026-07-27 · cuenta: personal
 **Avancé — sprint técnico del catálogo (COMPLETO):**
 - prima-hook: agregué columna anchor_products + sección "Anchoring to a Prima product". Mapea la señal contra el Application Index del catálogo (B.1); UNCLEAR si la señal no dice qué fabrica. Commit 16d79e7.
