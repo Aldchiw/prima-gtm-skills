@@ -12,7 +12,9 @@ guardrails: inherited from Notion "Data Centers GTM" (source of truth) — not d
 ## field names as the seed templates, T-4B-plantpurchasing-v1 / T-4C-founder-v1, so prima-draft
 ## fills these the same way it already knows how to, no new substitution logic needed)
 - {{account_name}} — as given upstream (`prima-icp-check`)
-- {{contact_name}} — as given by `prima-committee` (full name, same as the seed templates use)
+- {{account_name_short}} — commercial account name without legal suffixes or tickers; derived
+  from `account_name` by trimming ", Inc.", ", LLC", ", Corp." and any "(NYSE: ...)".
+- {{contact_name}} — contact's full name from the CSV; in the greeting use ONLY the first name.
 - {{hook_fact}} — the E1 hook (`prima-hook`, `hook_rank = 1`) — this template is E1-only, so it
   always pulls rank 1, never rank 2/3. Must be `signal_type = capacity_expansion` for this template
   to be selected at all (see `templates/index.md`'s precedence rule).
@@ -25,7 +27,7 @@ guardrails: inherited from Notion "Data Centers GTM" (source of truth) — not d
 - Energy Storage:     TES & buffer tanks, containment vessels, battery casings, piping & manifolds
 
 ## Subject
-capacity for {{account_name}}
+capacity for {{account_name_short}}
 
 ## Body
 Hi {{contact_name}},
@@ -59,6 +61,10 @@ Best,
     opener as a stale formula every time.
 - **Zero em-dashes (—) anywhere in the filled email** — subject and body both. Use periods or
   commas instead.
+- `{{contact_name}}` en el saludo = solo el first name (ej. "Hi Stacy," no "Hi Stacy Ristvedt,").
+- `{{account_name_short}}` = el nombre comercial de la cuenta sin sufijos legales ni tickers
+  (ej. "ESS Tech", no "ESS Tech, Inc. (NYSE: GWH)"). Si el motor no puede derivarlo, usar
+  `account_name` recortando ", Inc.", ", LLC", ", Corp." y cualquier "(NYSE: ...)".
 - Never insert client names, certifications (UL/NEMA/ASME), or price/cost framing.
 - If the account has no verified signal, do NOT generate — skip the row.
 - Every output must pass prima-guardrail-audit before it leaves.
