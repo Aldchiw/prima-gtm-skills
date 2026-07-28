@@ -18,13 +18,6 @@ guardrails: inherited from Notion "Data Centers GTM" (source of truth) — not d
 - {{hook_fact}} — the E1 hook (`prima-hook`, `hook_rank = 1`) — this template is E1-only, so it
   always pulls rank 1, never rank 2/3. Must be `signal_type = capacity_expansion` for this template
   to be selected at all (see `templates/index.md`'s precedence rule).
-- {{prima_products}} — 2-3 structural components for this vertical, looked up from the product map
-  below by the account's Category-4 product line (`prima-icp-check`'s output) — this one is computed
-  by `prima-draft` itself, not a raw pass-through field from any single upstream skill.
-
-## Product map (by vertical)
-- Power & Electrical: frames, skids, tanks, enclosures, switchgear cabinets, e-houses, fuel tanks
-- Energy Storage:     TES & buffer tanks, containment vessels, battery casings, piping & manifolds
 
 ## Subject
 capacity for {{account_name_short}}
@@ -34,14 +27,15 @@ Hi {{contact_name}},
 
 {{hook_fact}}
 
-We're a steel fabricator in Mexico building welded structural subassemblies
-({{prima_products}}) for US data center equipment OEMs that need to absorb
-demand overflow.
+I'm [Signature name] at Prima, an AISC/AWS-certified steel fabricator and US
+seller of record for mission-critical AI infrastructure. We build welded
+structural subassemblies (enclosures, power skids, and Division 5 structural
+steel) to your drawings, delivered with zero customs friction.
 
-Everything built to your drawings, at 10,000 tons/month of capacity. Reliable
-added capacity for when your own shop is maxed out.
+We run 10,000 tons/month of capacity and can be a reliable supply backstop as
+you scale.
 
-Worth me sending a one-pager and grabbing 15 minutes?
+Happy to send a one-pager and facility credentials. Worth a short call?
 
 Best,
 [Signature]
@@ -76,19 +70,21 @@ Hi [Contact Name],
 
 Saw you're expanding switchgear and PDC output for data center power distribution.
 
-We're a steel fabricator in Mexico building welded structural subassemblies
-(frames, skids, enclosures) for US data center equipment OEMs that need to absorb
-demand overflow.
+I'm [Signature name] at Prima, an AISC/AWS-certified steel fabricator and US
+seller of record for mission-critical AI infrastructure. We build welded
+structural subassemblies (enclosures, power skids, and Division 5 structural
+steel) to your drawings, delivered with zero customs friction.
 
-Everything built to your drawings, at 10,000 tons/month of capacity. Reliable
-added capacity for when your own shop is maxed out.
+We run 10,000 tons/month of capacity and can be a reliable supply backstop as
+you scale.
 
-Worth me sending a one-pager and grabbing 15 minutes?
+Happy to send a one-pager and facility credentials. Worth a short call?
 
 Best,
 [Signature]
 
 ## Changelog
+- v1.3 — added intro line (name + AISC/AWS + US seller of record for AI infrastructure), fixed product set, backstop close.
 - v1.2 — signal line rendered as a factual 1-line human comment (no figures, dates, or flattery); zero em-dashes; body expanded to 6 lines. Supersedes v1.1 for all new drafts.
 - v1.1 — refocused on data centers; leaner style (4-line body); adopted "welded structural subassemblies" framing.
 - v1.0 — initial angle: capacity_expansion -> overflow structural fabrication.
