@@ -1,3 +1,19 @@
+## 2026-07-28 · cuenta: personal
+**Avancé — primera generación de correos E1 reales para outbound:**
+- Sesión operativa: primera generación de correos E1 reales para outbound.
+- Calibré el template E1 (e1_datacenter_overflow) a v1.3: señal como comentario humano factual (sin cifras/fechas/halago), cero em-dashes, saludo con first-name, subject sin sufijo legal, intro con presentación + AISC/AWS + US seller of record for AI infrastructure, set fijo de productos (enclosures, power skids, Division 5 structural steel), cierre "supply backstop". Comiteado.
+- Renombré T-4C-founder-v1 -> T-4C-founder-v2 (regla de versionado del index), alineado al mismo body que E1 v1.3 + hook con puente corto, arreglado el subject roto ({{hook_fact_short}}). Comiteado (266572c).
+- Descubrimiento: 6 de las 19 cuentas son signal_type=funding (Ayr, CORE, Nostromo, EnerVenue, Electrified Thermal, Redwood) -> ahora rutean a T-4C-founder-v2; las otras 13 (capacity_expansion) a e1_datacenter_overflow.
+- Generé drafts_e1.md con los 19 correos (13 E1 + 6 funding), 19/19 PASS. Archivo local, NO comiteado (es material de trabajo).
+- Override manual de scope P1 autorizado por mí para las 18 P1 (decisión de negocio; Sparkstone es P2).
+- Creé outreach_tracker.csv con las 19 cuentas clasificadas (bloques cadencia y resultado vacíos para llenar a mano). Local, no comiteado.
+- Limpieza de menciones de prosa "T-4C-founder-v1" (index.md x2, e1_datacenter_overflow.md, SKILL.md): ya corregidas en disco, solo falta comitearlas.
+**PENDIENTES / SIGUE:**
+- Envío manual de los 19 E1 (copy-paste): reemplazar [Signature name]/[Signature], suavizar "Google" en Form Energy, arreglar frase coja en Redwood, decidir INNIO (fronteriza Power/Cooling). Espaciar envíos. Registrar date_e1_sent en el tracker.
+- FALTAN templates E2 y E3 (la cadencia sigue a +2d LinkedIn, +5d E2). Prioridad próxima sesión.
+- Template fallback sin señal (e1_fallback_no_signal): diseñado, NO creado aún.
+- Deepline: refund de $450 pendiente; NO usar créditos (Tier 0 / email-waterfall) hasta resolver. Tier 0 sigue roto (campos industries/employeeSize no existen en el schema de AI Ark).
+
 ## 2026-07-27 (sesión 2) · cuenta: personal
 **Avancé — anchor_products para cuentas fit-only:**
 - Problema detectado: los fit-only (pasan ICP pero NO_SIGNAL) quedaban SIN producto ancla, porque el Eje 3 vivía solo en prima-hook y hook las marca NO_HOOK. El bot de Zadrac necesita ese dato como base del correo fit-only.
