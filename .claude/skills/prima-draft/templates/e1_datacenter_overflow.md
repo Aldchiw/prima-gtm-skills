@@ -9,7 +9,7 @@ tier scope: all Cat 4 tiers. P1 accounts require manual scope confirmation befor
 guardrails: inherited from Notion "Data Centers GTM" (source of truth) — not duplicated here
 
 ## Variables (filled by prima-draft from the account row — same `{{double_brace}}` syntax and
-## field names as the seed templates, T-4B-plantpurchasing-v1 / T-4C-founder-v1, so prima-draft
+## field names as the seed templates, T-4B-plantpurchasing-v1 / T-4C-founder-v2, so prima-draft
 ## fills these the same way it already knows how to, no new substitution logic needed)
 - {{account_name}} — as given upstream (`prima-icp-check`)
 - {{account_name_short}} — commercial account name without legal suffixes or tickers; derived

@@ -19,7 +19,7 @@ once it's been used in a real draft — new revision = new `template_id`), the m
 by whole-string equality), and the coverage-gap fallback rule (closest sub-segment-level template if
 the contact's role isn't in any template's list yet).
 
-Only 2 seed templates exist as of 2026-07-20 (`T-4B-plantpurchasing-v1`, `T-4C-founder-v1`) —
+Only 2 seed templates exist as of 2026-07-20 (`T-4B-plantpurchasing-v1`, `T-4C-founder-v2`) —
 both marked `seed-v1-unvalidated`. Treat them as a starting point to unblock Sprint 2, not a
 finished library; Gaby/Aldahir review and the library grows/improves template-by-template as real
 send data comes in.

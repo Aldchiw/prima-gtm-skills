@@ -6,7 +6,7 @@ open every template file to check applicability, check here first.
 ## Matching rule
 
 `committee_role` is a **list**, not a single string — a template can legitimately serve more than
-one committee role (e.g. `T-4C-founder-v1` covers both "Founder / CEO" and "VP Engineering / Head
+one committee role (e.g. `T-4C-founder-v2` covers both "Founder / CEO" and "VP Engineering / Head
 of Manufacturing" with the same peer-to-peer tone). A match means the contact's `committee_role`
 (from `prima-committee`, always a single role) **appears in** the template's list — never require
 the two to be equal as whole strings, and never fuse multiple roles into one list entry just to
@@ -133,7 +133,7 @@ weighed in; don't bump the version pre-emptively.
 Only 2 templates exist today, one per supported sub-segment (`4B`, `4C`). `T-4B-plantpurchasing-v1`
 covers only 4B's primary entry-point role (Plant Purchasing Manager / Procurement Manager) — 4B's
 other two roles (Supply Chain Director/VP Operations, Plant Manager/Director of Manufacturing) have
-no dedicated template yet. `T-4C-founder-v1` covers 2 of 4C's 3 roles (Founder/CEO and VP
+no dedicated template yet. `T-4C-founder-v2` covers 2 of 4C's 3 roles (Founder/CEO and VP
 Engineering/Head of Manufacturing) via its `committee_role` list — only COO/Head of Operations is
 uncovered there. A contact whose `committee_role` isn't in any template's list still gets drafted —
 `prima-draft` falls back to the closest sub-segment-level template rather than refusing to draft.
