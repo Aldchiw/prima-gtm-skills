@@ -1,4 +1,4 @@
-# README_MOTOR — Prima GTM Skills (Data Centers)
+# Prima GTM Skills — Data Centers (motor de outbound)
 
 > Borrador. Documenta el estado real del repo tal como está hoy (2026-07-28). Escrito para
 > alguien que se suma al proyecto y no conoce el contexto de las sesiones anteriores.
@@ -143,6 +143,5 @@ drafts_e1.md                                → material de trabajo del sprint a
   confundirlo con `templates/index.md`.
 
 ---
-*Borrador — no comiteado. Basado en lectura directa de `CLAUDE.md`, los 9 `SKILL.md`,
-`templates/index.md`, `output/README.md`, `SESION_LOG.md` y la estructura de carpetas real al
-2026-07-28.*
+*Documentado el 2026-07-28, basado en lectura directa del repo (CLAUDE.md, los 9 SKILL.md,
+templates/index.md, SESION_LOG.md y estructura de carpetas).*
