@@ -22,7 +22,7 @@ template file once it's been used in a real draft).
 | template_id | sub_segment | committee_role (list) | signal_type_fit | draft_slot | priority_scope | status | file |
 |---|---|---|---|---|---|---|---|
 | T-4B-plantpurchasing-v1 | `4B` | Plant Purchasing Manager / Procurement Manager | `capacity_expansion`, `job_opening`, `customs` | E1/E2/E3 | any | `seed-v1-unvalidated` | `T-4B-plantpurchasing-v1.md` |
-| T-4C-founder-v1 | `4C` | Founder / CEO; VP Engineering / Head of Manufacturing | `funding`, `job_opening`, `capacity_expansion`, `customs` | E1/E2/E3 | any | `seed-v1-unvalidated` | `T-4C-founder-v1.md` |
+| T-4C-founder-v2 | `4C` | Founder / CEO; VP Engineering / Head of Manufacturing | `funding`, `job_opening`, `capacity_expansion`, `customs` | E1/E2/E3 | any | `active-v2` | `T-4C-founder-v2.md` |
 | e1_datacenter_overflow | any Cat 4 sub-segment (angle-matched — see below, not role-matched) | *(any — this template ignores `committee_role` entirely)* | `capacity_expansion` **(the E1 hook specifically, not just "present somewhere")** | **E1 only** | all tiers — P1 still gated by the existing `needs_manual_scope_confirmation` rule, same as every other template | `DRAFT — pending Gaby sign-off (do NOT send until approved)` | `e1_datacenter_overflow.md` |
 
 ### New matching dimensions added for `e1_datacenter_overflow` (2026-07-21)
