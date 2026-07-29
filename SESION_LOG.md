@@ -1,3 +1,17 @@
+## 2026-07-28 (sesión 3) · cuenta: trabajo
+**Avancé — operativa + friendly-user:**
+- Generé los 19 correos E1 reales (13 capacity + 6 funding), todos PASS, en drafts_e1.md. Envío manual pendiente.
+- Calibré E1 a v1.3 (señal humana, sin em-dashes, intro AISC/AWS + AI infra + US seller of record, set fijo de productos, cierre backstop) y T-4C-founder a v2. Ambos comiteados.
+- Creé COMMANDS.md (atajos del motor) y README.md real del repo (reemplazó el stub vacío).
+- Ordené git: merge de los 2 commits remotos (web) con los locales + push. Repo alineado.
+- Hallazgo documentado: anchor_products se calcula pero el template E1 ya no lo consume (set fijo desde v1.3) — decidir a futuro.
+**PENDIENTES:**
+- Templates E2/E3 + LinkedIn de cadencia (reloj ~5 días).
+- Fallback sin señal.
+- Otras capas friendly-user (Manu/Zadrac/Gaby).
+- Mover/borrar templates.md huérfano.
+- Refund Deepline + Tier 0 roto.
+
 ## 2026-07-28 · cuenta: personal
 **Avancé — primera generación de correos E1 reales para outbound:**
 - Sesión operativa: primera generación de correos E1 reales para outbound.
