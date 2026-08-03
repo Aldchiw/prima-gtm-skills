@@ -1,3 +1,38 @@
+## 2026-08-03 · cuenta: trabajo
+**Avancé — apertura de Category 3 en el motor de prospección:**
+- Leí el Notion "Data Centers GTM" en vivo y verifiqué la alineación del ICP.
+  Hallazgo: el esquema 4A-4D NO está retirado (es capa propia sobre Cat 4,
+  aprobada 2026-07-19) y la derivación de prioridad SÍ calibra contra el Notion
+  (4A→P2, 4B→P1, 4C→P1, 4D→P3 coinciden con la Prima Priority curada). El 95%
+  de cuentas P1 no es un bug: es la verdad del TAM de Cat 4.
+- Fase 1 — prima-icp-check ahora acepta Category 3 (Modular DC Systems
+  Manufacturers, P1 en Notion). Nuevas columnas company_category y notion_scope.
+  Cat3 usa sub_segment = N/A-Cat3, priority LEÍDA del Notion (no derivada), y
+  vertical_owner = UNKNOWN pendiente de acordar con Manu. Commit 0481d7f.
+  Probado con Rosendin (Cat3 OK) + Powell (regresión Cat4 OK).
+- Fase 2 — prima-committee ahora soporta Cat3: entrada por procurement/supply
+  chain de la división de manufactura (principal) + líder de manufactura/prefab
+  (secundario), máx 2 contactos. Regla crítica de división: nunca el corporativo
+  de la matriz contratista (Excellerate no Faith Technologies; RK Mission
+  Critical no RK Industries). Gate: Cat3 P1 siempre sale NEEDS_HUMAN_REVIEW.
+  Commit c36497b.
+- Hallazgo clave: Cat3 se salta el cuello de botella de scope-score, porque el
+  Notion ya trae el "Fabrication Outsourcing Scope" curado a mano por empresa.
+- Decisión de alcance: el copy de correos pasa a Zadrac (su SDR Bot). Mi foco
+  es prospección y estructura de cuenta. prima-draft, guardrail-audit y los
+  templates E2/E3 bajan de prioridad.
+**PENDIENTES:**
+- vertical_owner de Cat3: acordar con Manu (Cat3 cruza verticales por diseño).
+- Borrar la fila duplicada de Rosendin en Cat 5 del Notion (el propio Notion la
+  marca como redundante).
+- Fase 3: que prima-generate-leads descubra cuentas Cat3 nuevas (hoy solo Cat 4).
+  No urge: hay 9 Cat3 en Notion sin trabajar.
+- prima-scope-score no soporta Cat3 (su tabla de product-type es Cat4-only).
+- Llamada con Zadrac/Manu: punto de entrega del CSV, dedup, que me regrese las
+  respuestas clasificadas, volumen (20-40/día vs techo 20/semana), y guardrails
+  de mensaje para su agente (traía framing de precio 20-25% ya retirado).
+- Los 19 E1 de drafts_e1.md siguen sin enviar.
+
 ## 2026-07-28 (sesión 3) · cuenta: trabajo
 **Avancé — operativa + friendly-user:**
 - Generé los 19 correos E1 reales (13 capacity + 6 funding), todos PASS, en drafts_e1.md. Envío manual pendiente.
