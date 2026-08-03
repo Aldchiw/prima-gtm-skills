@@ -35,8 +35,9 @@ this output will trust the classification at face value.
 
 Applies only to accounts that are Category-4 OEMs in Notion (Cooling, Power & Electrical, Energy
 Storage, or Test & Commissioning product line). An account that isn't a Category-4 OEM at all
-(e.g. it's actually a Cat 1 AI Infrastructure Operator, Cat 3 Modular DC manufacturer, etc.) doesn't
-get a sub-segment — see "Out of scope" below.
+doesn't get a 4A–4D sub-segment. Category-3 accounts (Modular DC Systems Manufacturers) are in
+scope but handled separately — see "Category 3 (Modular DC Systems Manufacturers)" below — never
+force them into this table. Anything outside Cat 3 and Cat 4 entirely — see "Out of scope" below.
 
 | Sub-segment | Archetype | Priority | Entry point | Signals to look for |
 |---|---|---|---|---|
@@ -45,12 +46,40 @@ get a sub-segment — see "Out of scope" below.
 | `4C` | Founder-led scale-up | `P1` | Founder / CEO / VP Engineering / Head of Manufacturing | Young company; rapid growth signals (funding, hiring, capacity expansion); founder still leading |
 | `4D` | Niche custom, low volume | `P3` | Not yet defined — don't invent one, leave blank and flag for the user | Small custom fabricator; highly bespoke product; low production volume |
 
-**Priority is driven by sub-segment**, per the table above — it is a separate question from
-whatever 🔴/🟡/🟢 priority Notion shows for that company's Category-4 row. If Notion's own priority
-marking for a specific company visibly conflicts with the sub-segment-derived priority, don't
-silently pick one — note both in `reasoning` and let a human reconcile it.
+**Priority is driven by sub-segment for Category-4 accounts only**, per the table above — it is a
+separate question from whatever 🔴/🟡/🟢 priority Notion shows for that company's Category-4 row. If
+Notion's own priority marking for a specific company visibly conflicts with the sub-segment-derived
+priority, don't silently pick one — note both in `reasoning` and let a human reconcile it.
+Category-3 accounts don't derive priority this way at all — see below.
+
+### Category 3 (Modular DC Systems Manufacturers) — in scope, but not on the 4A–4D scheme
+
+Category 3 is a real, in-scope company category — it is **not** subject to the "Out of scope"
+exclusion below. But the 4A–4D archetype table above is a Category-4-only classification layer; it
+does not get forced onto Cat-3 accounts. Handle Cat 3 as follows instead:
+
+- **`sub_segment`** = `N/A-Cat3` — a literal value, not `UNKNOWN`. This flags "the 4A–4D scheme
+  doesn't apply here" as distinct from "we couldn't determine it."
+- **`priority`** = read directly from Notion's own curated "Prima Priority" field for that specific
+  company in its leads table — do **not** derive it from any sub-segment table (there isn't one for
+  Cat 3). If the company isn't listed in Notion's leads table at all, `priority = UNKNOWN` — don't
+  guess from scale, funding, or anything else.
+- **`vertical_owner`** = `UNKNOWN`, always, for now. Cat-3 companies build integrated systems that
+  cross the Aldahir/Manu product-line split (Power & Electrical, Energy Storage, Cooling, and Test &
+  Commissioning components can all show up inside one modular DC system) — there's no clean
+  single-owner mapping yet. Note in `reasoning` that this is pending a human decision (to be worked
+  out with Manu), and never assign an owner for a Cat-3 account on your own judgment.
+- **`anchor_products`** = same process as Cat 4 — map via the Application Index in
+  `reference/prima-catalog.md` based on what the account fabricates.
+
+Cat-3 accounts still go through exclusions (Disqualify / Disqualification Signal / existing
+customer) exactly like any other account — exemption from "Out of scope" doesn't exempt them from a
+genuine ICP disqualification.
 
 ### Vertical owner — independent axis, not derived from sub-segment
+
+This table applies to **Category-4 accounts only**. Category-3 `vertical_owner` is always
+`UNKNOWN` — see "Category 3" above.
 
 Owner is keyed off the Notion Category-4 **product-line segment**, not the 4A–4D archetype:
 
@@ -67,10 +96,11 @@ Owner is keyed off the Notion Category-4 **product-line segment**, not the 4A–
   them fully (sub-segment, priority, reasoning) but mark them as a **handoff** in `reasoning` (e.g.
   "owner: Manu — handoff, not pursued in this repo"). They are **not** excluded — `excluded` stays
   `no` for these unless a genuine Disqualify signal applies independently.
-- An account whose product line doesn't fall into any of these four Cat-4 lines — i.e. it isn't a
-  Category-4 OEM at all — is **out of scope** for this repo. Mark it `excluded = yes` with
-  `exclusion_reason` starting "Out of scope: ..." (distinct from an ICP disqualification — see
-  below), and `sub_segment` / `priority` / `vertical_owner` = `UNKNOWN`.
+- An account that is neither Category-3 nor Category-4 in Notion (i.e. it's Category 1, 2, 5, 6, or
+  7) is **out of scope** for this repo. Mark it `excluded = yes` with `exclusion_reason` starting
+  "Out of scope: ..." (distinct from an ICP disqualification — see below), and `company_category` /
+  `sub_segment` / `priority` / `vertical_owner` = `UNKNOWN`. Category 3 is exempt from this rule —
+  see "Category 3" above for its own handling — and Category 4 is covered by the table above.
 
 ### Exclusions
 
@@ -109,23 +139,33 @@ entities" below before assuming a 1:1 mapping.
 
 For each account:
 
-1. Resolve the domain/account name to whatever's needed to classify it — Notion Category (1–7),
-   and if Category 4, the product-line segment (Cooling / Power & Electrical / Energy Storage /
-   Test & Commissioning / Multi-focus). Pull this from the account itself, from Notion's existing
-   leads tables if the company is already listed there, or from whatever enrichment data the user
-   already supplied. Don't invent facts about the account any more than you'd invent ICP rules.
-2. If the account isn't a Category-4 OEM in one of the four product lines above: mark it out of
-   scope (see Exclusions) and stop — no sub-segment, priority, or owner to determine.
-3. Determine **sub-segment**: `4A`, `4B`, `4C`, `4D`, or `UNKNOWN` if it doesn't clearly fit any
-   archetype or the signals aren't available.
-4. Determine **priority** from the sub-segment table above (`P1`/`P2`/`P3`), or `UNKNOWN` if the
-   sub-segment itself is `UNKNOWN`. Note any conflict with Notion's own per-company priority marking
-   in `reasoning` rather than resolving it yourself.
-5. Determine **vertical owner** (`Aldahir` / `Manu`) from the product-line table above.
+1. Resolve the domain/account name to whatever's needed to classify it — Notion Category (1–7) —
+   and set **`company_category`** from that: `Cat3` (Modular DC Systems Manufacturers), `Cat4` (and
+   if so, also resolve the product-line segment: Cooling / Power & Electrical / Energy Storage /
+   Test & Commissioning / Multi-focus), or `UNKNOWN` for anything else (Cat 1, 2, 5, 6, 7, or not
+   determinable). Pull this from the account itself, from Notion's existing leads tables if the
+   company is already listed there, or from whatever enrichment data the user already supplied.
+   Don't invent facts about the account any more than you'd invent ICP rules.
+2. If `company_category = UNKNOWN`: mark it out of scope (see Exclusions) and stop — no
+   sub-segment, priority, owner, or `notion_scope` to determine.
+3. If `company_category = Cat3`: follow "Category 3 (Modular DC Systems Manufacturers)" above —
+   `sub_segment = N/A-Cat3`; `priority` read from Notion's curated Prima Priority for that company
+   (or `UNKNOWN` if not listed); `vertical_owner = UNKNOWN` with the cross-vertical note in
+   `reasoning`. Steps 4–5 below are Cat-4-only — skip them.
+4. If `company_category = Cat4`: determine **sub-segment** (`4A`/`4B`/`4C`/`4D`/`UNKNOWN`), then
+   **priority** from the sub-segment table (or `UNKNOWN` if sub-segment is `UNKNOWN`) — note any
+   conflict with Notion's own per-company priority marking in `reasoning` rather than resolving it
+   yourself — then **vertical owner** (`Aldahir`/`Manu`) from the product-line table.
+5. Read **`notion_scope`**: whatever curated scope text Notion has for this company — "Fabrication
+   Outsourcing Scope" for Cat 3, "Equipment Procurement Scope" for Cat 4 — verbatim, as text. Leave
+   blank if Notion doesn't have it for this company. Don't interpret, score, or convert it to a
+   number here — that's `prima-scope-score`'s job (and, for Cat 3 today, a job that skill can't do
+   yet at all — see the note under Output schema).
 6. Check **exclusions** — Notion Disqualify / Disqualification Signal, or the out-of-scope rule.
    An excluded account still gets a sub-segment/priority/owner if that was determinable (exclusion
    is a separate flag, not a reason to skip classification) — except out-of-scope accounts, which
-   have no Category-4 segment to classify against in the first place.
+   aren't Cat-3 or Cat-4 at all, so there's no segment (Cat-3's `N/A-Cat3` or Cat-4's `4A`–`4D`) to
+   classify against.
 7. Write one line of plain-language **reasoning** per account: what pushed it into that sub-segment/
    priority/owner, or why it landed on `UNKNOWN`/excluded/handoff. This is what a human (or the next
    skill) will actually read to sanity-check the call — don't just restate the label.
@@ -170,10 +210,12 @@ Return the same rows the user gave you, with these columns added (in this order)
 
 | Column | Values |
 |---|---|
-| `sub_segment` | `4A` \| `4B` \| `4C` \| `4D` \| `UNKNOWN` |
+| `company_category` | `Cat3` \| `Cat4` \| `UNKNOWN` |
+| `sub_segment` | `4A` \| `4B` \| `4C` \| `4D` \| `N/A-Cat3` \| `UNKNOWN` |
 | `priority` | `P1` \| `P2` \| `P3` \| `UNKNOWN` |
 | `vertical_owner` | `Aldahir` \| `Manu` \| `UNKNOWN` |
 | `anchor_products` | Prima catalog item(s) que esta cuenta probablemente necesita, según QUÉ FABRICA, mapeado vía el Application Index de `reference/prima-catalog.md` (ej. "1.1 switchboard skids; 3.5 switchgear enclosures") — o `UNCLEAR` si no se puede determinar qué fabrica la cuenta. Base del gancho para cuentas fit-only sin señal. |
+| `notion_scope` | Notion's curated scope text, verbatim — "Fabrication Outsourcing Scope" value for Cat 3, "Equipment Procurement Scope" value for Cat 4. Blank if Notion doesn't have it for this company. Raw text only — never interpreted, scored, or converted to a number here. |
 | `excluded` | `yes` \| `no` |
 | `exclusion_reason` | text, blank if `excluded = no` |
 | `reasoning` | free text — the classification rationale |
@@ -181,6 +223,12 @@ Return the same rows the user gave you, with these columns added (in this order)
 Don't rename these columns or change the value vocabulary once `prima-signal-scan` is built against
 it — if the schema needs to change later, that's a deliberate cross-skill decision, not a one-off
 tweak.
+
+**`prima-scope-score` does not support Category 3 yet.** Its weighted score is built on a Cat-4-only
+product-type table (Power & Electrical Distribution / Energy Storage product categories) — it has no
+equivalent table for Modular DC Systems Manufacturers. Don't route `Cat3` rows into `prima-scope-score`
+until that skill is updated with its own Cat-3 weights; hold them after this skill in the meantime
+(they still have `notion_scope` as raw text, just no probability/tier on top of it yet).
 
 ## Output format
 
