@@ -251,6 +251,18 @@ on why (e.g. "only found VP Supply Chain at [Parent Co] corporate — no divisio
 surfaced; risk of emailing the wrong org"). A human decides whether that's close enough to use or
 whether to keep searching.
 
+#### Query pattern for Tier 2 lookups on manufacturing divisions (learning, 2026-08-04)
+
+Searching a provider **by the division's name alone** can return false positives from an unrelated,
+same-named company — during the Excellerate run, searching `job_company: "Excellerate"` returned six
+real people, but all six worked at "Excellerate JHI," a South African property-management firm with
+zero relation to Faith Technologies. The pattern that actually works: search by the **parent
+company's name** and filter for the **division's name inside the job title** instead — e.g.
+`job_company: "Faith Technologies"` + `job_title` containing `"Excellerate"`. This applies to every
+Cat3 account with the same parent/division split — **RK Mission Critical / RK Industries** and any
+equivalent case should use the same pattern: parent as the company filter, division name as a title
+filter, never the division name alone as the company filter.
+
 #### Exclusions (Cat3-specific)
 
 Never accept any of these as a valid Cat3 committee contact, even if the title superficially matches
@@ -289,6 +301,32 @@ Only for roles where Tier 1 found nothing verifiable. Before calling **any** pai
    not carry over to a new batch/session.
 4. If approved, run Tier 2 **only** for the specific accounts/roles that failed Tier 1 — not the
    whole batch — and merge results into the same output.
+
+#### Provider order — free first, cheapest-paid next, most expensive last (learning, 2026-08-04)
+
+`wiza_search_prospects` is **free** and must be tried before any paid provider, every time — not
+just when convenient. Only escalate to a paid provider if Wiza's results don't include a name that
+qualifies for a target tier (see "Query pattern for Tier 2 lookups on manufacturing divisions" above
+for how to phrase the query itself so it doesn't return the wrong company entirely). When escalation
+is needed, go in ascending cost order — cheapest first, most expensive only as a last resort:
+
+1. `wiza_search_prospects` — free.
+2. `ai_ark_people_search` — 0.07 credits/result.
+3. `crustdata_v2_people_search_realtime` — 0.4 credits/result.
+4. `lusha_search_contacts` (0.7 credits/result) / `contactout_search_people` (1.4 credits/result) —
+   last resort only, after the cheaper options have been tried and come up short.
+
+#### Known provider coverage gaps — don't keep paying past a real dead end (learning, 2026-08-04)
+
+`ai_ark_people_search` has zero coverage of Faith Technologies (`totalElements: 0` even on a bare
+domain-only query, no title filter needed to prove it) — for manufacturing divisions of recently
+branded or lower-profile parents, a contact-data provider can simply not have the company indexed at
+all, independent of whether the target person exists. When Wiza has already confirmed the division
+is real (real employees found, even at a non-target tier) but no provider — free or paid — returns a
+name for the target role, that's the correct signal to **stop**, not a reason to try yet another
+paid provider. Output `status = ROLE_NOT_FOUND`, and note in `flag_reason`/`reasoning` that the
+account should be escalated to Sales Navigator or direct human outreach instead of continued Deepline
+spend.
 
 ### What counts as "verifiable"
 
