@@ -1,3 +1,51 @@
+## 2026-08-04 · cuenta: trabajo
+**Avancé — apertura de Category 3 y rediseño de targeting de contactos:**
+- Fase 1: prima-icp-check acepta Category 3 (Modular DC Systems Manufacturers,
+  P1 en Notion). Columnas nuevas company_category y notion_scope. Cat3 usa
+  sub_segment = N/A-Cat3, priority LEÍDA del Notion, vertical_owner = UNKNOWN
+  pendiente con Manu. Commit 0481d7f. Probado con Rosendin (Cat3) + Powell
+  (regresión Cat4). Duplica el universo de cuentas P1.
+- Fase 2: prima-committee soporta Cat3 — entrada por procurement de la división
+  de manufactura, regla crítica de división (nunca el corporativo de la matriz
+  contratista), Cat3 P1 siempre sale NEEDS_HUMAN_REVIEW. Commit c36497b.
+- 4C rediseñado: Founder/CEO baja a FALLBACK; ALTA ahora es procurement/supply
+  chain, SECUNDARIA manufactura/operaciones. Razón: los 4C reales (Form Energy,
+  EnerVenue, Eos, Redwood) ya tienen supply chain organizado; Prima vende
+  suministro = conversación de compras. Commit 5d3b05c.
+- Banca de contactos: sourcing de 3-4 nombres por cuenta (el guardrail de
+  escribir a máx 2 no cambia). Nuevo output/account_roster.csv, ACUMULATIVO,
+  con división de propiedad: la skill escribe quién existe, el operador marca
+  qué pasó (contact_status, touches, outcome, notes). La banca NO consume
+  Deepline: nombres por WebSearch (gratis), email solo al promover. Commit 3a52eb1.
+- Match por función, no por string exacto: los títulos del diccionario son
+  ejemplos de una función. Commit af73842. Este fue el cambio decisivo.
+- VALIDADO con Form Energy: 4 contactos de supply chain, cero CEOs, los 4 por
+  match funcional (ninguno coincide literal), cero llamadas a Deepline.
+  Contacto #1: Catherine Carmichael, VP Global Supply Chain. Con la regla vieja
+  de string exacto los 4 se habrían descartado y habría caído al CEO.
+
+**Marco estratégico acordado:** con TAM chico (cientos de cuentas), el engine
+deja de ser generador de listas y se vuelve sistema de vigilancia del TAM
+completo. Los dos huecos reales son VIGILAR (monitoreo continuo, no lotes) y
+APRENDER (respuestas clasificadas que recalibren pesos). Todo lo construido
+está en medio. NO construir: más generación de copy (es de Zadrac), nada que
+persiga volumen, nada que automatice el criterio del operador.
+
+**PENDIENTES:**
+- Poblar account_roster.csv con el resto de las cuentas (por lotes chicos,
+  revisando el match funcional).
+- Re-correr prima-committee sobre las cuentas viejas: sus contactos se eligieron
+  con la regla vieja (por eso salían CEOs).
+- prima-scope-score no soporta Cat3 (tabla product-type es Cat4-only).
+- Verificar que company_category y notion_scope lleguen a leads_final.csv (las
+  escribe el orquestador, puede tener lista de columnas fija).
+- vertical_owner de Cat3: acordar con Manu.
+- Borrar fila duplicada de Rosendin en Cat 5 del Notion.
+- Enumerar el TAM completo (ejercicio de una vez, no motor recurrente).
+- Llamada Zadrac: punto de entrega, dedup, que regrese respuestas clasificadas
+  (es lo más estratégico), volumen, guardrails para su agente.
+- Canal nuevo de LinkedIn: template como primer toque mientras corre el warm-up.
+
 ## 2026-08-03 · cuenta: trabajo
 **Avancé — apertura de Category 3 en el motor de prospección:**
 - Leí el Notion "Data Centers GTM" en vivo y verifiqué la alineación del ICP.
