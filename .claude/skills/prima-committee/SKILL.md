@@ -1,6 +1,6 @@
 ---
 name: prima-committee
-description: Identifies the buying committee — real, named contacts per account — for accounts already classified `4B`/`4C` (via `sub_segment`) or `Cat3` (via `company_category`) by `prima-icp-check` (`4A`/`4D` sub-segments not supported yet). Caps at 3 contacts for 4B/4C, 2 for Cat3 — Cat3 also enforces a stricter manufacturing-division-only rule and, since its targeting logic is an unvalidated v1 hypothesis (Aldahir, 2026-08-03), sourcing runs on every Cat3 priority but `P1` contacts always come back as `NEEDS_HUMAN_REVIEW` (never auto-cleared `CONTACT_FOUND`) until the hypothesis is validated on `P2` data. Sources names via free WebSearch (company site + public LinkedIn snippets) first; only falls back to paid Deepline providers (ContactOut, Lusha, RocketReach, etc.) after stopping to show how many accounts need paid lookup and the estimated cost, and getting explicit approval — same gate as the Clay-vs-Terminal pilot. Never fabricates a name — if no verifiable contact is found for a role, outputs the target role/title only. Use this after `prima-icp-check` (and ideally after `prima-signal-scan` has confirmed the target-title door exists) and before `prima-email-waterfall` needs a named person to find an email for.
+description: Identifies the buying committee — real, named contacts per account — for accounts already classified `4B`/`4C` (via `sub_segment`) or `Cat3` (via `company_category`) by `prima-icp-check` (`4A`/`4D` sub-segments not supported yet). Sources widely (3-4 verifiable names per account — the "banca") but writes narrowly: the outreach guardrail still caps actual contact at 2 people per account regardless of segment, with the rest held on the bench for later promotion if a contact doesn't respond. Cat3 also enforces a stricter manufacturing-division-only rule and, since its targeting logic is an unvalidated v1 hypothesis (Aldahir, 2026-08-03), sourcing runs on every Cat3 priority but `P1` contacts always come back as `NEEDS_HUMAN_REVIEW` (never auto-cleared `CONTACT_FOUND`) until the hypothesis is validated on `P2` data. Writes/updates an accumulative `output/account_roster.csv` (never regenerated) tracking every sourced name — skill-owned columns vs. operator-owned lifecycle columns (`contact_status`, touches, outcome) — and only hands `active`-status contacts to `prima-email-waterfall`; bench contacts stay `email_status = NOT_ATTEMPTED` so Deepline credits are never spent on an unpromoted name. Sources names via free WebSearch (company site + public LinkedIn snippets) first; only falls back to paid Deepline providers (ContactOut, Lusha, RocketReach, etc.) after stopping to show how many accounts need paid lookup and the estimated cost, and getting explicit approval — same gate as the Clay-vs-Terminal pilot. Never fabricates a name — if no verifiable contact is found for a role, outputs the target role/title only. Use this after `prima-icp-check` (and ideally after `prima-signal-scan` has confirmed the target-title door exists) and before `prima-email-waterfall` needs a named person to find an email for.
 ---
 
 # prima-committee
@@ -73,6 +73,26 @@ are grouped into two priority tiers per sub-segment:
   when someone from either of the other two tiers exists. See the `4C` table and its decision note
   below for why this moved here from where it used to sit.
 
+### Banca vs. contacto — sourcing wide, writing narrow
+
+Two different caps, on purpose, and easy to conflate:
+
+- **Banca ("who we know")** — sourcing now aims for **3-4 verifiable names per account**, for every
+  segment (`4B`, `4C`, and `Cat3` alike — this replaces the old caps of 3 for `4B`/`4C` and 2 for
+  `Cat3`). Keep working down the tiers in priority order (ALTA→SECUNDARIA→FALLBACK for `4B`/`4C`;
+  Principal→Secundario for Cat3) instead of stopping the moment enough names exist to write to.
+  Every extra verifiable name found goes on the bench instead of being discarded — that's the whole
+  point of widening sourcing.
+- **Contacto ("who we write to")** — the outreach guardrail is unchanged and applies regardless of
+  segment: **maximum 2 people per account** get an actual message. The top 2 verifiable names by
+  tier order become the contact set; everyone else sourced stays on the bench, ranked, ready to
+  promote later if a contact goes unanswered.
+
+This distinction is what `output/account_roster.csv` (see "Contact roster" below) exists to track:
+`contact_status = active` for the 2 being written to, `contact_status = bench` for the rest — so a
+non-response can be promoted from the bench instead of re-sourcing the account from scratch, or
+giving up on it too early.
+
 ### `4B`
 
 | Tier | Title | Evidence |
@@ -129,12 +149,12 @@ account name is intentionally not printed here since this file could otherwise g
 outbound material — never write "Antora" into an actual draft (`prima-guardrail-audit` Blocker B3
 would catch it anyway, but don't rely on that backstop when it's this avoidable).
 
-Cap at 3 contacts per account for `4B`/`4C` regardless of tier. If more than 3 verifiable names
-surface, keep the most PRIORIDAD ALTA-weighted ones — don't pad the output with a 4th just because
-more names were found, and don't let a SECUNDARIA name bump an ALTA one out of the top 3. For `4C`,
-the same rule extends to FALLBACK: a FALLBACK (Founder/CEO) name never bumps an ALTA or SECUNDARIA
-name out of the top 3 — it only fills a slot that would otherwise be empty. Cat3 has its own, lower
-cap of 2 — see below.
+Per "Banca vs. contacto" above: source up to 3-4 verifiable names per `4B`/`4C` account, ranked ALTA
+before SECUNDARIA before FALLBACK. Only the top **2** become the contact set that actually gets
+written to — don't let a lower-tier name bump a higher-tier one out of those 2 slots, whether it's
+SECUNDARIA bumping ALTA or FALLBACK bumping either. Everyone else verifiable, up to the 3-4 sourced,
+is bench — keep them ranked in `output/account_roster.csv`, don't discard them just because they
+didn't make the contact set.
 
 ### `Cat3` (`company_category = Cat3`) — not on the 4A–4D scheme, capped at 2 contacts
 
@@ -160,8 +180,10 @@ this order:
 | Secundario | Manufacturing / prefabrication leadership | VP of Manufacturing, Director of Prefabrication, Director of Manufacturing Operations, Plant Manager |
 
 The first verifiable name found under Principal becomes contact #1; Secundario fills contact #2, or
-becomes contact #1 only when Principal turns up nothing verifiable. Cap at **2** contacts total for
-Cat3 — don't extend to 3 the way 4B/4C does.
+becomes contact #1 only when Principal turns up nothing verifiable. That's the contact set —
+capped at **2**, same as before. Per "Banca vs. contacto" above, sourcing itself now goes wider:
+keep searching past those first 2 hits, up to 3-4 verifiable names total per Cat3 account, and bench
+the extras instead of stopping once the contact set is full.
 
 #### Division rule (critical) — manufacturing division only, never the parent's corporate
 
@@ -247,33 +269,45 @@ output when the evidence isn't there.
    the Principal title first instead.
 4. Run Tier 1 (WebSearch) for each title attempted, in priority order (ALTA-then-SECUNDARIA for
    4B/4C; Principal-then-Secundario for Cat3; `4C` only tries FALLBACK — Founder/CEO — after both
-   ALTA and SECUNDARIA have been exhausted with nothing verifiable).
-5. For `4B`/`4C`: fill contact #2/#3 from any additional ALTA titles that also produced a verifiable
-   name, then from SECUNDARIA titles. If **no** ALTA title produced anything verifiable at all, a
-   SECUNDARIA title may become contact #1 instead — don't leave contact #1 empty when a real (if
-   lower-priority) contact exists. For `4C` specifically: only if **neither** ALTA **nor** SECUNDARIA
-   produced anything verifiable may a FALLBACK (Founder/CEO) title become contact #1 — FALLBACK never
-   bumps an ALTA or SECUNDARIA name that was already found. For Cat3: fill contact #2 from Secundario
-   only if Principal found something for #1 (or let Secundario become #1 if Principal found nothing)
-   — cap at 2 total.
+   ALTA and SECUNDARIA have been exhausted with nothing verifiable). Per "Banca vs. contacto" above,
+   **don't stop at 2** — keep working down the tiers (and trying additional real candidates within a
+   tier, if more than one surfaces) until either 4 verifiable names are found for the account or
+   every tier/title has genuinely been exhausted. This is what builds the banca.
+5. For `4B`/`4C`: rank every verifiable name found by tier (ALTA above SECUNDARIA above FALLBACK).
+   For Cat3: rank by tier (Principal above Secundario). Don't let a lower-tier name outrank a
+   higher-tier one regardless of the order they were actually found in.
 6. For every Cat3 candidate found (in either tier), apply the division rule before accepting it: if
    the evidence ties the person to the parent contracting company's corporate side rather than the
    manufacturing/prefab division itself, don't accept it as `CONTACT_FOUND` — output it as
    `NEEDS_HUMAN_REVIEW` with `flag_reason` explaining the risk instead (see "Division rule" above).
    Also apply the Cat3 exclusions (parent-corporate procurement, project/jobsite purchasing agents,
    construction executives) at this same step — reject a title match against any of those outright,
-   don't even flag it, just treat it as not found and keep searching.
+   don't even flag it, just treat it as not found and keep searching. This applies to every
+   candidate, active or bench — the division rule is about the person's identity, not who gets
+   written to.
 7. If the account is Cat3 **and** `priority = P1`: downgrade the status from step 6 — even a contact
    the division rule already accepted — from `CONTACT_FOUND` to `NEEDS_HUMAN_REVIEW`, with
    `flag_reason` noting this is a Cat3 `P1` account under the unvalidated-hypothesis gate and needs
    operator confirmation before use (see "Cat3 hard gate" above). This downgrade always applies to
-   Cat3 `P1`, regardless of how clean the division-rule check came out.
+   Cat3 `P1`, regardless of how clean the division-rule check came out, and regardless of active/
+   bench.
 8. Collect the accounts/titles where Tier 1 failed (and weren't already resolved as
-   `NEEDS_HUMAN_REVIEW` or excluded) into the Tier-2 candidate set.
+   `NEEDS_HUMAN_REVIEW` or excluded) into the Tier-2 candidate set — i.e. accounts still short of
+   either the 3-4 banca target or a filled contact set.
 9. If that set is non-empty, run the Tier 2 approval gate above before touching any paid provider.
 10. Merge Tier 1 + (approved) Tier 2 results; anything still unresolved becomes a role-only row.
-11. For multi-entity accounts flagged by `prima-icp-check` (e.g. the Applied Digital/ChronoScale
+11. From the ranked, verified list per account (step 5, after steps 6-7's checks), assign
+    `contact_status`: the top **2** are `active` (the contact set); anyone else verifiable, up to
+    the 3-4 sourced, is `bench`.
+12. For multi-entity accounts flagged by `prima-icp-check` (e.g. the Applied Digital/ChronoScale
     split), source a committee per entity, not per domain — same rule as that skill's edge case.
+13. Write/update `output/account_roster.csv` for every candidate sourced this run (both `active` and
+    `bench`) — see "Contact roster" below for the accumulate/dedup/column-ownership rules. Set
+    `contact_email` blank and `email_status = NOT_ATTEMPTED` on every row this skill touches
+    regardless of `active`/`bench` — this skill never looks up emails itself.
+14. Of everything just written, only rows with `contact_status = active` are eligible to be handed
+    to `prima-email-waterfall` next. Don't pass `bench` rows forward for an email lookup — see
+    "Why bench contacts don't get an email lookup" below for why.
 
 ## Output schema
 
@@ -285,6 +319,7 @@ output when the evidence isn't there.
 | `sub_segment` | `4B` \| `4C` \| `N/A-Cat3` |
 | `committee_role` | the title label matched from the target title dictionary (e.g. "Director of Sourcing", or "Director of Supply Chain" for Cat3) |
 | `priority_tier` | `ALTA` \| `SECUNDARIA` \| `FALLBACK` (`FALLBACK` is `4C`-only) for `4B`/`4C` — `PRINCIPAL` \| `SECUNDARIO` for `Cat3` — which tier of the relevant dictionary this contact's title came from |
+| `contact_status` | `active` \| `bench` — per "Banca vs. contacto" above: the top 2 verifiable names (by `priority_tier` rank) are `active`; anything beyond that, sourced but not written to, is `bench`. This run-level value only ever takes these two values — the operator-managed lifecycle (`exhausted`/`responded`/`do_not_contact`) lives only in `output/account_roster.csv`, never here |
 | `contact_name` | blank if not found |
 | `contact_title` | the actual title found (may read slightly differently than the generic role bucket) |
 | `profile_url` | blank if not found |
@@ -293,13 +328,67 @@ output when the evidence isn't there.
 | `status` | `CONTACT_FOUND` \| `ROLE_NOT_FOUND` \| `NEEDS_HUMAN_REVIEW` \| `SUB_SEGMENT_NOT_SUPPORTED` \| `SKIPPED_EXCLUDED` \| `SKIPPED_UNKNOWN` |
 | `flag_reason` | free text — required when `status = NEEDS_HUMAN_REVIEW`. Explains either (a) a Cat3 division-vs-parent-corporate risk found during sourcing, or (b) that this is a Cat3 `P1` account under the unvalidated-hypothesis gate and needs operator confirmation before use (see "Cat3 hard gate"). Blank otherwise. |
 
-One row per (account, committee_role) — 2-3 rows per qualifying `4B`/`4C` account, up to 2 rows per
-qualifying Cat3 account. Cat3 `P1` rows always carry `status = NEEDS_HUMAN_REVIEW` instead of
+One row per (account, committee_role) — up to 3-4 rows per qualifying account (`4B`/`4C` or `Cat3`
+alike): 2 `active` rows (the contact set) plus however many verifiable `bench` names were found on
+top of that. Cat3 `P1` active rows always carry `status = NEEDS_HUMAN_REVIEW` instead of
 `CONTACT_FOUND`, per the Cat3 hard gate — they're still real, sourced rows, just not auto-cleared.
 Accounts that are skipped or unsupported get exactly one row with `status` set accordingly and the
 rest of the row-specific columns blank.
 
+## Contact roster — `output/account_roster.csv` (accumulative, cross-run)
+
+In addition to the per-run CSV above, this skill writes/updates a second file every run:
+`output/account_roster.csv`. Unlike every other output in this pipeline, this file **accumulates** —
+it is never regenerated and never overwritten wholesale. If it doesn't exist yet, create it with
+headers only. If it exists, only ever append new rows or update specific columns on existing rows.
+
+### Unique key
+
+One row per **(`account_name`, `contact_name`)** pair. Before writing a candidate, check whether
+that exact pair already has a row:
+- **Exists already** — update only the skill-owned columns below on that row. Never duplicate the
+  row, and never touch the operator-owned columns.
+- **New pair** — append a new row.
+
+### Column ownership
+
+| Ownership | Columns |
+|---|---|
+| **Skill** — written/updated freely on both new and existing rows | `account_name`, `company_category`, `sub_segment`, `contact_name`, `contact_title`, `priority_tier`, `profile_url`, `contact_email`, `email_status`, `source`, `found_date` |
+| **Operator** — human-managed; this skill must **never** modify these on an existing row | `contact_status`, `touches`, `last_touch_date`, `last_channel`, `outcome`, `notes` |
+
+**One exception, at row creation only:** when a row is first created (a new `account_name` +
+`contact_name` pair), initialize `contact_status` — `active` for the 2 contacts that made the
+contact set (see "Banca vs. contacto" above), `bench` for everyone else sourced this run. That's the
+only time this skill ever writes to `contact_status`. Once the row exists, that column belongs to
+the operator: a later run that re-finds the same person updates the skill-owned columns only and
+leaves `contact_status` exactly as the operator last left it — even if it's since moved to
+`responded`, `exhausted`, or `do_not_contact`.
+
+`contact_status` valid values: `active` \| `bench` \| `exhausted` \| `responded` \| `do_not_contact`.
+
+Within this skill, `contact_email` is always written blank and `email_status = NOT_ATTEMPTED` on
+every row it touches, active or bench — this skill doesn't look up emails; `prima-email-waterfall`
+does, later, for `active` rows only.
+
+The file is in English (headers and values), regardless of what language the rest of the run is
+conducted in.
+
+### Why bench contacts don't get an email lookup (decision: Aldahir, 2026-08-03)
+
+Only `contact_status = active` rows should be handed to `prima-email-waterfall` next. Bench rows
+stay with `email_status = NOT_ATTEMPTED` and no `contact_email` — don't run email-waterfall (or any
+paid Deepline provider) against a bench contact. Reasoning: names come from free WebSearch, but a
+verified email costs Deepline credits — paying for a bench contact's email before it's clear the
+account even needs one is money that may never get used. The roster exists precisely so a
+non-response can promote a bench name to `active` later without re-sourcing the account from
+scratch; the email gets paid for **then**, not now. This also gives Aldahir a durable per-account
+history — who's been tried, who's in reserve, and whether an account's real options are exhausted
+before writing it off as dead.
+
 ## Output format
 
-CSV (or printed inline for a short list), written back to a file next to the input unless the user
-asks for something else. Keep account order stable and match `prima-icp-check`'s row order.
+Per-run committee CSV (or printed inline for a short list): written back to a file next to the
+input unless the user asks for something else. Keep account order stable and match
+`prima-icp-check`'s row order. Separately, and regardless of where that per-run file goes, every run
+also writes/updates `output/account_roster.csv` per the rules above.
