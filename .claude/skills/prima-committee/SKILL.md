@@ -82,6 +82,24 @@ function even when the exact wording differs.
   *within* a tier — it never overrides an exclusion. Project/jobsite purchasing agents, the parent
   contracting company's corporate procurement/leadership (`Cat3`), and construction executives are
   still always rejected, no matter how closely their title's function resembles a target tier.
+- **Founder/C-suite titles always classify as `FALLBACK`, never ALTA/SECUNDARIA/Principal/
+  Secundario — this rule outranks function-matching, it doesn't compete with it.** Founder,
+  Co-founder, CEO, COO, CTO, CFO, President, or any "Chief ___ Officer" is `FALLBACK` (`4C` only)
+  regardless of how closely their actual function resembles a higher tier. A COO doesn't clear
+  SECUNDARIA by "running operations"; a CPO doesn't clear ALTA by "running procurement." The cutoff
+  is VP and below: `VP Operations`, `VP Manufacturing`, `VP Supply Chain` are normal tier titles and
+  function-match as usual; Founder/C-suite titles never are, no matter the function. Function-
+  matching only expands what counts *within* a tier (same as the exclusions point above) — it never
+  promotes someone *out of* `FALLBACK` into a higher tier.
+
+**Why (decision: Aldahir, 2026-08-04):** the operator asked explicitly to target procurement roles
+and use Founder/CEO only when genuinely nobody else exists. Function-matching, without this
+precedence rule, opened a back door for the founder to re-enter through a higher tier — this
+surfaced during the Moment Energy run, where "Co-founder & COO" was accepted into SECUNDARIA by
+function-matching reasoning ("a COO oversees operations") even though that exact title was
+deliberately dropped from the `4C` dictionary (see the 2026-08-03 decision note above) and the
+account already had 3 other real procurement contacts. This rule closes that gap: Founder/C-suite is
+always `FALLBACK`, full stop.
 
 **Why (decision: Aldahir, 2026-08-03):** the roster's purpose is having **live contact options** per
 account for when one path doesn't work — not finding one exact title string. A real,
