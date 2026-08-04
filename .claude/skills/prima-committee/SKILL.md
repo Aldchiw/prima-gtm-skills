@@ -58,6 +58,37 @@ postings and named executives observed at reference accounts during Sprint 2 tes
 (2026-07-20), not yet confirmed as complete by Aldahir/Gaby — flag any account whose real committee
 uses a title not listed here so the dictionary grows over time.
 
+### Title matching: function, not exact string
+
+Every title listed in the `4B`, `4C`, and `Cat3` dictionaries below (and their Cat3 equivalents,
+Principal/Secundario) is an **example of a function**, not a literal string a real title has to
+match word-for-word. Match by function; accept a real contact whose title clearly performs that
+function even when the exact wording differs.
+
+- **Procurement / supply-chain / sourcing tier** (`ALTA` for `4B`/`4C`, `Principal` for `Cat3`): a
+  title counts if that person buys or manages the sourcing of materials/fabrication for the
+  account — regardless of exact wording. Real examples that should count even though none appear
+  verbatim in any dictionary table: "Head of Global Sourcing," "Materials Manager," "Senior
+  Manager, Indirect Procurement," "Commodity Manager," "Purchasing Director," "Supply Chain Lead."
+  This isn't a closed list — the test is the function (do they buy/manage supply?), not the string.
+- **Manufacturing / operations tier** (`SECUNDARIA` for `4B`/`4C`, `Secundario` for `Cat3`): a title
+  counts if that person runs production, plant, or prefabrication — again by function, not by
+  matching one of the example titles word-for-word.
+- **`contact_title` always records the real title found** — never the dictionary's example string.
+  **`committee_role` records the functional bucket it was matched to** (e.g. "Procurement / Supply
+  Chain," "Manufacturing / Operations"), not the specific dictionary example that prompted the
+  search.
+- **The hard exclusions do not loosen under this rule.** Function-matching only expands what counts
+  *within* a tier — it never overrides an exclusion. Project/jobsite purchasing agents, the parent
+  contracting company's corporate procurement/leadership (`Cat3`), and construction executives are
+  still always rejected, no matter how closely their title's function resembles a target tier.
+
+**Why (decision: Aldahir, 2026-08-03):** the roster's purpose is having **live contact options** per
+account for when one path doesn't work — not finding one exact title string. A real,
+functionally-matching person is worth more than an empty row waiting for a title that happens to say
+"Director of Supply Chain" verbatim. If genuinely nobody in either functional tier exists, Founder/
+CEO remains a valid `FALLBACK` (`4C` only) — that's exactly the case the tier exists for.
+
 **Reoriented around who actually buys fabrication, not who runs the company.** Prima sells a
 supply-chain/procurement purchase, not an executive decision — a plant purchasing manager or a
 commodity manager evaluates and picks a fabrication supplier; a CEO or COO almost never does. Titles
@@ -317,11 +348,11 @@ output when the evidence isn't there.
 | `account_name` | as given by `prima-icp-check` (disambiguates multi-entity accounts) |
 | `company_category` | `Cat3` \| `Cat4` \| `UNKNOWN` — as given by `prima-icp-check` |
 | `sub_segment` | `4B` \| `4C` \| `N/A-Cat3` |
-| `committee_role` | the title label matched from the target title dictionary (e.g. "Director of Sourcing", or "Director of Supply Chain" for Cat3) |
+| `committee_role` | the **functional bucket** the contact was matched to (e.g. "Procurement / Supply Chain", "Manufacturing / Operations") — per "Title matching: function, not exact string" above, this is the bucket, not the specific dictionary example that prompted the search |
 | `priority_tier` | `ALTA` \| `SECUNDARIA` \| `FALLBACK` (`FALLBACK` is `4C`-only) for `4B`/`4C` — `PRINCIPAL` \| `SECUNDARIO` for `Cat3` — which tier of the relevant dictionary this contact's title came from |
 | `contact_status` | `active` \| `bench` — per "Banca vs. contacto" above: the top 2 verifiable names (by `priority_tier` rank) are `active`; anything beyond that, sourced but not written to, is `bench`. This run-level value only ever takes these two values — the operator-managed lifecycle (`exhausted`/`responded`/`do_not_contact`) lives only in `output/account_roster.csv`, never here |
 | `contact_name` | blank if not found |
-| `contact_title` | the actual title found (may read slightly differently than the generic role bucket) |
+| `contact_title` | the real title found, verbatim — per "Title matching: function, not exact string" above, this is deliberately expected to read differently from any dictionary example |
 | `profile_url` | blank if not found |
 | `source` | `WebSearch` \| `Deepline: <provider>` \| blank |
 | `verified_date` | date the contact was found/confirmed |
