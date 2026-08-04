@@ -65,9 +65,13 @@ are grouped into two priority tiers per sub-segment:
 
 - **PRIORIDAD ALTA** — supply chain / purchasing / sourcing titles. Search these first; the first
   verifiable name found in this tier becomes contact #1.
-- **PRIORIDAD SECUNDARIA** — executives (founder/CEO, COO, VP Engineering, VP Operations). These
-  fill contact #2/#3, or become contact #1 only when nothing in PRIORIDAD ALTA turns up a
-  verifiable name for that account.
+- **PRIORIDAD SECUNDARIA** — manufacturing / operations leadership (VP Manufacturing, VP Operations,
+  Plant Manager, etc.). These fill contact #2/#3, or become contact #1 only when nothing in
+  PRIORIDAD ALTA turns up a verifiable name for that account.
+- **FALLBACK** (`4C` only — the lowest tier, below SECUNDARIA) — Founder/CEO. Used **only** when
+  neither ALTA nor SECUNDARIA produced a verifiable name for that account — never as contact #1
+  when someone from either of the other two tiers exists. See the `4C` table and its decision note
+  below for why this moved here from where it used to sit.
 
 ### `4B`
 
@@ -89,30 +93,48 @@ are grouped into two priority tiers per sub-segment:
 
 | Tier | Title | Evidence |
 |---|---|---|
-| ALTA | Director, Electrical Strategic Sourcing (or equivalent "Director, [domain] Strategic Sourcing") | Real — active posting, Mainspring Energy |
-| ALTA | Senior Staff Commodity Manager, [domain] Strategic Design Sourcing | Real — active posting, Mainspring Energy |
-| ALTA | Global Supply Manager | Real — active posting, a 4C battery-storage reference account (scope: sourcing battery cells/strategic materials) |
-| ALTA | Head of Supply Chain | Real function, **title string inferred** — a reference account's supply-chain lead (ex-procurement background); confirm exact title before using verbatim |
-| SECUNDARIA | Founder & CEO — **only when the account is small/early enough that the founder plausibly still touches procurement directly**; don't default to this for a scaled-up 4C | Real — an existing-customer reference account (see note below); use as title evidence only |
-| SECUNDARIA | CEO (non-founder, post-transition) | Real — Mainspring Energy (Tom Linebarger; see [[account_mainspring_ceo_transition]] memory) |
-| SECUNDARIA | Co-founder & President (post-CEO-transition) | Real — Mainspring Energy (Shannon Miller) |
-| SECUNDARIA | Co-founder & COO | Real — an existing-customer reference account; use as title evidence only |
-| SECUNDARIA | VP Engineering / VP Systems Engineering | Real — an existing-customer reference account; use as title evidence only |
-| SECUNDARIA | Director of Manufacturing | Real — Mainspring Energy |
+| ALTA | Director of Supply Chain | Real — per operator review of actual 4C outreach contacts, 2026-08-03 (see decision note below) |
+| ALTA | VP Supply Chain | Real — per operator review of actual 4C outreach contacts, 2026-08-03 (see decision note below) |
+| ALTA | Director of Procurement | Real — per operator review of actual 4C outreach contacts, 2026-08-03 (see decision note below) |
+| ALTA | Procurement Manager | Real — per operator review of actual 4C outreach contacts, 2026-08-03 (see decision note below) |
+| ALTA | Strategic Sourcing Manager | Real — per operator review of actual 4C outreach contacts, 2026-08-03 (see decision note below) |
+| ALTA | Category Manager (Metals / Fabrication) | Real — per operator review of actual 4C outreach contacts, 2026-08-03 (see decision note below) |
+| SECUNDARIA | VP Manufacturing | Real — per operator review of actual 4C outreach contacts, 2026-08-03 (see decision note below) |
 | SECUNDARIA | Head of Manufacturing (e.g. "runs the deployment factory") | Real function, **title string inferred** — a reference account; confirm exact title before using verbatim |
+| SECUNDARIA | Director of Manufacturing Operations | Real — per operator review of actual 4C outreach contacts, 2026-08-03 (see decision note below) |
+| SECUNDARIA | VP Operations | Real — per operator review of actual 4C outreach contacts, 2026-08-03 (see decision note below) |
+| SECUNDARIA | Plant Manager | Real — per operator review of actual 4C outreach contacts, 2026-08-03 (see decision note below) |
+| FALLBACK | Founder & CEO — **only when the account is small/early enough that the founder plausibly still touches procurement directly**, and never used if an ALTA/SECUNDARIA name already exists; don't default to this for a scaled-up 4C | Real — an existing-customer reference account (see note below); use as title evidence only |
+| FALLBACK | CEO (non-founder, post-transition) | Real — Mainspring Energy (Tom Linebarger; see [[account_mainspring_ceo_transition]] memory) |
+| FALLBACK | Co-founder & President (post-CEO-transition) | Real — Mainspring Energy (Shannon Miller) |
 
-**Note on "an existing-customer reference account" above:** several 4C titles were sourced from
-Antora Energy, which is an existing Prima customer (confirmed 2026-07-20 — see
-[[account_antora_existing_customer]] memory and the "existing customer" exclusion added to
-`prima-icp-check`). The titles stay in this dictionary as valid vocabulary evidence; the account
-name is intentionally not printed here since this file could otherwise get copied toward outbound
-material — never write "Antora" into an actual draft (`prima-guardrail-audit` Blocker B3 would
-catch it anyway, but don't rely on that backstop when it's this avoidable).
+**Decision note (2026-08-03, operator: Aldahir):** Founder/CEO used to sit in PRIORIDAD SECUNDARIA —
+the original dictionary design assumed 4C scale-ups had no real procurement function yet, so the
+founder/CEO was treated as the closest thing to a buyer. That assumption doesn't hold: the real 4C
+accounts already worked (Form Energy, EnerVenue, Eos, Redwood) turned out to already have an actual
+supply-chain organization, surfaced while reviewing the contacts already chosen for their outreach.
+Prima sells supply — that's a purchasing conversation, not an executive one — so ALTA and SECUNDARIA
+were rebuilt around supply-chain/procurement and manufacturing/operations titles, and Founder/CEO
+dropped to a last-resort FALLBACK tier: still real and still usable, but only when nothing else
+verifiable turns up, and never as contact #1 over an ALTA/SECUNDARIA name. `Co-founder & COO` and
+`VP Engineering` / `VP Systems Engineering` (both former SECUNDARIA rows) are dropped from this
+dictionary entirely — they don't fit the new ALTA/SECUNDARIA/FALLBACK framing and weren't part of
+what actually got chosen for outreach.
+
+**Note on "an existing-customer reference account" above:** the Founder & CEO title in this
+dictionary was sourced from Antora Energy, which is an existing Prima customer (confirmed
+2026-07-20 — see [[account_antora_existing_customer]] memory and the "existing customer" exclusion
+added to `prima-icp-check`). The title stays in this dictionary as valid vocabulary evidence; the
+account name is intentionally not printed here since this file could otherwise get copied toward
+outbound material — never write "Antora" into an actual draft (`prima-guardrail-audit` Blocker B3
+would catch it anyway, but don't rely on that backstop when it's this avoidable).
 
 Cap at 3 contacts per account for `4B`/`4C` regardless of tier. If more than 3 verifiable names
 surface, keep the most PRIORIDAD ALTA-weighted ones — don't pad the output with a 4th just because
-more names were found, and don't let a SECUNDARIA name bump an ALTA one out of the top 3. Cat3 has
-its own, lower cap of 2 — see below.
+more names were found, and don't let a SECUNDARIA name bump an ALTA one out of the top 3. For `4C`,
+the same rule extends to FALLBACK: a FALLBACK (Founder/CEO) name never bumps an ALTA or SECUNDARIA
+name out of the top 3 — it only fills a slot that would otherwise be empty. Cat3 has its own, lower
+cap of 2 — see below.
 
 ### `Cat3` (`company_category = Cat3`) — not on the 4A–4D scheme, capped at 2 contacts
 
@@ -224,12 +246,16 @@ output when the evidence isn't there.
    account (any priority — `P1` sources exactly like `P2`/`P3`, see "Cat3 hard gate" above), work
    the Principal title first instead.
 4. Run Tier 1 (WebSearch) for each title attempted, in priority order (ALTA-then-SECUNDARIA for
-   4B/4C; Principal-then-Secundario for Cat3).
+   4B/4C; Principal-then-Secundario for Cat3; `4C` only tries FALLBACK — Founder/CEO — after both
+   ALTA and SECUNDARIA have been exhausted with nothing verifiable).
 5. For `4B`/`4C`: fill contact #2/#3 from any additional ALTA titles that also produced a verifiable
    name, then from SECUNDARIA titles. If **no** ALTA title produced anything verifiable at all, a
    SECUNDARIA title may become contact #1 instead — don't leave contact #1 empty when a real (if
-   lower-priority) contact exists. For Cat3: fill contact #2 from Secundario only if Principal found
-   something for #1 (or let Secundario become #1 if Principal found nothing) — cap at 2 total.
+   lower-priority) contact exists. For `4C` specifically: only if **neither** ALTA **nor** SECUNDARIA
+   produced anything verifiable may a FALLBACK (Founder/CEO) title become contact #1 — FALLBACK never
+   bumps an ALTA or SECUNDARIA name that was already found. For Cat3: fill contact #2 from Secundario
+   only if Principal found something for #1 (or let Secundario become #1 if Principal found nothing)
+   — cap at 2 total.
 6. For every Cat3 candidate found (in either tier), apply the division rule before accepting it: if
    the evidence ties the person to the parent contracting company's corporate side rather than the
    manufacturing/prefab division itself, don't accept it as `CONTACT_FOUND` — output it as
@@ -258,7 +284,7 @@ output when the evidence isn't there.
 | `company_category` | `Cat3` \| `Cat4` \| `UNKNOWN` — as given by `prima-icp-check` |
 | `sub_segment` | `4B` \| `4C` \| `N/A-Cat3` |
 | `committee_role` | the title label matched from the target title dictionary (e.g. "Director of Sourcing", or "Director of Supply Chain" for Cat3) |
-| `priority_tier` | `ALTA` \| `SECUNDARIA` for `4B`/`4C` — `PRINCIPAL` \| `SECUNDARIO` for `Cat3` — which tier of the relevant dictionary this contact's title came from |
+| `priority_tier` | `ALTA` \| `SECUNDARIA` \| `FALLBACK` (`FALLBACK` is `4C`-only) for `4B`/`4C` — `PRINCIPAL` \| `SECUNDARIO` for `Cat3` — which tier of the relevant dictionary this contact's title came from |
 | `contact_name` | blank if not found |
 | `contact_title` | the actual title found (may read slightly differently than the generic role bucket) |
 | `profile_url` | blank if not found |
