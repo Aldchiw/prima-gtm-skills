@@ -1,6 +1,6 @@
 ---
 name: prima-committee
-description: Identifies the buying committee — real, named contacts per account — for accounts already classified `4B`/`4C` (via `sub_segment`) or `Cat3` (via `company_category`) by `prima-icp-check` (`4A`/`4D` sub-segments not supported yet). Sources widely (3-4 verifiable names per account — the "banca") but writes narrowly: the outreach guardrail still caps actual contact at 2 people per account regardless of segment, with the rest held on the bench for later promotion if a contact doesn't respond. Cat3 also enforces a stricter manufacturing-division-only rule and, since its targeting logic is an unvalidated v1 hypothesis (Aldahir, 2026-08-03), sourcing runs on every Cat3 priority but `P1` contacts always come back as `NEEDS_HUMAN_REVIEW` (never auto-cleared `CONTACT_FOUND`) until the hypothesis is validated on `P2` data. Writes/updates an accumulative `output/account_roster.csv` (never regenerated) tracking every sourced name — skill-owned columns vs. operator-owned lifecycle columns (`contact_status`, touches, outcome) — and only hands `active`-status contacts to `prima-email-waterfall`; bench contacts stay `email_status = NOT_ATTEMPTED` so Deepline credits are never spent on an unpromoted name. Sources names via free WebSearch (company site + public LinkedIn snippets) first; only falls back to paid Deepline providers (ContactOut, Lusha, RocketReach, etc.) after stopping to show how many accounts need paid lookup and the estimated cost, and getting explicit approval — same gate as the Clay-vs-Terminal pilot. Never fabricates a name — if no verifiable contact is found for a role, outputs the target role/title only. Use this after `prima-icp-check` (and ideally after `prima-signal-scan` has confirmed the target-title door exists) and before `prima-email-waterfall` needs a named person to find an email for.
+description: Identifies the buying committee — real, named contacts per account — for accounts already classified `4B`/`4C` (via `sub_segment`) or `Cat3` (via `company_category`) by `prima-icp-check` (`4A`/`4D` sub-segments not supported yet). Sources widely (3-4 verifiable names per account — the "banca") but writes narrowly: the outreach guardrail still caps actual contact at 2 people per account regardless of segment, with the rest held on the bench for later promotion if a contact doesn't respond. Cat3 also enforces a stricter manufacturing-division-only rule and, since its targeting logic is an unvalidated v1 hypothesis (Aldahir, 2026-08-03), sourcing runs on every Cat3 priority but `P1` contacts always come back as `NEEDS_HUMAN_REVIEW` (never auto-cleared `CONTACT_FOUND`) until the hypothesis is validated on `P2` data. Writes/updates an accumulative `output/account_roster.csv` (never regenerated) tracking every sourced name — skill-owned columns vs. operator-owned lifecycle columns (`contact_status`, touches, outcome) — and only hands a contact to `prima-email-waterfall` when it's both `contact_status = active` AND `status = CONTACT_FOUND` — bench contacts and unconfirmed `NEEDS_HUMAN_REVIEW` contacts (e.g. any Cat3 `P1` row, active or not) stay `email_status = NOT_ATTEMPTED` so Deepline credits are never spent on an unpromoted or unconfirmed name. Sources names via free WebSearch (company site + public LinkedIn snippets) first; only falls back to paid Deepline providers (ContactOut, Lusha, RocketReach, etc.) after stopping to show how many accounts need paid lookup and the estimated cost, and getting explicit approval — same gate as the Clay-vs-Terminal pilot. Never fabricates a name — if no verifiable contact is found for a role, outputs the target role/title only. Use this after `prima-icp-check` (and ideally after `prima-signal-scan` has confirmed the target-title door exists) and before `prima-email-waterfall` needs a named person to find an email for.
 ---
 
 # prima-committee
@@ -354,9 +354,11 @@ output when the evidence isn't there.
     `bench`) — see "Contact roster" below for the accumulate/dedup/column-ownership rules. Set
     `contact_email` blank and `email_status = NOT_ATTEMPTED` on every row this skill touches
     regardless of `active`/`bench` — this skill never looks up emails itself.
-14. Of everything just written, only rows with `contact_status = active` are eligible to be handed
-    to `prima-email-waterfall` next. Don't pass `bench` rows forward for an email lookup — see
-    "Why bench contacts don't get an email lookup" below for why.
+14. Of everything just written, only rows where **both** `contact_status = active` **and** `status
+    = CONTACT_FOUND` are eligible to be handed to `prima-email-waterfall` next — see "Two gates, not
+    one" below. `bench` rows never qualify regardless of `status`. `active` rows with `status =
+    NEEDS_HUMAN_REVIEW` (e.g. any Cat3 `P1` row, per the hard gate above) don't qualify either — not
+    until a human confirms the identity and updates `status` to `CONTACT_FOUND`.
 
 ## Output schema
 
@@ -417,11 +419,37 @@ leaves `contact_status` exactly as the operator last left it — even if it's si
 `contact_status` valid values: `active` \| `bench` \| `exhausted` \| `responded` \| `do_not_contact`.
 
 Within this skill, `contact_email` is always written blank and `email_status = NOT_ATTEMPTED` on
-every row it touches, active or bench — this skill doesn't look up emails; `prima-email-waterfall`
-does, later, for `active` rows only.
+every row it touches, regardless of `active`/`bench` or `status` — this skill doesn't look up
+emails; `prima-email-waterfall` does, later, and only for rows that clear **both** gates in "Two
+gates, not one" below.
 
 The file is in English (headers and values), regardless of what language the rest of the run is
 conducted in.
+
+### Two gates, not one: `status` and `contact_status` are different axes (decision: Aldahir, 2026-08-04)
+
+`status` and `contact_status` answer two different questions, and **both** have to be green before
+`prima-email-waterfall` touches a row — one green light is not enough:
+
+- **`status`** asks *is this contact validated?* `CONTACT_FOUND` means the identity has cleared
+  every check that applies (the Cat3 division rule, the Cat3 `P1` hard gate). `NEEDS_HUMAN_REVIEW`
+  means it hasn't — a human still has to confirm the person before the row can be trusted.
+- **`contact_status`** asks *is this one of the contacts we're planning to write to?* `active` vs.
+  `bench` is purely about the 2-contact outreach cap (see "Banca vs. contacto" above) — it says
+  nothing about whether the identity itself has been confirmed.
+
+A row reaches `prima-email-waterfall` only when **`contact_status = active` AND `status =
+CONTACT_FOUND`**:
+- `active` + `NEEDS_HUMAN_REVIEW` → **not eligible.** This is exactly the Cat3 `P1` case: the
+  account's top-ranked contact is `active` (it's the one that would be written to), but the `P1`
+  hard gate forces `status = NEEDS_HUMAN_REVIEW` until a human confirms the person — so it stays
+  `email_status = NOT_ATTEMPTED` no matter what `contact_status` says. Treating `active` alone as
+  the green light would quietly reopen the exact door the `P1` gate exists to close: spending a
+  Deepline credit on an unconfirmed contact and having it come back looking send-ready.
+- `bench` + `CONTACT_FOUND` → **not eligible** either, per "Why bench contacts don't get an email
+  lookup" below — a confirmed identity doesn't override the outreach cap.
+- Only `active` + `CONTACT_FOUND` clears both gates — including a Cat3 `P1` row *after* a human has
+  reviewed it and updated `status` to `CONTACT_FOUND`.
 
 ### Why bench contacts don't get an email lookup (decision: Aldahir, 2026-08-03)
 
