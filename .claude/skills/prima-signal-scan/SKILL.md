@@ -80,6 +80,33 @@ the query around the actual `Cat3` Principal/Secundario titles and the parent+di
 pattern. That's why this skill no longer keeps a title list of its own — see "Sources of truth"
 above.
 
+#### Domain-scoped fallback for generic titles (learning, 2026-08-04)
+
+Fixing the title dictionary and the parent+division query pattern (above) isn't always enough on its
+own: a **generic, short title** (one or two common words — "Plant Manager," "Buyer," "Category
+Manager") can still get drowned out in open-web search even when the query correctly quotes the
+target phrase and requires the parent+division terms. Open-web search engines rank by semantic
+relevance, not strict phrase-AND matching, so a generic title can pull in noise from unrelated
+companies that happen to rank higher, burying (or fully excluding) the real posting from the results
+shown.
+
+**Rule: a target title is only marked not-found after it's been searched scoped to the company's own
+domain, not just the open web.** Before concluding `NO_SIGNAL` for a title that came back empty (or
+suspiciously all-noise) on an open-web query, retry scoped to the account's domain:
+- `site:[account-domain] "[target title]"` (e.g. `site:faithtechnologies.com "Plant Manager"`)
+- The company's own careers/jobs page directly, if one is known or discoverable
+- The domain of its ATS, if identifiable (e.g. `myworkdayjobs.com`, `greenhouse.io`, `lever.co`,
+  `icims.com` — often visible from other postings already found for the same account)
+
+Only after a domain-scoped attempt also comes back empty does the title get logged `NO_SIGNAL`.
+
+**Learning (2026-08-04, Excellerate run):** this is exactly the gap the pattern above didn't close.
+A specific-enough title — "Procurement Manager" — surfaced on the very first open-web query. But
+"Plant Manager," a generic two-word title, returned only noise from unrelated companies (Rockwool,
+Plant Prefab) on the same well-formed query (parent+division terms, quoted phrase) — the real
+"Plant Manager - Excellerate" posting only surfaced once the search was scoped to
+`faithtechnologies.com`.
+
 Freshness (provisional — adjust once we have real data):
 
 | Posting status | Freshness | Usable as a first-line hook? |
