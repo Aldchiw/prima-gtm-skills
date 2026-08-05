@@ -1,6 +1,6 @@
 ---
 name: prima-signal-scan
-description: Given a domain, scans 5 sources for verifiable Data Centers signals — plant purchasing/supply chain/procurement job openings, capacity-expansion news, recent funding or grants, target-title presence (Sales Navigator proxy), and Mexico→US customs imports (Import Genius). Outputs a dated, sourced signal list — empty (NO_SIGNAL) if nothing verifiable turns up, and explicitly NOT_CHECKED if a source couldn't be reached this run. Use this after `prima-icp-check` has classified an account and before `prima-committee`/`prima-hook` need something to work with. Never fabricates a signal.
+description: Given a domain, scans 5 sources for verifiable Data Centers signals — plant purchasing/supply chain/procurement job openings, capacity-expansion news, recent funding or grants, target-title presence (Sales Navigator proxy), and Mexico→US customs imports (Import Genius). Target titles for job-opening and target-title checks are read fresh from `prima-committee`'s dictionaries (`4B`/`4C`/`Cat3`) — this skill keeps no title list of its own, and matches by function (not exact string) the same way committee does. Outputs a dated, sourced signal list — empty (NO_SIGNAL) if nothing verifiable turns up, and explicitly NOT_CHECKED if a source couldn't be reached this run. Use this after `prima-icp-check` has classified an account and before `prima-committee`/`prima-hook` need something to work with. Never fabricates a signal.
 ---
 
 # prima-signal-scan
@@ -10,11 +10,19 @@ dated, sourced signals and hand the result to `prima-committee` / `prima-hook`.
 
 ## Sources of truth
 
-- **Target titles**: reuse the per-sub-segment entry-point table already defined in
-  [`prima-icp-check/SKILL.md`](../prima-icp-check/SKILL.md#sub-segment-scheme-4a4d--business-archetype-within-category-4-oems)
-  (4A → VP Strategic Sourcing / Director Procurement, 4B → plant purchasing / procurement,
-  4C → founder / CEO / VP Engineering / Head of Manufacturing). Don't duplicate that table here —
-  if it changes, this skill should pick up the change automatically by reading it fresh.
+- **Target titles**: reuse the target-title dictionaries already defined in
+  [`prima-committee/SKILL.md`](../prima-committee/SKILL.md#target-title-dictionary-hardcoded-provisional--same-exception-as-prima-icp-checks-4a4d-scheme)
+  — `4B`, `4C` (ALTA/SECUNDARIA/FALLBACK), and `Cat3` (Principal/Secundario) — fetched fresh, never
+  copied into this file. `4A`/`4D` aren't supported yet (`prima-committee` doesn't have a dictionary
+  for them either); mark job-opening/target-title checks `NOT_CHECKED` for those rather than
+  guessing at titles. Also inherit `prima-committee`'s **function-match rule**: a title counts
+  toward a signal if it performs the target function (buys/manages supply, or runs
+  production/plant/prefabrication), even when the exact string differs from committee's examples —
+  see that skill's "Title matching: function, not exact string" section.
+  **This skill used to keep its own separate, hardcoded title list here — that duplication went
+  stale and caused a real miss (see the 2026-08-04 learning under "Job openings" below). There is
+  now exactly one title dictionary for the whole pipeline, and it lives in `prima-committee`, not
+  here.**
 - **Notion "Data Centers GTM"** — the "Growth Signals" text already present for many accounts is a
   **lead, not a signal**. It tells you where to look; it was not written with a verification date
   and may be stale. Every signal that actually goes into this skill's output must be independently
@@ -36,15 +44,41 @@ Never invent a signal to fill a gap, and never blur `NOT_CHECKED` into `NO_SIGNA
 "we don't know," the second means "we looked and there's nothing." Downstream skills and the humans
 reading this output need that distinction to not misread "we didn't check" as "no activity."
 
+## Query pattern for Cat3 manufacturing-division accounts (learning, 2026-08-04)
+
+Many `Cat3` accounts are a named manufacturing division inside a larger parent company (Excellerate
+inside Faith Technologies, RK Mission Critical inside RK Industries, and equivalents). Searching by
+the **division's name alone**, for any of the 5 sources below, risks pulling in an unrelated,
+same-named company — during the Excellerate signal-scan run, a plain `"Excellerate"` job-openings
+search surfaced a South African property-management firm ("Excellerate JHI") with zero relation to
+Faith Technologies. The pattern that actually works: search by the **parent company's name**, and
+require the **division's name inside the specific posting/article/title** — e.g. `"Faith
+Technologies" "Excellerate"` rather than `"Excellerate"` alone. Apply this to every WebSearch query
+this skill runs for a `Cat3` account, not just job openings — capacity-expansion news and
+target-title checks carry the same homonym risk.
+
 ## The 5 sources, in detail
 
 ### 1. Job openings (`signal_type = job_opening`)
 
-Search for open or recently-posted roles at the account matching plant purchasing, procurement,
-supply chain, or strategic sourcing. The title list is **open, not closed** — variants that count
-(per existing ICP briefs, already seen documenting scaling accounts): Sourcing Manager, Commodity
-Manager, Supply Chain Manager, Manufacturing Engineer, and equivalents. Use judgment for titles not
-listed here, but don't stretch to unrelated roles just to produce a hit.
+Search for open or recently-posted roles matching the account's target-title dictionary in
+`prima-committee/SKILL.md` (see "Sources of truth" above): `4B`/`4C` ALTA → SECUNDARIA → FALLBACK,
+or `Cat3` Principal → Secundario, depending on the account's classification. Apply committee's
+**function-match rule**: a posting counts as a job-opening signal if the role buys/manages
+materials/fabrication supply, or runs production/plant/prefabrication — even when the exact title
+isn't one of committee's listed examples. For a `Cat3` account, also apply the query pattern above
+(parent company name + division name in the title) to avoid homonym false positives.
+
+**Learning (2026-08-04, Excellerate run):** this section used to hardcode its own separate, generic
+list here — Sourcing Manager, Commodity Manager, Supply Chain Manager, Manufacturing Engineer — kept
+out of sync with `prima-committee`'s dictionary. Run literally against Excellerate (a `Cat3`
+account), it returned **zero results**: none of those four generic titles are close enough to the
+real open reqs ("Excellerate Procurement Manager," "Plant Manager - Excellerate") for a
+title-matching WebSearch to surface them, and the old list had no `Cat3` entry point at all — this
+skill didn't even know `Cat3` existed. The real postings only turned up after manually reformulating
+the query around the actual `Cat3` Principal/Secundario titles and the parent+division query
+pattern. That's why this skill no longer keeps a title list of its own — see "Sources of truth"
+above.
 
 Freshness (provisional — adjust once we have real data):
 
@@ -94,16 +128,20 @@ there's a real decision to revisit it.
 ### 4. Target-title presence (`signal_type = target_title`) — boundary with `prima-committee`
 
 This is a **boolean signal only**: "do people holding the entry-point titles for this account's
-sub-segment exist today, with public evidence (e.g. a visible LinkedIn profile, a leadership/team
-page)?" Answer yes/no with a source URL.
+sub-segment (or, for `Cat3`, its `company_category`) exist today, with public evidence (e.g. a
+visible LinkedIn profile, a leadership/team page)?" Answer yes/no with a source URL.
 
 **Do not bring back names, profiles, or contact details** — identifying *who* holds the role is
 100% `prima-committee`'s job. This skill only confirms the door exists; `prima-committee` identifies
 who's behind it. If you catch yourself writing a person's name into `signal_summary`, stop — that
 belongs in the next skill, not this one.
 
-Use the title list already defined per sub-segment in `prima-icp-check` (see Sources of truth above)
-— don't maintain a second copy of it here.
+Use the target-title dictionaries defined in `prima-committee` — `4B`/`4C` or `Cat3`
+Principal/Secundario, per the account's classification (see "Sources of truth" above) — don't
+maintain a second copy of them here. Apply the same function-match rule as in "Job openings" above:
+a person's title counts as evidencing the role even if it isn't one of committee's listed examples,
+as long as it performs the target function. For a `Cat3` account, use the parent+division query
+pattern above for this search too.
 
 ### 5. Import Genius / customs (`signal_type = customs`) — the strongest signal in the system
 
