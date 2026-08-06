@@ -39,12 +39,25 @@ doesn't get a 4A–4D sub-segment. Category-3 accounts (Modular DC Systems Manuf
 scope but handled separately — see "Category 3 (Modular DC Systems Manufacturers)" below — never
 force them into this table. Anything outside Cat 3 and Cat 4 entirely — see "Out of scope" below.
 
-| Sub-segment | Archetype | Priority | Entry point | Signals to look for |
+| Sub-segment | Archetype | Priority | Entry point (function) | Signals to look for |
 |---|---|---|---|---|
-| `4A` | Integrated platforms — large OEM spanning multiple product lines | `P2` | Corporate procurement / supply chain, per division | Notion tags it "Multi-focus"; multiple manufacturing sites; broad product catalog |
-| `4B` | Established single-category — one dominant, mature product | `P1` | Plant purchasing / procurement | Single clear product line; established company (not early-stage); meaningful revenue scale |
-| `4C` | Founder-led scale-up | `P1` | Founder / CEO / VP Engineering / Head of Manufacturing | Young company; rapid growth signals (funding, hiring, capacity expansion); founder still leading |
+| `4A` | Integrated platforms — large OEM spanning multiple product lines | `P2` | Procurement / supply-chain function, per division | Notion tags it "Multi-focus"; multiple manufacturing sites; broad product catalog |
+| `4B` | Established single-category — one dominant, mature product | `P1` | Procurement / supply-chain function (plant purchasing tier first) | Single clear product line; established company (not early-stage); meaningful revenue scale |
+| `4C` | Founder-led scale-up | `P1` | Procurement / supply-chain function first, manufacturing/operations function second — Founder/CEO only as a last resort when neither exists | Young company; rapid growth signals (funding, hiring, capacity expansion); founder still leading |
 | `4D` | Niche custom, low volume | `P3` | Not yet defined — don't invent one, leave blank and flag for the user | Small custom fabricator; highly bespoke product; low production volume |
+
+**"Entry point" here names a function, never a specific title — the real, current target-title
+dictionary (who to actually search for and contact) lives in exactly one place:
+[`prima-committee/SKILL.md`](../prima-committee/SKILL.md#target-title-dictionary-hardcoded-provisional--same-exception-as-prima-icp-checks-4a4d-scheme)
+— its `4B`/`4C` ALTA/SECUNDARIA/FALLBACK tables, matched by function per that skill's own
+"Title matching: function, not exact string" rule.** This skill used to spell out example titles
+in this column (e.g. "Founder / CEO / VP Engineering / Head of Manufacturing" for `4C`) — that
+duplicated committee's dictionary in a second place and went stale the moment committee's targeting
+changed: committee's 2026-08-03 decision demoted Founder/CEO to a FALLBACK used only when nothing
+else is found, and dropped `VP Engineering` from the `4C` dictionary entirely, while this column
+still read as if both were primary entry points. Don't restore a title list here, and don't add one
+for `4A`/`4D` either — if the function description above ever needs to change, fetch it fresh from
+`prima-committee` rather than re-describing it a second time in this file.
 
 **Priority is driven by sub-segment for Category-4 accounts only**, per the table above — it is a
 separate question from whatever 🔴/🟡/🟢 priority Notion shows for that company's Category-4 row. If
