@@ -1,3 +1,43 @@
+## 2026-08-05 · cuenta: trabajo
+**Avancé — alineación de skills y poblado del roster:**
+- Encontré un patrón de bug repetido en 4 skills: diccionarios de títulos
+  duplicados, match por string exacto, y desconocimiento de Cat3. Lo perseguí a
+  propósito en todas en vez de esperar a tropezarme.
+- prima-signal-scan: dejó de mantener su propia lista y ahora referencia los
+  diccionarios de prima-committee. Antes devolvía NO_SIGNAL en cuentas CON
+  señal (falso negativo silencioso, el peor error posible). Probado con
+  Excellerate: antes 3 rondas y criterio humano, ahora sale a la primera.
+- Regla nueva: fallback acotado al dominio antes de marcar un título como no
+  encontrado. Los títulos genéricos ("Plant Manager") se ahogan en web abierta.
+- prima-generate-leads: BUG REAL corregido — ruteaba cuentas Cat3 a
+  prima-scope-score, que es Cat4-only. Ahora las rutea por fuera. Además dejó
+  de duplicar el ranking de seniority.
+- prima-icp-check: la columna Entry point ya describe función, no títulos.
+- Regla nueva: desempate por seniority dentro del tier (VP > Director > Manager
+  > Buyer). Salió de PCX, donde "Buyer 1" quedó como contacto activo.
+- Roster poblado: 13 cuentas con banca (Form Energy, EnerVenue, Eos, Moment,
+  Redwood, Rosendin, Excellerate, Prolec, IEM, PCX, PTT, Cupertino).
+- Wiza (gratis, dentro de Deepline) resolvió 2 veces lo que WebSearch no pudo,
+  con costo $0. Debe ser siempre el primer proveedor.
+
+**HALLAZGOS:**
+- El 4B es MÁS difícil de sourcear que el 4C: los scale-ups tienen LinkedIn
+  actualizado, los fabricantes establecidos no. IEM dio cero ALTA en WebSearch.
+- 4B no tiene tier FALLBACK; cuando solo hay C-suite visible, queda en cero.
+  Decidir si 4B debe tener FALLBACK.
+- Excellerate: arrancó planta de $80.5M / 500K sq ft en Monroe LA (2026-08-01) y
+  tiene 3 vacantes de sourcing abiertas. Cuenta hirviendo, pero sin contacto
+  localizable. Requiere trabajo manual.
+
+**PENDIENTES:**
+- prima-scope-score: último eslabón sin alinear (no conoce Cat3, no referencia
+  match funcional). Sin bugs activos.
+- El roster no avisa cuando una corrida nueva encuentra a alguien mejor que un
+  active existente (caso IEM/Kris Syal).
+- PCX quedó con juniors en active, de antes de la regla de seniority.
+- Verificar que company_category y notion_scope lleguen a leads_final.csv.
+- Tier 0 sigue roto. vertical_owner de Cat3 con Manu. Llamada Zadrac.
+
 ## 2026-08-04 · cuenta: trabajo
 **Avancé — apertura de Category 3 y rediseño de targeting de contactos:**
 - Fase 1: prima-icp-check acepta Category 3 (Modular DC Systems Manufacturers,
