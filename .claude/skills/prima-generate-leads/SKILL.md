@@ -219,8 +219,8 @@ valid, expected outcome some runs, not a bug to hide.
 |---|---|---|
 | 1 | [`prima-icp-check`](../prima-icp-check/SKILL.md) | Classifies + excludes (existing customer, out-of-scope, ICP disqualify). A candidate excluded here stops right there — it goes toward the "excluded" bucket in the shortfall accounting, not toward N. |
 | 2 | [`prima-signal-scan`](../prima-signal-scan/SKILL.md) | Formally re-verifies the signal that got the candidate discovered in Step 0 (own URL, own date) — don't just carry the Step 0 finding forward uncited. |
-| 3 | [`prima-scope-score`](../prima-scope-score/SKILL.md) | Tier + `needs_manual_scope_confirmation`. A `disqualified_inhouse` result stops the candidate here (excluded bucket). A P1 with `needs_manual_scope_confirmation = TRUE` **keeps going** through Steps 4-5 — the anti-burn gate only blocks `prima-draft`, which this skill never reaches — but gets flagged in the final summary (see below). |
-| 4 | [`prima-committee`](../prima-committee/SKILL.md) | Sources 2-3 real ALTA/SECUNDARIA contacts per company, same as always. |
+| 3 | [`prima-scope-score`](../prima-scope-score/SKILL.md) | **Cat4-only — check `company_category` before calling it.** `prima-icp-check` itself documents that `prima-scope-score` doesn't support `Cat3` yet (its weighted table is Cat4-only). So: **`company_category = Cat4`** → run this step normally — tier + `needs_manual_scope_confirmation`; a `disqualified_inhouse` result stops the candidate here (excluded bucket); a P1 with `needs_manual_scope_confirmation = TRUE` **keeps going** through Steps 4-5 (only `prima-draft`, never reached by this skill, is blocked by that flag) but gets flagged in the final summary (see below). **`company_category = Cat3`** → **skip this step entirely**, same as `prima-icp-check` already recommends — go straight from Step 2 to Step 4, carrying `notion_scope` (the Cat3 "Fabrication Outsourcing Scope" text `prima-icp-check` already read from Notion) forward as-is instead of a computed `outsourcing_score`/`scope_tier`. There's no in-house override to check and no anti-burn flag for these rows — `needs_manual_scope_confirmation` stays blank, same convention `prima-scope-score` itself uses for a status it never computed. |
+| 4 | [`prima-committee`](../prima-committee/SKILL.md) | Sources 2-3 real contacts per company — ALTA/SECUNDARIA/FALLBACK for `Cat4` (`4B`/`4C`), or Principal/Secundario for `Cat3`, per that skill's own dictionary. |
 | 5 | [`prima-email-waterfall`](../prima-email-waterfall/SKILL.md) | See "Contact selection" below for which contact this orchestrator actually sends through this step. |
 
 **Known deviation, deliberate:** `prima-committee`'s Tier 2 and `prima-email-waterfall`'s provider
@@ -239,14 +239,31 @@ This doesn't change `prima-committee`/`prima-email-waterfall`'s own files — re
 still a separate, standing to-do — it just means this orchestrator doesn't blindly follow a provider
 list nobody actually validated.
 
+**Known limitation, not yet fixed:** `contact.function.any.include: ["purchasing"]` is narrower than
+`prima-committee`'s own ALTA/PRINCIPAL function-match rule, which counts a much wider function
+surface — sourcing, supply chain, commodity management, materials management, not just literal
+"purchasing" (see committee's "Title matching: function, not exact string" section, and its worked
+examples like "Head of Global Sourcing" or "Commodity Manager," neither of which is guaranteed to
+carry AI Ark's `purchasing` function tag). This means Tier 0/cascade candidates run through this
+orchestrator's shortcut can silently miss a real, valid ALTA contact that committee's own broader
+rule would have caught — the gap is in this filter being narrower than the rule it's standing in
+for, not in committee's rule itself. Documented here as a known gap rather than silently accepted;
+widening the filter (or falling back to committee's own sourcing process when this narrower call
+comes up empty) is still an open to-do, not yet implemented.
+
 ## Contact selection — one contact per company reaches the deliverable
 
-`prima-committee` may surface 2-3 real names per company; only **one** — the highest-ranked ALTA
-(sourcing/purchasing) title — goes through `prima-email-waterfall` and into `leads_final.csv`.
-Ranking is seniority within the ALTA tier (Director/Manager/Category Manager/Strategic Sourcing
-outranks Buyer/Associate/Analyst-level titles). If the top-ranked contact doesn't produce a
-`VERIFIED` email, try the next-ranked ALTA contact at the **same company** (cap: 2-3 attempts per
-company, same as the contact cap already in `prima-committee`) before settling for its best
+`prima-committee` may surface 2-3 real names per company; only **one** goes through
+`prima-email-waterfall` and into `leads_final.csv`. Ranking is whatever `prima-committee` itself
+already assigned via `priority_tier` — never re-ranked here by title string. Take the top-ranked
+`active` contact off `output/account_roster.csv` for the company: the highest `priority_tier`
+(`ALTA` before `SECUNDARIA` before `FALLBACK` for `Cat4`; `PRINCIPAL` before `SECUNDARIO` for `Cat3`),
+using committee's own function-match rule to decide which real-world title landed in which tier —
+see [`prima-committee`'s "Title matching: function, not exact string"](../prima-committee/SKILL.md#title-matching-function-not-exact-string).
+Don't maintain a second, title-string-based seniority list here; if committee's tiering ever needs
+refining, that's committee's file to change, not this one's. If the top-ranked contact doesn't
+produce a `VERIFIED` email, try the next-ranked contact at the **same company** (cap: 2-3 attempts
+per company, same as the contact cap already in `prima-committee`) before settling for its best
 available result (`FOUND_UNVERIFIED` or `linkedin_url`-only).
 
 The other 1-2 contacts `prima-committee` found are never discarded — they're written to
