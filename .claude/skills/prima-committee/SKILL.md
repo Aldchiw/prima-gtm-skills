@@ -142,6 +142,43 @@ This distinction is what `output/account_roster.csv` (see "Contact roster" below
 non-response can be promoted from the bench instead of re-sourcing the account from scratch, or
 giving up on it too early.
 
+### Seniority tie-break within a tier (added 2026-08-06)
+
+Tiers rank by function, not by level — but function-matching alone leaves ties inside a tier
+unresolved, and "top 2 by tier order" isn't a full ordering until those ties are broken too.
+
+**Learning (PCX Corporation run, 2026-08-05):** sourcing surfaced two real ALTA titles at PCX —
+"Buyer" and "Buyer 1" — and both landed in the `active` contact set as the top 2 ALTA names, ahead
+of a real "Plant Manager" (SECUNDARIA) sourced at the same account. That's the tier order working
+correctly (ALTA outranks SECUNDARIA, full stop — see below). But it exposed a gap *within* ALTA
+itself: "Buyer 1" is an entry-level title, and nothing in the ranking logic distinguished it from a
+senior/director-level ALTA title when both exist for the same account. A Buyer 1 doesn't decide
+fabrication sourcing the way a Director of Sourcing or a Supply Chain VP does — writing to the
+junior title first because it happened to rank alongside the senior one isn't the intent of ALTA
+being "who to contact first," it's an artifact of tier order having no tiebreaker.
+
+**Rule: within the same tier, rank by seniority, descending:**
+
+```
+VP / Head of  >  Director  >  Senior Manager  >  Manager  >  Specialist / Coordinator / Analyst  >
+Buyer / Associate / Junior (e.g. "Buyer 1", "Analyst I")
+```
+
+Apply this only to break ties **within** one tier (ALTA vs. ALTA, SECUNDARIA vs. SECUNDARIA,
+Principal vs. Principal, and so on) — it never operates across tiers. **Tier order still wins
+outright over seniority:** a junior ALTA contact still outranks a senior SECUNDARIA contact for the
+`active` contact set — an entry-level "Buyer" still beats a "VP of Operations" when the account's
+top 2 are being picked, because ALTA is the function Prima actually needs to reach. Seniority only
+decides who wins *inside* a tier that already has more than one real candidate.
+
+A junior/entry-level title (Buyer, Associate, Analyst, Coordinator, or a numbered variant like
+"Buyer 1") can still be sourced and written to `output/account_roster.csv` as `bench` — real names
+are always worth keeping on the bench regardless of level. What changes is the `active` slot: a
+junior title should not occupy an `active` slot in a tier where a more senior real candidate was
+also found. If the only verifiable name(s) found in a tier are junior/entry-level, they can and
+should still be `active` — a real junior contact beats no contact at all; this rule breaks ties, it
+never disqualifies a title from being contactable.
+
 ### `4B`
 
 | Tier | Title | Evidence |
