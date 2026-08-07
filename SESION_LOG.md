@@ -1,4 +1,43 @@
 ## 2026-08-05 · cuenta: trabajo
+**Avancé — Fase 1 y Fase 2 del ROADMAP: motor pasa de 2 a 4 categorías del ICP:**
+- Creé ROADMAP.md en la raíz: análisis de estado por capa (vigilar/entender/
+  decidir/ejecutar/aprender) y secuencia de 7 fases ordenada por dependencias.
+- FASE 1 — prima-scope-score alineado: gate Cat4-only y la señal de sourcing
+  ahora referencia el match funcional de committee. Con esto quedan las 5 skills
+  bajo el mismo principio: committee es la única dueña del diccionario de
+  títulos, las demás lo referencian.
+- FASE 2 — abiertas Category 1 (AI Infrastructure Operators) y Category 2
+  (Crypto Miners → AI). 16 cuentas nuevas, 11 de ellas P1: CoreWeave, IREN,
+  Fluidstack, Lambda, Nebius, Riot, Core Scientific, CleanSpark, TeraWulf,
+  Bitdeer y más.
+- HALLAZGO CRÍTICO: la polaridad del scope se INVIERTE entre categorías. En Cat4
+  scope-score penaliza a quien fabrica in-house (busca quien subcontrate). En
+  Cat1/Cat2, operar y comprar todo directamente es exactamente lo que califica
+  ("Full = builds AND equips own campus"). Aplicar la lógica de Cat4 ahí habría
+  descalificado a las mejores cuentas. Por eso el gate de scope-score se invirtió
+  de lista de exclusión a lista de inclusión: solo Cat4 pasa.
+- Diccionario Cat1/Cat2 en prima-committee: un solo tier PRINCIPAL (VP
+  Infrastructure, Head of Deployment, Director of Supply Chain, VP Operations,
+  Head of HPC, Procurement Director + variantes funcionales), COO en FALLBACK
+  por la regla de C-suite. No hay segundo tier funcional a propósito: para un
+  operador que compra equipo directo, el VP de Infraestructura ES el comprador.
+- CRUSOE ES CLIENTE EXISTENTE (confirmado por Aldahir). Excluida en icp-check
+  junto con Antora Energy, con lista nombrada de clientes existentes mantenida
+  solo por confirmación humana. Aplica a toda entidad Crusoe (Cloud / Energy
+  Systems), no solo al nombre del Notion.
+
+**PENDIENTES:**
+- Probar el diccionario Cat1/Cat2 en dos extremos: CoreWeave (pública, mucha
+  huella) y Fluidstack (privada, poca) — ver si el FALLBACK al COO se dispara.
+- vertical_owner de Cat1/Cat2 y Cat3: todas incluyen cooling skids (vertical de
+  Manu). Todas en UNKNOWN hasta acordarlo con él.
+- FASE 3 del roadmap: arreglar Tier 0. FASE 4: enumerar el TAM completo.
+- Avisarle a Zadrac que Crusoe es cliente — aparece como prospecto en sus
+  correos de prueba y su bot no puede detectarlo solo.
+- ¿4B debe tener tier FALLBACK? Hoy queda en cero cuando solo hay C-suite.
+- PCX quedó con juniors en active, de antes de la regla de seniority.
+
+## 2026-08-05 · cuenta: trabajo
 **Avancé — alineación de skills y poblado del roster:**
 - Encontré un patrón de bug repetido en 4 skills: diccionarios de títulos
   duplicados, match por string exacto, y desconocimiento de Cat3. Lo perseguí a
