@@ -1,6 +1,6 @@
 ---
 name: prima-committee
-description: Identifies the buying committee — real, named contacts per account — for accounts already classified `4B`/`4C` (via `sub_segment`) or `Cat3` (via `company_category`) by `prima-icp-check` (`4A`/`4D` sub-segments not supported yet). Sources widely (3-4 verifiable names per account — the "banca") but writes narrowly: the outreach guardrail still caps actual contact at 2 people per account regardless of segment, with the rest held on the bench for later promotion if a contact doesn't respond. Cat3 also enforces a stricter manufacturing-division-only rule and, since its targeting logic is an unvalidated v1 hypothesis (Aldahir, 2026-08-03), sourcing runs on every Cat3 priority but `P1` contacts always come back as `NEEDS_HUMAN_REVIEW` (never auto-cleared `CONTACT_FOUND`) until the hypothesis is validated on `P2` data. Writes/updates an accumulative `output/account_roster.csv` (never regenerated) tracking every sourced name — skill-owned columns vs. operator-owned lifecycle columns (`contact_status`, touches, outcome) — and only hands a contact to `prima-email-waterfall` when it's both `contact_status = active` AND `status = CONTACT_FOUND` — bench contacts and unconfirmed `NEEDS_HUMAN_REVIEW` contacts (e.g. any Cat3 `P1` row, active or not) stay `email_status = NOT_ATTEMPTED` so Deepline credits are never spent on an unpromoted or unconfirmed name. Sources names via free WebSearch (company site + public LinkedIn snippets) first; only falls back to paid Deepline providers (ContactOut, Lusha, RocketReach, etc.) after stopping to show how many accounts need paid lookup and the estimated cost, and getting explicit approval — same gate as the Clay-vs-Terminal pilot. Never fabricates a name — if no verifiable contact is found for a role, outputs the target role/title only. Use this after `prima-icp-check` (and ideally after `prima-signal-scan` has confirmed the target-title door exists) and before `prima-email-waterfall` needs a named person to find an email for.
+description: Identifies the buying committee — real, named contacts per account — for accounts already classified `4B`/`4C` (via `sub_segment`) or `Cat1`/`Cat2`/`Cat3` (via `company_category`) by `prima-icp-check` (`4A`/`4D` sub-segments not supported yet). `Cat1` (AI Infrastructure Operators) and `Cat2` (Crypto Miners Pivoting to AI) share a single target-title dictionary — Notion documents the same direct-equipment-buyer profile for both — with one PRINCIPAL tier (VP Infrastructure, Head of Deployment, Director of Supply Chain, VP Operations, Head of HPC, Procurement Director) and a COO FALLBACK gated by the same founder/C-suite-always-FALLBACK rule as `4C`. Sources widely (3-4 verifiable names per account — the "banca") but writes narrowly: the outreach guardrail still caps actual contact at 2 people per account regardless of segment, with the rest held on the bench for later promotion if a contact doesn't respond. Cat3 also enforces a stricter manufacturing-division-only rule and, since its targeting logic is an unvalidated v1 hypothesis (Aldahir, 2026-08-03), sourcing runs on every Cat3 priority but `P1` contacts always come back as `NEEDS_HUMAN_REVIEW` (never auto-cleared `CONTACT_FOUND`) until the hypothesis is validated on `P2` data. Writes/updates an accumulative `output/account_roster.csv` (never regenerated) tracking every sourced name — skill-owned columns vs. operator-owned lifecycle columns (`contact_status`, touches, outcome) — and only hands a contact to `prima-email-waterfall` when it's both `contact_status = active` AND `status = CONTACT_FOUND` — bench contacts and unconfirmed `NEEDS_HUMAN_REVIEW` contacts (e.g. any Cat3 `P1` row, active or not) stay `email_status = NOT_ATTEMPTED` so Deepline credits are never spent on an unpromoted or unconfirmed name. Sources names via free WebSearch (company site + public LinkedIn snippets) first; only falls back to paid Deepline providers (ContactOut, Lusha, RocketReach, etc.) after stopping to show how many accounts need paid lookup and the estimated cost, and getting explicit approval — same gate as the Clay-vs-Terminal pilot. Never fabricates a name — if no verifiable contact is found for a role, outputs the target role/title only. Use this after `prima-icp-check` (and ideally after `prima-signal-scan` has confirmed the target-title door exists) and before `prima-email-waterfall` needs a named person to find an email for.
 ---
 
 # prima-committee
@@ -9,10 +9,13 @@ Given an account already classified by `prima-icp-check` (`sub_segment`, `priori
 `vertical_owner`, `excluded`), identify the 2-3 real people who make up its buying committee and
 hand named contacts to `prima-email-waterfall`.
 
-## Scope — 4B, 4C, and Cat3 (P2 only), this sprint
+## Scope — 4B, 4C, Cat1/Cat2, and Cat3 (P2 only), this sprint
 
 An account gets worked if `excluded = no` AND either:
 - `sub_segment` is `4B` or `4C` (the 4A–4D scheme, from `prima-icp-check`), or
+- `company_category = Cat1` or `Cat2` (from `prima-icp-check` — both carry `sub_segment = N/A-Cat1`/
+  `N/A-Cat2` and share a single target-title dictionary, since Notion documents the same buying
+  profile for both; see "`Cat1`/`Cat2`" below), or
 - `company_category = Cat3` (from `prima-icp-check` — Cat3 accounts carry `sub_segment = N/A-Cat3`
   and don't use the 4A–4D scheme at all; see "Cat3 (`company_category = Cat3`)" below for its own
   target-title dictionary, division rule, and exclusions).
@@ -60,10 +63,10 @@ uses a title not listed here so the dictionary grows over time.
 
 ### Title matching: function, not exact string
 
-Every title listed in the `4B`, `4C`, and `Cat3` dictionaries below (and their Cat3 equivalents,
-Principal/Secundario) is an **example of a function**, not a literal string a real title has to
-match word-for-word. Match by function; accept a real contact whose title clearly performs that
-function even when the exact wording differs.
+Every title listed in the `4B`, `4C`, `Cat3`, and `Cat1`/`Cat2` dictionaries below (and their Cat3
+equivalents, Principal/Secundario, and Cat1/Cat2's PRINCIPAL/FALLBACK) is an **example of a
+function**, not a literal string a real title has to match word-for-word. Match by function; accept
+a real contact whose title clearly performs that function even when the exact wording differs.
 
 - **Procurement / supply-chain / sourcing tier** (`ALTA` for `4B`/`4C`, `Principal` for `Cat3`): a
   title counts if that person buys or manages the sourcing of materials/fabrication for the
@@ -74,6 +77,12 @@ function even when the exact wording differs.
 - **Manufacturing / operations tier** (`SECUNDARIA` for `4B`/`4C`, `Secundario` for `Cat3`): a title
   counts if that person runs production, plant, or prefabrication — again by function, not by
   matching one of the example titles word-for-word.
+- **Infrastructure / equipment-buyer tier** (`PRINCIPAL` for `Cat1`/`Cat2`): a title counts if that
+  person operates or directly procures the account's physical infrastructure/equipment — cooling,
+  power, enclosures, GPU deployment — regardless of exact wording. Notion's own Best Entry Points
+  list for these categories already merges what `4B`/`4C` split into two tiers (procurement vs.
+  operations) into one: for a direct equipment operator, the infrastructure/operations lead **is**
+  the procurement decision-maker. Don't try to re-split `PRINCIPAL` into two tiers here.
 - **`contact_title` always records the real title found** — never the dictionary's example string.
   **`committee_role` records the functional bucket it was matched to** (e.g. "Procurement / Supply
   Chain," "Manufacturing / Operations"), not the specific dictionary example that prompted the
@@ -83,14 +92,17 @@ function even when the exact wording differs.
   contracting company's corporate procurement/leadership (`Cat3`), and construction executives are
   still always rejected, no matter how closely their title's function resembles a target tier.
 - **Founder/C-suite titles always classify as `FALLBACK`, never ALTA/SECUNDARIA/Principal/
-  Secundario — this rule outranks function-matching, it doesn't compete with it.** Founder,
-  Co-founder, CEO, COO, CTO, CFO, President, or any "Chief ___ Officer" is `FALLBACK` (`4C` only)
-  regardless of how closely their actual function resembles a higher tier. A COO doesn't clear
-  SECUNDARIA by "running operations"; a CPO doesn't clear ALTA by "running procurement." The cutoff
-  is VP and below: `VP Operations`, `VP Manufacturing`, `VP Supply Chain` are normal tier titles and
-  function-match as usual; Founder/C-suite titles never are, no matter the function. Function-
-  matching only expands what counts *within* a tier (same as the exclusions point above) — it never
-  promotes someone *out of* `FALLBACK` into a higher tier.
+  Secundario/`PRINCIPAL` — this rule outranks function-matching, it doesn't compete with it.**
+  Founder, Co-founder, CEO, COO, CTO, CFO, President, or any "Chief ___ Officer" is `FALLBACK`
+  (`4C` and `Cat1`/`Cat2` — the only segments with a `FALLBACK` tier) regardless of how closely
+  their actual function resembles a higher tier. A COO doesn't clear SECUNDARIA (or Cat1/Cat2's
+  `PRINCIPAL`) by "running operations"; a CPO doesn't clear ALTA by "running procurement." The
+  cutoff is VP and below: `VP Operations`, `VP Manufacturing`, `VP Supply Chain` are normal tier
+  titles and function-match as usual (this is exactly why `VP Operations` sits in Cat1/Cat2's
+  `PRINCIPAL` tier below, while `COO` — a C-suite title — sits in `FALLBACK` even though Notion
+  lists it as a Best Entry Point); Founder/C-suite titles never are, no matter the function.
+  Function-matching only expands what counts *within* a tier (same as the exclusions point above)
+  — it never promotes someone *out of* `FALLBACK` into a higher tier.
 
 **Why (decision: Aldahir, 2026-08-04):** the operator asked explicitly to target procurement roles
 and use Founder/CEO only when genuinely nobody else exists. Function-matching, without this
@@ -127,11 +139,11 @@ are grouped into two priority tiers per sub-segment:
 Two different caps, on purpose, and easy to conflate:
 
 - **Banca ("who we know")** — sourcing now aims for **3-4 verifiable names per account**, for every
-  segment (`4B`, `4C`, and `Cat3` alike — this replaces the old caps of 3 for `4B`/`4C` and 2 for
-  `Cat3`). Keep working down the tiers in priority order (ALTA→SECUNDARIA→FALLBACK for `4B`/`4C`;
-  Principal→Secundario for Cat3) instead of stopping the moment enough names exist to write to.
-  Every extra verifiable name found goes on the bench instead of being discarded — that's the whole
-  point of widening sourcing.
+  segment (`4B`, `4C`, `Cat3`, and `Cat1`/`Cat2` alike — this replaces the old caps of 3 for
+  `4B`/`4C` and 2 for `Cat3`). Keep working down the tiers in priority order (ALTA→SECUNDARIA→
+  FALLBACK for `4B`/`4C`; Principal→Secundario for Cat3; PRINCIPAL→FALLBACK for `Cat1`/`Cat2`)
+  instead of stopping the moment enough names exist to write to. Every extra verifiable name found
+  goes on the bench instead of being discarded — that's the whole point of widening sourcing.
 - **Contacto ("who we write to")** — the outreach guardrail is unchanged and applies regardless of
   segment: **maximum 2 people per account** get an actual message. The top 2 verifiable names by
   tier order become the contact set; everyone else sourced stays on the bench, ranked, ready to
@@ -165,7 +177,8 @@ Buyer / Associate / Junior (e.g. "Buyer 1", "Analyst I")
 ```
 
 Apply this only to break ties **within** one tier (ALTA vs. ALTA, SECUNDARIA vs. SECUNDARIA,
-Principal vs. Principal, and so on) — it never operates across tiers. **Tier order still wins
+Principal vs. Principal, PRINCIPAL vs. PRINCIPAL for `Cat1`/`Cat2`, and so on) — it never operates
+across tiers. **Tier order still wins
 outright over seniority:** a junior ALTA contact still outranks a senior SECUNDARIA contact for the
 `active` contact set — an entry-level "Buyer" still beats a "VP of Operations" when the account's
 top 2 are being picked, because ALTA is the function Prima actually needs to reach. Seniority only
@@ -241,6 +254,49 @@ written to — don't let a lower-tier name bump a higher-tier one out of those 2
 SECUNDARIA bumping ALTA or FALLBACK bumping either. Everyone else verifiable, up to the 3-4 sourced,
 is bench — keep them ranked in `output/account_roster.csv`, don't discard them just because they
 didn't make the contact set.
+
+### `Cat1`/`Cat2` (`company_category = Cat1` or `Cat2`) — shared dictionary, capped at 2 contacts
+
+Category 1 (AI Infrastructure Operators) and Category 2 (Crypto Miners Pivoting to AI) share **one
+target-title dictionary**, not two — Notion documents Cat2 as having "the same buying profile as
+Category 1: they buy equipment directly," so there's no basis for splitting titles by category the
+way `4B`/`4C` are split by archetype. Titles below are Notion's own "Best Entry Points" for these
+categories, verbatim.
+
+| Tier | Title | Source |
+|---|---|---|
+| PRINCIPAL | VP Infrastructure | Notion — Best Entry Points, Cat1 |
+| PRINCIPAL | Head of Deployment | Notion — Best Entry Points, Cat1 |
+| PRINCIPAL | Director of Supply Chain | Notion — Best Entry Points, Cat1 & Cat2 |
+| PRINCIPAL | VP Operations | Notion — Best Entry Points, Cat2 |
+| PRINCIPAL | Head of HPC | Notion — Best Entry Points, Cat2 |
+| PRINCIPAL | Procurement Director | Notion — Best Entry Points, Cat2 |
+| PRINCIPAL | Director of Data Center Operations | Variante funcional agregada por el operador (2026-08-05), no textual del Notion |
+| PRINCIPAL | Head of Infrastructure | Variante funcional agregada por el operador (2026-08-05), no textual del Notion |
+| PRINCIPAL | VP Data Center Delivery | Variante funcional agregada por el operador (2026-08-05), no textual del Notion |
+| PRINCIPAL | Director of Infrastructure Procurement | Variante funcional agregada por el operador (2026-08-05), no textual del Notion |
+| FALLBACK | COO | Notion lists COO as a Cat1 Best Entry Point, but the founder/C-suite rule (2026-08-04, see "Title matching" above) overrides Notion here — C-suite is always `FALLBACK`, never `PRINCIPAL`, regardless of how operational the title reads |
+
+Unlike `4B`/`4C`, there's no second functional tier here — Notion's own list for these categories
+doesn't split "procurement" from "operations" the way the fabrication-buyer categories do; both
+land in the same `PRINCIPAL` bucket because for a direct equipment operator, the VP of
+Infrastructure *is* the procurement decision-maker. `FALLBACK` exists for the same reason it does
+at `4C`: a real, reachable option (COO) for scale-ups where nothing else is found — genuinely
+plausible here, since several Cat1 accounts are private and still small enough that a COO
+plausibly still touches infrastructure buying directly (e.g. Fluidstack, Lambda Labs, Nscale).
+
+The first verifiable name found under `PRINCIPAL` becomes contact #1; `FALLBACK` only fills a slot
+when `PRINCIPAL` has been genuinely exhausted with nothing verifiable — never as contact #1 over a
+real `PRINCIPAL` name, same precedence rule as `4C`'s `FALLBACK`.
+
+Per "Banca vs. contacto" above: source up to 3-4 verifiable names, ranked `PRINCIPAL` before
+`FALLBACK`. Only the top 2 become the contact set; everyone else verifiable is bench. Apply the
+seniority tie-break within `PRINCIPAL` exactly as for `4B`/`4C`/`Cat3` when more than one real
+`PRINCIPAL` name surfaces for the same account.
+
+No division rule and no Cat3-style exclusions apply here — Cat1/Cat2 accounts are direct
+infrastructure operators, not a manufacturing division sitting inside a parent contractor, so
+there's no parent/division split to filter for.
 
 ### `Cat3` (`company_category = Cat3`) — not on the 4A–4D scheme, capped at 2 contacts
 
@@ -385,21 +441,25 @@ output when the evidence isn't there.
    (including the "Existing customer" reason — see that skill's Exclusions section) never reaches
    this skill in the first place; don't re-check customer status here, `prima-icp-check` already
    gates it upstream.
-2. Filter: keep `excluded = no` and either `sub_segment` in `{4B, 4C}` or `company_category = Cat3`.
-   Everything else gets a single skipped/unsupported row (see Output) with no sourcing attempted.
+2. Filter: keep `excluded = no` and either `sub_segment` in `{4B, 4C}` or `company_category` in
+   `{Cat1, Cat2, Cat3}`. Everything else gets a single skipped/unsupported row (see Output) with no
+   sourcing attempted.
 3. For a `4B`/`4C` account, work the sub-segment's PRIORIDAD ALTA titles first — try each ALTA title
    in the dictionary until one produces a verifiable name; that becomes contact #1. For a Cat3
    account (any priority — `P1` sources exactly like `P2`/`P3`, see "Cat3 hard gate" above), work
-   the Principal title first instead.
+   the Principal title first instead. For a `Cat1`/`Cat2` account, work the shared `PRINCIPAL` title
+   list first instead (same dictionary for both categories — see "`Cat1`/`Cat2`" above).
 4. Run Tier 1 (WebSearch) for each title attempted, in priority order (ALTA-then-SECUNDARIA for
-   4B/4C; Principal-then-Secundario for Cat3; `4C` only tries FALLBACK — Founder/CEO — after both
-   ALTA and SECUNDARIA have been exhausted with nothing verifiable). Per "Banca vs. contacto" above,
-   **don't stop at 2** — keep working down the tiers (and trying additional real candidates within a
-   tier, if more than one surfaces) until either 4 verifiable names are found for the account or
-   every tier/title has genuinely been exhausted. This is what builds the banca.
+   4B/4C; Principal-then-Secundario for Cat3; `PRINCIPAL`-then-`FALLBACK` for `Cat1`/`Cat2`; `4C`
+   only tries FALLBACK — Founder/CEO — after both ALTA and SECUNDARIA have been exhausted with
+   nothing verifiable). Per "Banca vs. contacto" above, **don't stop at 2** — keep working down the
+   tiers (and trying additional real candidates within a tier, if more than one surfaces) until
+   either 4 verifiable names are found for the account or every tier/title has genuinely been
+   exhausted. This is what builds the banca.
 5. For `4B`/`4C`: rank every verifiable name found by tier (ALTA above SECUNDARIA above FALLBACK).
-   For Cat3: rank by tier (Principal above Secundario). Don't let a lower-tier name outrank a
-   higher-tier one regardless of the order they were actually found in.
+   For Cat3: rank by tier (Principal above Secundario). For `Cat1`/`Cat2`: rank by tier (`PRINCIPAL`
+   above `FALLBACK`). Don't let a lower-tier name outrank a higher-tier one regardless of the order
+   they were actually found in.
 6. For every Cat3 candidate found (in either tier), apply the division rule before accepting it: if
    the evidence ties the person to the parent contracting company's corporate side rather than the
    manufacturing/prefab division itself, don't accept it as `CONTACT_FOUND` — output it as
@@ -441,10 +501,10 @@ output when the evidence isn't there.
 |---|---|
 | `domain` | the account domain |
 | `account_name` | as given by `prima-icp-check` (disambiguates multi-entity accounts) |
-| `company_category` | `Cat3` \| `Cat4` \| `UNKNOWN` — as given by `prima-icp-check` |
-| `sub_segment` | `4B` \| `4C` \| `N/A-Cat3` |
-| `committee_role` | the **functional bucket** the contact was matched to (e.g. "Procurement / Supply Chain", "Manufacturing / Operations") — per "Title matching: function, not exact string" above, this is the bucket, not the specific dictionary example that prompted the search |
-| `priority_tier` | `ALTA` \| `SECUNDARIA` \| `FALLBACK` (`FALLBACK` is `4C`-only) for `4B`/`4C` — `PRINCIPAL` \| `SECUNDARIO` for `Cat3` — which tier of the relevant dictionary this contact's title came from |
+| `company_category` | `Cat1` \| `Cat2` \| `Cat3` \| `Cat4` \| `UNKNOWN` — as given by `prima-icp-check` |
+| `sub_segment` | `4B` \| `4C` \| `N/A-Cat1` \| `N/A-Cat2` \| `N/A-Cat3` |
+| `committee_role` | the **functional bucket** the contact was matched to (e.g. "Procurement / Supply Chain", "Manufacturing / Operations", "Infrastructure / Equipment Buyer" for `Cat1`/`Cat2`) — per "Title matching: function, not exact string" above, this is the bucket, not the specific dictionary example that prompted the search |
+| `priority_tier` | `ALTA` \| `SECUNDARIA` \| `FALLBACK` for `4B`/`4C` (`FALLBACK` is `4C`-only within that pair) — `PRINCIPAL` \| `SECUNDARIO` for `Cat3` — `PRINCIPAL` \| `FALLBACK` for `Cat1`/`Cat2` — which tier of the relevant dictionary this contact's title came from |
 | `contact_status` | `active` \| `bench` — per "Banca vs. contacto" above: the top 2 verifiable names (by `priority_tier` rank) are `active`; anything beyond that, sourced but not written to, is `bench`. This run-level value only ever takes these two values — the operator-managed lifecycle (`exhausted`/`responded`/`do_not_contact`) lives only in `output/account_roster.csv`, never here |
 | `contact_name` | blank if not found |
 | `contact_title` | the real title found, verbatim — per "Title matching: function, not exact string" above, this is deliberately expected to read differently from any dictionary example |
@@ -454,9 +514,9 @@ output when the evidence isn't there.
 | `status` | `CONTACT_FOUND` \| `ROLE_NOT_FOUND` \| `NEEDS_HUMAN_REVIEW` \| `SUB_SEGMENT_NOT_SUPPORTED` \| `SKIPPED_EXCLUDED` \| `SKIPPED_UNKNOWN` |
 | `flag_reason` | free text — required when `status = NEEDS_HUMAN_REVIEW`. Explains either (a) a Cat3 division-vs-parent-corporate risk found during sourcing, or (b) that this is a Cat3 `P1` account under the unvalidated-hypothesis gate and needs operator confirmation before use (see "Cat3 hard gate"). Blank otherwise. |
 
-One row per (account, committee_role) — up to 3-4 rows per qualifying account (`4B`/`4C` or `Cat3`
-alike): 2 `active` rows (the contact set) plus however many verifiable `bench` names were found on
-top of that. Cat3 `P1` active rows always carry `status = NEEDS_HUMAN_REVIEW` instead of
+One row per (account, committee_role) — up to 3-4 rows per qualifying account (`4B`/`4C`, `Cat3`, or
+`Cat1`/`Cat2` alike): 2 `active` rows (the contact set) plus however many verifiable `bench` names
+were found on top of that. Cat3 `P1` active rows always carry `status = NEEDS_HUMAN_REVIEW` instead of
 `CONTACT_FOUND`, per the Cat3 hard gate — they're still real, sourced rows, just not auto-cleared.
 Accounts that are skipped or unsupported get exactly one row with `status` set accordingly and the
 rest of the row-specific columns blank.
