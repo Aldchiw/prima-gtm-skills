@@ -379,6 +379,24 @@ This is the intended way a non-technical vendor experiences this skill — the o
 is about what does **not** get shown, not new logic. This doesn't change Steps 0-5 or the merge rule
 above — it changes what surfaces to the screen while they run.
 
+### Exception: the cost-approval pause (added 2026-08-06)
+
+**Silence in this section means silence in the technical noise, not silence on decisions the
+operator has to make.** Those are different things, and the rule below only ever covered the
+first one: internal step-by-step narration, provider names, raw CSV dumps, raw verification
+strings, per-account skip codes — all *detail*, none of it something the operator needs to act on in
+the moment. The cost-approval pause (see "Rules that apply automatically" above — no standing
+approval, ever, before a paid provider call) is not detail. It's the one point in a run where the
+orchestrator genuinely cannot proceed without the operator deciding something, so it always
+interrupts silent mode — it is the **only** interruption silent mode allows, and it is never
+suppressed by the "run every internal step silently" rule below.
+
+When the pause fires, show only what's needed to decide, nothing else: how many lookups it needs to
+run, which provider, and the estimated cost. No raw provider payloads, no per-account breakdown, no
+technical framing around it — the same restraint the rest of this section applies to everything
+else, just not applied to the decision itself. Once the operator approves or declines, execution
+returns to silent mode exactly as described below for the rest of the run.
+
 **Run every internal step silently.** While discovery and Steps 1-5 execute, do not narrate or print:
 - Which company is currently being processed, or the running list of candidates evaluated.
 - Which Deepline provider was called for a given step (`ai_ark_people_search`, `hunter_email_finder`,
@@ -407,7 +425,9 @@ it.
 
 **The only real output is the final vendor-facing block**, defined in the next section, shown once,
 in full, isolated — nothing printed before it lingers on screen mixed in with it, and nothing prints
-after it.
+after it. The one exception is the cost-approval pause above, when a run actually reaches it — that's
+not a violation of this rule, it's the interruption "Exception: the cost-approval pause" explicitly
+carves out; everything else in this section still holds.
 
 **Known technical noise — silence it at the call site, every time.** Every `deepline` CLI invocation
 on Windows currently prints a startup block to **stderr** — "Deepline skills changed; syncing agent
