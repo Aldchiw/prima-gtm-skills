@@ -1,6 +1,6 @@
 ---
 name: prima-scope-score
-description: Given an account already classified by `prima-icp-check` and scanned by `prima-signal-scan`, estimates the probability that it actually subcontracts structural fabrication (steel/enclosures) rather than manufacturing 100% in-house — Notion's "Equipment Procurement Scope" criterion, which almost never has hard public data behind it. Outputs a 0-100 score + tier (`tier_1`/`tier_2`/`tier_3`), always with a traceable rationale citing the specific signals behind it — never a bare number. Two hard overrides dominate the weighted score: explicit "100% in-house/vertically integrated" evidence forces `disqualified_inhouse` regardless of everything else; a confirmed Import Genius import match forces `confirmed_outsources`. Also sets `needs_manual_scope_confirmation` for P1 accounts — a P1 never reaches `prima-draft` on tier alone. Use this after `prima-signal-scan` (needs its capacity-expansion freshness) and before `prima-committee`.
+description: Given an account already classified by `prima-icp-check` and scanned by `prima-signal-scan`, estimates the probability that it actually subcontracts structural fabrication (steel/enclosures) rather than manufacturing 100% in-house — Notion's "Equipment Procurement Scope" criterion, which almost never has hard public data behind it. Outputs a 0-100 score + tier (`tier_1`/`tier_2`/`tier_3`), always with a traceable rationale citing the specific signals behind it — never a bare number. Two hard overrides dominate the weighted score: explicit "100% in-house/vertically integrated" evidence forces `disqualified_inhouse` regardless of everything else; a confirmed Import Genius import match forces `confirmed_outsources`. Also sets `needs_manual_scope_confirmation` for P1 accounts — a P1 never reaches `prima-draft` on tier alone. Cat4-only: `company_category = Cat3` accounts don't run through this scoring at all — they carry Notion's own curated `notion_scope` (`Fabrication Outsourcing Scope`) instead, since that's already human-confirmed, and come back unscored/`N/A-Cat3`. Use this after `prima-signal-scan` (needs its capacity-expansion freshness) and before `prima-committee`.
 
 ---
 
@@ -24,14 +24,36 @@ question of what source can actually confirm this) is still unresolved.
 
 ## Input
 
-- From `prima-icp-check`: `sub_segment`, `priority`, and the account's Category-4 product line
-  (Cooling / Power & Electrical Distribution / Energy Storage / Test & Commissioning).
+- From `prima-icp-check`: `company_category` (`Cat3`/`Cat4`/`UNKNOWN`) — check this first, see
+  "Step 0" below — plus, for `Cat4` rows, `sub_segment`, `priority`, and the account's Category-4
+  product line (Cooling / Power & Electrical Distribution / Energy Storage / Test & Commissioning).
 - From `prima-signal-scan`: the account's `capacity_expansion` row (`status`, `freshness`), if any.
   Read this, don't recompute it — freshness bucketing is that skill's job, not this one's.
 - Whatever else is on hand: job postings/named people evidence of a sourcing/procurement team
-  (typically surfaced during the same research pass), and Import Genius data if the user has
-  provided it this session (same manual-input-only rule as `prima-signal-scan`'s customs source —
-  never searched or fabricated).
+  (typically surfaced during the same research pass — see the "Visible sourcing/procurement team
+  evidence" row in Step 2 for the matching rule), and Import Genius data if the user has provided
+  it this session (same manual-input-only rule as `prima-signal-scan`'s customs source — never
+  searched or fabricated).
+
+## Step 0 — Cat4 gate: check `company_category` first
+
+This skill is **Cat4-only**. Its entire weighted score is built on the Category-4 product-type
+table in Step 2 — Power & Electrical Distribution / Energy Storage product categories — which has
+no equivalent for `Cat3` (Modular DC Systems Manufacturers). `Cat3` accounts already carry a
+human-confirmed answer to the same underlying question: Notion's own curated "Fabrication
+Outsourcing Scope" field, surfaced by `prima-icp-check` as `notion_scope`. Estimating a probability
+on top of a value a human already confirmed would be redundant at best and contradictory at worst.
+
+- **`company_category = Cat3`**: do not compute anything — no overrides, no weighted score, no
+  product-type lookup. Return the row as-is with `scope_tier = N/A-Cat3`, `outsourcing_score`
+  blank, `needs_manual_scope_confirmation` blank, and `score_rationale` pointing to the existing
+  `notion_scope` value (e.g. "Cat3 — not scored, see notion_scope: '<verbatim Notion text>'").
+- **`company_category = Cat4`**: proceed to Step 1 as normal.
+- **`company_category = UNKNOWN`**: `prima-icp-check` should have already marked this out of scope
+  before it reaches this skill — if one arrives anyway, treat it like `Cat3` above (return
+  unscored, `scope_tier = N/A-Cat3` doesn't fit here, so use `scope_tier` blank with
+  `score_rationale = "company_category UNKNOWN — not classified, cannot score"`) rather than
+  guessing a product-type fit.
 
 ## Step 1 — check the two hard overrides first
 
@@ -52,11 +74,22 @@ likely" read.
 |---|---|---|
 | **Product type** | 45 | `45` — product line is a category the industry commonly outsources structural fabrication for (see table below) · `20` — mixed/unclear · `0` — typically kept in-house (precision electronics, PCBAs, control panels, semiconductor-level components — same pattern Notion already uses to call Legrand/Watlow "Weak") |
 | **Capacity expansion / production pressure** | 35 | `35` — `capacity_expansion` signal is `fresh` (≤90 days) · `25` — `recent` (90 days–12 months) · `10` — `stale` (>12 months) but on record · `0` — no capacity/growth signal found |
-| **Visible sourcing/procurement team evidence** | 20 | `20` — a named person or an active job posting specifically for a sourcing/commodity/supply-chain role tied to external fabrication sourcing · `8` — generic/weak evidence (e.g. a real but unscoped "Buyer" posting) · `0` — nothing found |
+| **Visible sourcing/procurement team evidence** | 20 | `20` — a named person or an active job posting whose role performs the sourcing/commodity/supply-chain function tied to external fabrication sourcing · `8` — generic/weak evidence (e.g. a real but unscoped "Buyer" posting) · `0` — nothing found |
 
 Weights sum to 100. Product type carries the most weight because it's the most stable predictor (a
 company's manufacturing model rarely changes); capacity expansion is a timing/pressure signal;
 sourcing-team evidence is deliberately the weakest signal — it's easy to find and easy to over-read.
+
+**Match by function, not by literal string.** Apply `prima-committee`'s [**function-match
+rule**](../prima-committee/SKILL.md#title-matching-function-not-exact-string) here: a title or
+posting counts toward this signal if it performs the sourcing/commodity/supply-chain function, even
+when the exact wording isn't one of committee's listed examples ("Buyer II," "Category Manager,
+Indirect Procurement," "Commodity Manager," "Purchasing Director," "Supply Chain Lead," etc. all
+count). `prima-signal-scan` already hit this exact false negative once — a hardcoded, generic title
+list ("Sourcing Manager, Commodity Manager, Supply Chain Manager, Manufacturing Engineer") returned
+zero results against a real account whose actual open req was "Procurement Manager" — before it was
+fixed to defer to committee's dictionary and function-match rule instead of keeping its own copy.
+Don't repeat that mistake here: don't score this row against a fixed title list of its own.
 
 ### Product-type reference table (provisional, Power & Electrical Distribution / Energy Storage only)
 
@@ -102,10 +135,10 @@ for high-value accounts.
 
 | Column | Values |
 |---|---|
-| `outsourcing_score` | `0`–`100` |
-| `scope_tier` | `confirmed_outsources` \| `tier_1` \| `tier_2` \| `tier_3` \| `disqualified_inhouse` |
-| `score_rationale` | one line citing every contributing factor concretely — e.g. "Tier 2 (63%): fresh capacity expansion (+35, ≤90d) + mixed product type (+20) + weak sourcing evidence (+8, real but unscoped 'Buyer II' posting); no Import Genius signal; no hard in-house evidence." Never output a bare score with no rationale. |
-| `needs_manual_scope_confirmation` | `TRUE`/`FALSE`/blank (blank when `scope_tier = disqualified_inhouse` — already blocked for a different, terminal reason, this flag no longer applies) |
+| `outsourcing_score` | `0`–`100`, blank when `scope_tier = N/A-Cat3` (see Step 0 — not scored, not "scored zero") |
+| `scope_tier` | `confirmed_outsources` \| `tier_1` \| `tier_2` \| `tier_3` \| `disqualified_inhouse` \| `N/A-Cat3` (Step 0 gate — `Cat4`-only skill, `Cat3` rows aren't scored, see `notion_scope` instead) |
+| `score_rationale` | one line citing every contributing factor concretely — e.g. "Tier 2 (63%): fresh capacity expansion (+35, ≤90d) + mixed product type (+20) + weak sourcing evidence (+8, real but unscoped 'Buyer II' posting); no Import Genius signal; no hard in-house evidence." For `N/A-Cat3`: "Cat3 — not scored, see notion_scope: '<verbatim Notion text>'". Never output a bare score with no rationale. |
+| `needs_manual_scope_confirmation` | `TRUE`/`FALSE`/blank (blank when `scope_tier` is `disqualified_inhouse` or `N/A-Cat3` — already blocked/out-of-scope for a different, terminal reason, this flag no longer applies) |
 
 ## Output format
 
