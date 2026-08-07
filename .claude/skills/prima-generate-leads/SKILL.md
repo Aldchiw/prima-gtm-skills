@@ -220,16 +220,46 @@ valid, expected outcome some runs, not a bug to hide.
 | 1 | [`prima-icp-check`](../prima-icp-check/SKILL.md) | Classifies + excludes (existing customer, out-of-scope, ICP disqualify). A candidate excluded here stops right there — it goes toward the "excluded" bucket in the shortfall accounting, not toward N. |
 | 2 | [`prima-signal-scan`](../prima-signal-scan/SKILL.md) | Formally re-verifies the signal that got the candidate discovered in Step 0 (own URL, own date) — don't just carry the Step 0 finding forward uncited. |
 | 3 | [`prima-scope-score`](../prima-scope-score/SKILL.md) | **Cat4-only — check `company_category` before calling it.** `prima-icp-check` itself documents that `prima-scope-score` doesn't support `Cat3` yet (its weighted table is Cat4-only). So: **`company_category = Cat4`** → run this step normally — tier + `needs_manual_scope_confirmation`; a `disqualified_inhouse` result stops the candidate here (excluded bucket); a P1 with `needs_manual_scope_confirmation = TRUE` **keeps going** through Steps 4-5 (only `prima-draft`, never reached by this skill, is blocked by that flag) but gets flagged in the final summary (see below). **`company_category = Cat3`** → **skip this step entirely**, same as `prima-icp-check` already recommends — go straight from Step 2 to Step 4, carrying `notion_scope` (the Cat3 "Fabrication Outsourcing Scope" text `prima-icp-check` already read from Notion) forward as-is instead of a computed `outsourcing_score`/`scope_tier`. There's no in-house override to check and no anti-burn flag for these rows — `needs_manual_scope_confirmation` stays blank, same convention `prima-scope-score` itself uses for a status it never computed. |
-| 4 | [`prima-committee`](../prima-committee/SKILL.md) | Sources 2-3 real contacts per company — ALTA/SECUNDARIA/FALLBACK for `Cat4` (`4B`/`4C`), or Principal/Secundario for `Cat3`, per that skill's own dictionary. |
+| 4 | [`prima-committee`](../prima-committee/SKILL.md) | Sources 2-3 real contacts per company — ALTA/SECUNDARIA/FALLBACK for `Cat4` (`4B`/`4C`), or Principal/Secundario for `Cat3`, per that skill's own dictionary. **Always the path to a contact — see "Precedence" note right below.** |
 | 5 | [`prima-email-waterfall`](../prima-email-waterfall/SKILL.md) | See "Contact selection" below for which contact this orchestrator actually sends through this step. |
+
+### Precedence: `prima-committee` is always the path, never bypassed (added 2026-08-06)
+
+This file used to describe two ways to land a contact for Step 4/5 — routing through
+`prima-committee` proper, and a Deepline shortcut (`company_titles` → `ai_ark_people_search`)
+described right below — without ever saying which one actually governs. That's not two equally
+valid options; it's an ambiguity, and an ambiguous spec means the actual result of a run depends on
+which path whoever's driving it happens to reach for. Fixed here: **`prima-committee` is always the
+path.** Every candidate that reaches Step 4 goes through that skill's real process — its tiers
+(ALTA/SECUNDARIA/FALLBACK or Principal/Secundario), its function-match rule, its seniority
+tie-break within a tier, and its write to `output/account_roster.csv` — full stop, no exceptions for
+Tier 0/cascade-sourced candidates or any other kind.
+
+The Deepline calls described in "Known deviation" below are not a parallel shortcut that skips
+committee — they are committee's own **Tier 2**, used exactly the way that skill already defines
+Tier 2: only after Tier 1 (Wiza's free `wiza_search_prospects`, then WebSearch) comes up with no
+verifiable name for a role, and gated by the same cost-approval step committee's Tier 2 already
+requires before any paid provider call. Never call `ai_ark_people_search` (or `company_titles`) as a
+first move, and never call it outside of committee's own process.
+
+**Why:** skipping straight to a Deepline lookup throws away everything that makes a contact usable —
+the tier ranking, the function-match rule (a title that doesn't say "purchasing" verbatim but
+clearly buys fabrication supply), the seniority tie-break (so a junior "Buyer 1" doesn't land in the
+`active` slot ahead of a real Director), and the roster write that makes the contact visible and
+promotable later. All of that targeting logic lives in `prima-committee` — a shortcut that reaches
+a name without going through it produces a name, not a *validated* committee contact, and this
+orchestrator has no way to tell the difference downstream if both paths are allowed to produce rows.
 
 **Known deviation, deliberate:** `prima-committee`'s Tier 2 and `prima-email-waterfall`'s provider
 list still name placeholder providers (ContactOut/Lusha/RocketReach.../the findymail-first waterfall)
 that were never validated against Deepline's real catalog — this is already logged as an open item in
 `SPRINT2_GABY_REVIEW.md`. This orchestrator uses the **actual validated Deepline calls** confirmed
-during Sprint 2 batch runs instead of those placeholder names:
-- Committee sourcing: `company_titles` (free precheck — skip the paid call entirely if no relevant
-  titles are registered for the domain) → `ai_ark_people_search` with
+during Sprint 2 batch runs instead of those placeholder names, called *as* committee's Tier 2 (per
+"Precedence" above — after Wiza and WebSearch have both come up short, and after the usual Tier 2
+cost-approval step: report how many roles need this lookup and the estimated cost, wait for
+explicit approval, same as committee's own Tier 2 gate):
+- Committee sourcing (Tier 2 only): `company_titles` (free precheck — skip the paid call entirely if
+  no relevant titles are registered for the domain) → `ai_ark_people_search` with
   `contact.function.any.include: ["purchasing"]`, size 2-3.
 - Email: `hunter_email_finder` with `first_name`+`last_name`+`domain` (not `linkedin_handle` — it
   doesn't reliably match AI Ark's index). `verification.status = "valid"` → `VERIFIED`.
@@ -244,12 +274,12 @@ list nobody actually validated.
 surface — sourcing, supply chain, commodity management, materials management, not just literal
 "purchasing" (see committee's "Title matching: function, not exact string" section, and its worked
 examples like "Head of Global Sourcing" or "Commodity Manager," neither of which is guaranteed to
-carry AI Ark's `purchasing` function tag). This means Tier 0/cascade candidates run through this
-orchestrator's shortcut can silently miss a real, valid ALTA contact that committee's own broader
-rule would have caught — the gap is in this filter being narrower than the rule it's standing in
-for, not in committee's rule itself. Documented here as a known gap rather than silently accepted;
-widening the filter (or falling back to committee's own sourcing process when this narrower call
-comes up empty) is still an open to-do, not yet implemented.
+carry AI Ark's `purchasing` function tag). This means a Tier 2 lookup run this way can silently miss
+a real, valid ALTA contact that committee's own broader Tier 1 (WebSearch, phrased around the actual
+function) would have caught — the gap is in this filter being narrower than the rule it's standing
+in for, not in committee's rule itself. Documented here as a known gap rather than silently accepted;
+widening the filter (or falling back to committee's own broader Tier 1 phrasing when this narrower
+call comes up empty) is still an open to-do, not yet implemented.
 
 ## Contact selection — one contact per company reaches the deliverable
 
@@ -272,10 +302,20 @@ not carried into `leads_final.csv`.
 
 ## Rules that apply automatically — the vendor never has to know these exist
 
-- Sample-first / cost-gate protocol from `prima-email-waterfall` and `prima-committee`'s Tier 2 gate
-  — but per Aldahir's standing approval for this validated method, this orchestrator runs Deepline
-  calls directly without pausing for per-batch approval. It still reports the real accumulated cost
-  at the end, every time, no exceptions.
+- Sample-first / cost-gate protocol from `prima-email-waterfall` and `prima-committee`'s Tier 2
+  gate — **no standing approval, no exceptions (revised 2026-08-05, reversing the prior rule below).**
+  This orchestrator always stops before spending on any paid provider: it shows how many lookups it
+  needs to run and the estimated cost, then waits for the operator's explicit approval before making
+  the call. This applies every time Step 4/5 would otherwise reach committee's Tier 2 or
+  `prima-email-waterfall`'s paid path — not just on the first batch of a session.
+  **Decision (Aldahir, 2026-08-05):** this replaces an earlier standing approval that let the
+  orchestrator run Deepline calls directly without pausing, granted for a validated method over a
+  narrower scope. That scope has since grown — Cat3 is now open, and the target-title dictionary is
+  bigger — so the orchestrator can now reach more accounts than the original approval was scoped to
+  cover. Separately, the pause has already paid for itself twice in practice: both times a run
+  actually stopped to review Deepline cost, the free `wiza_search_prospects` (Tier 1, inside
+  committee) turned up the name before any paid call was needed — the pause is a real checkpoint that
+  catches free wins, not just friction to route around.
 - Never fabricate a signal, a contact, or an email — every "no data" case is a real, correctly empty
   result, not a gap to fill with a plausible guess.
 - Existing-customer exclusion, ICP disqualification, out-of-scope exclusion (`prima-icp-check`).
@@ -296,8 +336,19 @@ Two files, same as every other batch, **not** a third format:
   orchestrator's runs: **exactly one row per company** (the single contact selected above), not one
   row per contact. This differs from a hand-run batch where multiple contacts per company might all
   make it into `leads_final.csv` — for `prima-generate-leads`, N companies always means N rows.
-  Same 12 columns, same order, as already defined in `output/README.md` (the last 2, `stage` and
-  `contact_count`, are manual sales-tracking fields — see the hard rule right below, never skip it).
+  Same 14 columns, same order, as already defined in `output/README.md` (the last 2, `stage` and
+  `contact_count`, are manual sales-tracking fields — see the hard rule right below, never skip it):
+  `account_name`, `company_category`, `scope_tier`, `notion_scope`, `signal_summary`,
+  `signal_source_url`, `contact_name`, `contact_title`, `linkedin_url`, `contact_email`,
+  `email_status`, `best_channel`, `stage`, `contact_count`.
+  `company_category` and `notion_scope` (added 2026-08-06) come straight from `prima-icp-check`'s
+  output — carry them through unchanged, don't recompute or reinterpret either. **`notion_scope`
+  is Cat3-only in practice**: for a `Cat3` row it's the curated "Fabrication Outsourcing Scope" text
+  `prima-icp-check` already read from Notion — the same value Step 3 uses in place of a computed
+  score (see the table above) — so this is where that scope actually surfaces to the vendor-facing
+  file instead of dead-ending after Step 3. For a `Cat4` row it's normally blank, since `scope_tier`
+  (from `prima-scope-score`) is already the Cat4 answer to the same question. `scope_tier` itself is
+  unchanged — still the computed tier, still Cat4-only, blank for `Cat3` rows exactly as before.
 
 ### Hard rule: merge `stage`/`contact_count`, never reset them (added 2026-07-21)
 

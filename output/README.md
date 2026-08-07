@@ -80,10 +80,17 @@ blank for it rather than set to either value.
 
 A distilled export derived from `accounts_processed.csv` — **not** a third source of truth,
 just the subset that's actually ready to act on, reshaped for handing to Sheets/Aldahir directly. This
-file's 12 columns, in this order: `account_name`, `scope_tier`, `signal_summary`, `signal_source_url`,
-`contact_name`, `contact_title`, `linkedin_url`, `contact_email`, `email_status`, `best_channel`,
-`stage`, `contact_count`.
+file's 14 columns, in this order: `account_name`, `company_category`, `scope_tier`, `notion_scope`,
+`signal_summary`, `signal_source_url`, `contact_name`, `contact_title`, `linkedin_url`,
+`contact_email`, `email_status`, `best_channel`, `stage`, `contact_count`.
 
+- `company_category` and `notion_scope` (added 2026-08-06) come straight from `prima-icp-check` —
+  carried through unchanged, never recomputed here. **`notion_scope` is Cat3-only in practice**: for
+  a `Cat3` row it's the curated "Fabrication Outsourcing Scope" text `prima-icp-check` read from
+  Notion (the same value that stands in for a computed score, since `prima-scope-score` doesn't
+  support `Cat3` — see that skill's own note); for a `Cat4` row it's normally blank, since
+  `scope_tier` already answers the same question for Cat4. `scope_tier` itself is unchanged by this
+  addition — still `prima-scope-score`'s computed tier, still Cat4-only, blank for `Cat3` rows.
 - One row per **actionable contact** — a contact only makes it in if it has a `linkedin_url` and/or a
   `contact_email`. Placeholder rows (no named contact, or a named contact with neither) are dropped
   entirely — this file has no "empty" rows by design.
