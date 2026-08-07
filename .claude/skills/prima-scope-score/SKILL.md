@@ -1,6 +1,6 @@
 ---
 name: prima-scope-score
-description: Given an account already classified by `prima-icp-check` and scanned by `prima-signal-scan`, estimates the probability that it actually subcontracts structural fabrication (steel/enclosures) rather than manufacturing 100% in-house — Notion's "Equipment Procurement Scope" criterion, which almost never has hard public data behind it. Outputs a 0-100 score + tier (`tier_1`/`tier_2`/`tier_3`), always with a traceable rationale citing the specific signals behind it — never a bare number. Two hard overrides dominate the weighted score: explicit "100% in-house/vertically integrated" evidence forces `disqualified_inhouse` regardless of everything else; a confirmed Import Genius import match forces `confirmed_outsources`. Also sets `needs_manual_scope_confirmation` for P1 accounts — a P1 never reaches `prima-draft` on tier alone. Cat4-only: `company_category = Cat3` accounts don't run through this scoring at all — they carry Notion's own curated `notion_scope` (`Fabrication Outsourcing Scope`) instead, since that's already human-confirmed, and come back unscored/`N/A-Cat3`. Use this after `prima-signal-scan` (needs its capacity-expansion freshness) and before `prima-committee`.
+description: Given an account already classified by `prima-icp-check` and scanned by `prima-signal-scan`, estimates the probability that it actually subcontracts structural fabrication (steel/enclosures) rather than manufacturing 100% in-house — Notion's "Equipment Procurement Scope" criterion, which almost never has hard public data behind it. Outputs a 0-100 score + tier (`tier_1`/`tier_2`/`tier_3`), always with a traceable rationale citing the specific signals behind it — never a bare number. Two hard overrides dominate the weighted score: explicit "100% in-house/vertically integrated" evidence forces `disqualified_inhouse` regardless of everything else; a confirmed Import Genius import match forces `confirmed_outsources`. Also sets `needs_manual_scope_confirmation` for P1 accounts — a P1 never reaches `prima-draft` on tier alone. Cat4-only, by inclusion: only `company_category = Cat4` proceeds to scoring — `Cat1`, `Cat2`, `Cat3`, and `UNKNOWN` all return unscored (`scope_tier = N/A-<category>`), since Cat1/Cat2's own scope criterion is polarity-inverted from Cat4's (direct in-house operation is what qualifies them, not what disqualifies them) and Cat3 already has a human-confirmed `notion_scope`. Use this after `prima-signal-scan` (needs its capacity-expansion freshness) and before `prima-committee`.
 
 ---
 
@@ -24,9 +24,10 @@ question of what source can actually confirm this) is still unresolved.
 
 ## Input
 
-- From `prima-icp-check`: `company_category` (`Cat3`/`Cat4`/`UNKNOWN`) — check this first, see
-  "Step 0" below — plus, for `Cat4` rows, `sub_segment`, `priority`, and the account's Category-4
-  product line (Cooling / Power & Electrical Distribution / Energy Storage / Test & Commissioning).
+- From `prima-icp-check`: `company_category` (`Cat1`/`Cat2`/`Cat3`/`Cat4`/`UNKNOWN`) — check this
+  first, see "Step 0" below — plus, for `Cat4` rows specifically, `sub_segment`, `priority`, and
+  the account's Category-4 product line (Cooling / Power & Electrical Distribution / Energy
+  Storage / Test & Commissioning).
 - From `prima-signal-scan`: the account's `capacity_expansion` row (`status`, `freshness`), if any.
   Read this, don't recompute it — freshness bucketing is that skill's job, not this one's.
 - Whatever else is on hand: job postings/named people evidence of a sourcing/procurement team
@@ -35,25 +36,39 @@ question of what source can actually confirm this) is still unresolved.
   it this session (same manual-input-only rule as `prima-signal-scan`'s customs source — never
   searched or fabricated).
 
-## Step 0 — Cat4 gate: check `company_category` first
+## Step 0 — Cat4 inclusion gate: only `company_category = Cat4` proceeds
 
-This skill is **Cat4-only**. Its entire weighted score is built on the Category-4 product-type
-table in Step 2 — Power & Electrical Distribution / Energy Storage product categories — which has
-no equivalent for `Cat3` (Modular DC Systems Manufacturers). `Cat3` accounts already carry a
-human-confirmed answer to the same underlying question: Notion's own curated "Fabrication
-Outsourcing Scope" field, surfaced by `prima-icp-check` as `notion_scope`. Estimating a probability
-on top of a value a human already confirmed would be redundant at best and contradictory at worst.
+This skill is **Cat4-only — by inclusion, not by exclusion.** Don't write this gate as "skip if
+Cat3 or UNKNOWN" — write it as "only compute if Cat4." Any other value returns unscored.
 
-- **`company_category = Cat3`**: do not compute anything — no overrides, no weighted score, no
-  product-type lookup. Return the row as-is with `scope_tier = N/A-Cat3`, `outsourcing_score`
-  blank, `needs_manual_scope_confirmation` blank, and `score_rationale` pointing to the existing
-  `notion_scope` value (e.g. "Cat3 — not scored, see notion_scope: '<verbatim Notion text>'").
+**Why an inclusion list, not an exclusion list — the scope polarity flips between categories.**
+This skill's entire model — both hard overrides and the weighted score — is built to answer one
+Cat4-specific question: *does this account secretly subcontract fabrication, or is it 100%
+in-house?* In-house is the bad answer there (`disqualified_inhouse`); subcontracting is the good
+one. But Notion's "Equipment Procurement Scope" gate means the **opposite** thing for Category 1
+(AI Infrastructure Operators) and Category 2 (Crypto Miners Pivoting to AI): for them, operating
+and buying everything directly — the Cat4 equivalent of "in-house" — is exactly what qualifies an
+account (Notion: "✅ Full = builds AND equips own campus"; "✅ Strong = self-procures all internal
+equipment"). Run Cat4's overrides/weights against a Cat1/Cat2 row and CoreWeave, IREN, Nscale,
+Crusoe, and every other best-fit account in those categories would score `disqualified_inhouse` —
+backwards. An exclusion list (skip Cat3/UNKNOWN, compute everything else) would silently let
+Cat1/Cat2 rows fall through into that inverted scoring the first time this skill runs on a mixed
+batch. An inclusion list can't make that mistake by construction.
+
 - **`company_category = Cat4`**: proceed to Step 1 as normal.
-- **`company_category = UNKNOWN`**: `prima-icp-check` should have already marked this out of scope
-  before it reaches this skill — if one arrives anyway, treat it like `Cat3` above (return
-  unscored, `scope_tier = N/A-Cat3` doesn't fit here, so use `scope_tier` blank with
-  `score_rationale = "company_category UNKNOWN — not classified, cannot score"`) rather than
-  guessing a product-type fit.
+- **Anything else (`Cat1`, `Cat2`, `Cat3`, `UNKNOWN`, or any future category)**: do not compute
+  anything — no overrides, no weighted score, no product-type lookup. Return the row as-is with
+  `scope_tier = "N/A-<category>"` (e.g. `N/A-Cat1`, `N/A-Cat2`, `N/A-Cat3`, `N/A-UNKNOWN`),
+  `outsourcing_score` blank, `needs_manual_scope_confirmation` blank, and `score_rationale`
+  pointing to the existing curated `notion_scope` value instead:
+  - `Cat1` / `Cat2`: `notion_scope` is Notion's "Equipment Procurement Scope" — already the
+    correctly-polarized answer for these categories (e.g. "Cat1 — not scored, this skill's model
+    doesn't apply here; see notion_scope: '✅ Full — Builds AND equips own campus'").
+  - `Cat3`: `notion_scope` is Notion's "Fabrication Outsourcing Scope" — already human-confirmed
+    (e.g. "Cat3 — not scored, see notion_scope: '<verbatim Notion text>'").
+  - `UNKNOWN`: `prima-icp-check` should have already marked this out of scope before it reaches
+    this skill — if one arrives anyway, `score_rationale = "company_category UNKNOWN — not
+    classified, cannot score"` rather than guessing a product-type fit.
 
 ## Step 1 — check the two hard overrides first
 
@@ -135,10 +150,10 @@ for high-value accounts.
 
 | Column | Values |
 |---|---|
-| `outsourcing_score` | `0`–`100`, blank when `scope_tier = N/A-Cat3` (see Step 0 — not scored, not "scored zero") |
-| `scope_tier` | `confirmed_outsources` \| `tier_1` \| `tier_2` \| `tier_3` \| `disqualified_inhouse` \| `N/A-Cat3` (Step 0 gate — `Cat4`-only skill, `Cat3` rows aren't scored, see `notion_scope` instead) |
-| `score_rationale` | one line citing every contributing factor concretely — e.g. "Tier 2 (63%): fresh capacity expansion (+35, ≤90d) + mixed product type (+20) + weak sourcing evidence (+8, real but unscoped 'Buyer II' posting); no Import Genius signal; no hard in-house evidence." For `N/A-Cat3`: "Cat3 — not scored, see notion_scope: '<verbatim Notion text>'". Never output a bare score with no rationale. |
-| `needs_manual_scope_confirmation` | `TRUE`/`FALSE`/blank (blank when `scope_tier` is `disqualified_inhouse` or `N/A-Cat3` — already blocked/out-of-scope for a different, terminal reason, this flag no longer applies) |
+| `outsourcing_score` | `0`–`100`, blank when `scope_tier` starts with `N/A-` (see Step 0 — not scored, not "scored zero") |
+| `scope_tier` | `confirmed_outsources` \| `tier_1` \| `tier_2` \| `tier_3` \| `disqualified_inhouse` \| `N/A-Cat1` \| `N/A-Cat2` \| `N/A-Cat3` \| `N/A-UNKNOWN` (Step 0 inclusion gate — only `Cat4` rows get scored; every other `company_category` returns one of the `N/A-*` values instead, see `notion_scope`) |
+| `score_rationale` | one line citing every contributing factor concretely — e.g. "Tier 2 (63%): fresh capacity expansion (+35, ≤90d) + mixed product type (+20) + weak sourcing evidence (+8, real but unscoped 'Buyer II' posting); no Import Genius signal; no hard in-house evidence." For `N/A-*` rows: "Cat1 — not scored, this skill's model doesn't apply here; see notion_scope: '<verbatim Notion text>'" (same pattern for `Cat2`/`Cat3`; `UNKNOWN` explains the missing classification instead). Never output a bare score with no rationale. |
+| `needs_manual_scope_confirmation` | `TRUE`/`FALSE`/blank (blank when `scope_tier` is `disqualified_inhouse` or any `N/A-*` value — already blocked/out-of-scope for a different, terminal reason, this flag no longer applies) |
 
 ## Output format
 
