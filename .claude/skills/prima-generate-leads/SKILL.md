@@ -88,10 +88,13 @@ Run this first, before touching WebSearch. One call, ranked by cheapest/fastest-
        returned 3 companies total (all <50 staff) — the weeks-long bug; the same
        products under `KEYWORD` returned 455 real manufacturers.
    - **`account.keyword.any.exclude`** — sibling of `include`, same shape; drops a
-     category's dominant noise bucket by industry. **Exclude is per-category and its
-     polarity flips:** Cat4 excludes `"wholesale"` (distributors) and must NOT
-     exclude `"utilities"` (real Cat4 makers are mis-tagged utilities). Never a
-     global exclude.
+     category's dominant noise bucket by industry. **Exclude is per-category — the
+     noise bucket differs by category and never crosses:** Cat4/Power&Electrical
+     excludes `"wholesale"` (distributors); Cat4/Energy Storage excludes
+     `"renewable energy semiconductor manufacturing"` (solar/wind developers, not
+     makers); Cat3 excludes `"utilities"` (grid operators). Cat4 must NOT exclude
+     `"utilities"` — real Cat4 makers like Giga Energy are mis-tagged there. Never
+     a global exclude.
    - **No `location`** — undeclared/untested, deferred like `naics`. Cat4 is global;
      a US lock drops half the real pool.
 
@@ -125,7 +128,7 @@ Run this first, before touching WebSearch. One call, ranked by cheapest/fastest-
    | Vertical | include `content` | `source` | exclude (INDUSTRY) |
    |---|---|---|---|
    | Power & Electrical | "switchgear", "circuit breaker", "industrial transformer", "power transformer" | KEYWORD | "wholesale" |
-   | Energy Storage — ⚠ UNVALIDATED | "battery manufacturing", "energy storage" (likely the same product-vs-industry issue; needs the same KEYWORD-source test as P&E before use) | TBD | TBD |
+   | Energy Storage | "battery manufacturing", "energy storage" | INDUSTRY | "renewable energy semiconductor manufacturing" |
 
    **NAICS caveat, confirmed 2026-07-22, don't re-litigate this without re-testing first:** the
    `naics` field is real and populated on individual company profiles (seen on Giga Energy's and
