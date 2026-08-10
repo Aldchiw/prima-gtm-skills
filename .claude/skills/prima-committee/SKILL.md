@@ -409,6 +409,17 @@ is needed, go in ascending cost order — cheapest first, most expensive only as
 4. `lusha_search_contacts` (0.7 credits/result) / `contactout_search_people` (1.4 credits/result) —
    last resort only, after the cheaper options have been tried and come up short.
 
+**Capture the LinkedIn URL from every Tier 2 provider, always — same pass as the contact/email
+(added 2026-08-10).** Each Deepline people-search provider exposes the LinkedIn URL through its
+declared `linkedin` extractor; take it into the `profile_url` column alongside the contact, exactly
+as Tier 1 does. Confirmed paths (2026-08-10): `wiza_search_prospects` → `prospects[].linkedin_url`;
+`ai_ark_people_search` → `link.linkedin`. For the other Tier 2 providers (crustdata, lusha,
+contactout), read their `linkedin` extractor via `deepline tools describe` before relying on it — do
+not hardcode a guessed path. If a provider returns no LinkedIn URL, leave `profile_url` blank — never
+invent (same rule as the no-result case). This closes a gap where Tier 2-resolved contacts (the
+majority, since Wiza runs first) were left with blank `profile_url` even when the provider returned
+the URL.
+
 #### Known provider coverage gaps — don't keep paying past a real dead end (learning, 2026-08-04)
 
 `ai_ark_people_search` has zero coverage of Faith Technologies (`totalElements: 0` even on a bare
