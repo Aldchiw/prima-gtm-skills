@@ -71,15 +71,49 @@ candidate name the cascade already produces.
 
 Run this first, before touching WebSearch. One call, ranked by cheapest/fastest-to-exhaust-first:
 
-1. Call `deepline tools execute ai_ark_company_search` with `account.industries` (SMART/text mode)
-   matched to the requested vertical, `account.location` set to United States, and a reasonable
-   `account.employeeSize` range (50–1000 is a sane default — wide enough to catch scale-ups and
-   established manufacturers, narrow enough to skip both pre-revenue shells and Fortune 500
-   incumbents that are almost always `disqualified_inhouse` anyway). Redirect stderr per the standing
-   Deepline noise rule (`2>/dev/null`).
-2. **Industry filter mapping, by vertical** — use the `industries` text filter, NOT the `naics` field:
+1. Build the `ai_ark_company_search` call with the **validated payload shapes**
+   (confirmed against the real inputSchema and live-tested 2026-08-10 — do NOT
+   revert to the pre-2026-08-10 prose shapes, which were wrong and returned
+   nothing):
 
-   | Vertical | `industries` search terms | NAICS (documented intent — see caveat below) |
+   - **`account.employeeSize`** — not a flat range. Use the RANGE wrapper:
+     `{ "type": "RANGE", "range": { "start": 50, "end": 1000 } }` (`end` may be
+     `null` for open-ended). 50–1000 stays the sane Cat4 default.
+   - **Industry filter → `account.keyword`, NOT `account.industries`.** The
+     "SMART/text" behavior the old prose attributed to `account.industries`
+     actually lives in `account.keyword.any.include` (`content: [...terms]`,
+     `sources: [{ "source": "INDUSTRY", "mode": "SMART" }]`). `account.industries`
+     exists but its `any/all` sub-form is undeclared in the schema — do not use
+     it; route industry terms through `keyword.include.content`.
+   - **No `location` filter.** `account.location` exists but its sub-form is
+     undeclared and untested — all validated runs ran without it. Geographic
+     scoping is deferred until its shape is diagnosed (same status as `naics`).
+     Do not add `location` on a guessed shape.
+
+   Canonical payload (Power & Electrical shown; swap `content` per vertical from
+   the table below; `page`/`size` are for paging during full enumeration):
+   ```json
+   {
+     "page": 0,
+     "size": 20,
+     "account": {
+       "employeeSize": { "type": "RANGE", "range": { "start": 50, "end": 1000 } },
+       "keyword": {
+         "any": {
+           "include": {
+             "content": ["electrical equipment manufacturing", "switchgear", "transformer manufacturing"],
+             "sources": [{ "source": "INDUSTRY", "mode": "SMART" }]
+           }
+         }
+       }
+     }
+   }
+   ```
+   Redirect stderr per the standing Deepline noise rule (`2>/dev/null`).
+2. **Industry filter mapping, by vertical** — these terms go into
+   `keyword.any.include.content` (NOT `account.industries`, NOT `naics`):
+
+   | Vertical | `keyword.include.content` terms | NAICS (documented intent — see caveat below) |
    |---|---|---|
    | Energy Storage | `"battery manufacturing"`, `"energy storage"` | `335911` (Storage Battery Manufacturing) |
    | Power & Electrical Distribution | `"electrical equipment manufacturing"`, `"switchgear"`, `"transformer manufacturing"` | `335313` (Switchgear/Switchboard) + `335311` (Power/Distribution/Specialty Transformer) |
@@ -89,14 +123,14 @@ Run this first, before touching WebSearch. One call, ranked by cheapest/fastest-
    Pennsylvania Transformer Technology's own records), but filtering *search* by `naics` returned
    **zero** results for both `335911` and the broader `335` in direct testing, while `industries`
    text search against the same companies worked fine. Treat `naics` as a format bug to revisit later,
-   not a working filter today — always use `industries` text mode unless a future session re-tests
-   `naics` and finds the correct format.
+   not a working filter today — always use the `keyword` INDUSTRY route (step 1) unless a future
+   session re-tests `naics` and finds the correct format.
 3. **Dedup exactly like the cascade does** — check every returned candidate against Notion's tracked
    list and `output/accounts_processed.csv` before spending any more effort on it (same rule, same
    command-shape convention, as the cascade's own dedup step below).
 4. **Feed every surviving candidate into `prima-icp-check` — the real one, no shortcut (hard rule,
-   added 2026-07-22, corrects a real mistake made the same day).** `industries`/NAICS have no idea
-   what a data center is or what counts as Category 4 — `prima-icp-check`'s formal criteria (Notion's
+   added 2026-07-22, corrects a real mistake made the same day).** the firmographic search has no
+   idea what a data center is or what counts as Category 4 — `prima-icp-check`'s formal criteria (Notion's
    categories/segments, existing-customer exclusion, disqualification signals) is what actually does
    that filtering for Tier 0, so it matters more here than for cascade-sourced candidates, not less.
    **Do not replace this with an eyeballed "obviously wrong category" pass** — a real run on 2026-07-22
