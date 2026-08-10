@@ -72,26 +72,31 @@ candidate name the cascade already produces.
 Run this first, before touching WebSearch. One call, ranked by cheapest/fastest-to-exhaust-first:
 
 1. Build the `ai_ark_company_search` call with the **validated payload shapes**
-   (confirmed against the real inputSchema and live-tested 2026-08-10 — do NOT
-   revert to the pre-2026-08-10 prose shapes, which were wrong and returned
-   nothing):
+   (confirmed against the real inputSchema, live-tested 2026-08-10 — do NOT revert
+   to the pre-2026-08-10 shapes, which returned nothing):
 
-   - **`account.employeeSize`** — not a flat range. Use the RANGE wrapper:
+   - **`account.employeeSize`** — RANGE wrapper:
      `{ "type": "RANGE", "range": { "start": 50, "end": 1000 } }` (`end` may be
-     `null` for open-ended). 50–1000 stays the sane Cat4 default.
-   - **Industry filter → `account.keyword`, NOT `account.industries`.** The
-     "SMART/text" behavior the old prose attributed to `account.industries`
-     actually lives in `account.keyword.any.include` (`content: [...terms]`,
-     `sources: [{ "source": "INDUSTRY", "mode": "SMART" }]`). `account.industries`
-     exists but its `any/all` sub-form is undeclared in the schema — do not use
-     it; route industry terms through `keyword.include.content`.
-   - **No `location` filter.** `account.location` exists but its sub-form is
-     undeclared and untested — all validated runs ran without it. Geographic
-     scoping is deferred until its shape is diagnosed (same status as `naics`).
-     Do not add `location` on a guessed shape.
+     `null`). 50–1000 is the Cat4 default (skips pre-revenue shells and Fortune 500
+     in-house incumbents).
+   - **Terms → `account.keyword`, never `account.industries`** (its sub-form is
+     undeclared). Terms go in `account.keyword.any.include.content`, and **`source`
+     depends on the TERM TYPE — load-bearing rule, live-tested 2026-08-10:**
+     - Industry-label term (e.g. "electrical construction") → `source: "INDUSTRY"`.
+     - Product term (e.g. "switchgear", "power transformer") → `source: "KEYWORD"`.
+       Products are NOT industry labels: the 3 Cat4 product terms under `INDUSTRY`
+       returned 3 companies total (all <50 staff) — the weeks-long bug; the same
+       products under `KEYWORD` returned 455 real manufacturers.
+   - **`account.keyword.any.exclude`** — sibling of `include`, same shape; drops a
+     category's dominant noise bucket by industry. **Exclude is per-category and its
+     polarity flips:** Cat4 excludes `"wholesale"` (distributors) and must NOT
+     exclude `"utilities"` (real Cat4 makers are mis-tagged utilities). Never a
+     global exclude.
+   - **No `location`** — undeclared/untested, deferred like `naics`. Cat4 is global;
+     a US lock drops half the real pool.
 
-   Canonical payload (Power & Electrical shown; swap `content` per vertical from
-   the table below; `page`/`size` are for paging during full enumeration):
+   Canonical payload (Cat4 / Power & Electrical — validated 2026-08-10; `page`/`size`
+   for paging during full enumeration):
    ```json
    {
      "page": 0,
@@ -101,7 +106,11 @@ Run this first, before touching WebSearch. One call, ranked by cheapest/fastest-
        "keyword": {
          "any": {
            "include": {
-             "content": ["electrical equipment manufacturing", "switchgear", "transformer manufacturing"],
+             "content": ["switchgear", "circuit breaker", "industrial transformer", "power transformer"],
+             "sources": [{ "source": "KEYWORD", "mode": "SMART" }]
+           },
+           "exclude": {
+             "content": ["wholesale"],
              "sources": [{ "source": "INDUSTRY", "mode": "SMART" }]
            }
          }
@@ -110,21 +119,21 @@ Run this first, before touching WebSearch. One call, ranked by cheapest/fastest-
    }
    ```
    Redirect stderr per the standing Deepline noise rule (`2>/dev/null`).
-2. **Industry filter mapping, by vertical** — these terms go into
-   `keyword.any.include.content` (NOT `account.industries`, NOT `naics`):
+2. **Search config by vertical** (both Cat4 OEM) — terms, their `source`, and any
+   `exclude`:
 
-   | Vertical | `keyword.include.content` terms | NAICS (documented intent — see caveat below) |
-   |---|---|---|
-   | Energy Storage | `"battery manufacturing"`, `"energy storage"` | `335911` (Storage Battery Manufacturing) |
-   | Power & Electrical Distribution | `"electrical equipment manufacturing"`, `"switchgear"`, `"transformer manufacturing"` | `335313` (Switchgear/Switchboard) + `335311` (Power/Distribution/Specialty Transformer) |
+   | Vertical | include `content` | `source` | exclude (INDUSTRY) |
+   |---|---|---|---|
+   | Power & Electrical | "switchgear", "circuit breaker", "industrial transformer", "power transformer" | KEYWORD | "wholesale" |
+   | Energy Storage — ⚠ UNVALIDATED | "battery manufacturing", "energy storage" (likely the same product-vs-industry issue; needs the same KEYWORD-source test as P&E before use) | TBD | TBD |
 
    **NAICS caveat, confirmed 2026-07-22, don't re-litigate this without re-testing first:** the
    `naics` field is real and populated on individual company profiles (seen on Giga Energy's and
    Pennsylvania Transformer Technology's own records), but filtering *search* by `naics` returned
    **zero** results for both `335911` and the broader `335` in direct testing, while `industries`
    text search against the same companies worked fine. Treat `naics` as a format bug to revisit later,
-   not a working filter today — always use the `keyword` INDUSTRY route (step 1) unless a future
-   session re-tests `naics` and finds the correct format.
+   not a working filter today — always use the `keyword` field (source per term type — see step 1)
+   unless a future session re-tests `naics` and finds the correct format.
 3. **Dedup exactly like the cascade does** — check every returned candidate against Notion's tracked
    list and `output/accounts_processed.csv` before spending any more effort on it (same rule, same
    command-shape convention, as the cascade's own dedup step below).
