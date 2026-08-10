@@ -1,3 +1,26 @@
+## 2026-08-10 · cuenta: trabajo
+**Avancé — Fix Tier 0 (Fase 3) + arranque capa Vigilar (Signal Radar):**
+- Tier 0 firmográfico desbloqueado (llevaba semanas roto). 2 verticales Cat4.
+  Commits: 26cc862 (formas), 5c8e477 (Cat4 P&E: KEYWORD+exclude wholesale),
+  2fc8266 (Cat4 Energy Storage: INDUSTRY+exclude renewable), 90d9267 (roster).
+  Hallazgos: el source depende del tipo de término; el exclude es por-categoría.
+  Scope cerrado: Tier 0 = Cat3/Cat4; Cat1/2 por curación+señal.
+- Capa Vigilar arrancada: skill nueva prima-signal-radar v0.1 (colector de
+  vacantes Cat3/Cat4, fuente predictleads, feed+sweeplog+safeguards), validada
+  end-to-end. Mockup visual entregado. Diseño en engine-vigilar-radar-log.md.
+- LinkedIn: fix en prima-committee para capturar LinkedIn de Tier 2.
+
+**PENDIENTES:**
+- Push (main adelante de origin).
+- v0.2 colector de noticias (Cat1/2).
+- Universo desde Notion.
+- v0.3 continuo.
+- Zadrac acceso repo + radar en docs/.
+- Afinar keyword fallback.
+- Pedir acceso a monitors nativos de Deepline.
+
+**DOCS:** engine-tier0-fase3-log.md, engine-vigilar-radar-log.md
+
 ## 2026-08-05 · cuenta: trabajo
 **Avancé — Fase 1 y Fase 2 del ROADMAP: motor pasa de 2 a 4 categorías del ICP:**
 - Creé ROADMAP.md en la raíz: análisis de estado por capa (vigilar/entender/
