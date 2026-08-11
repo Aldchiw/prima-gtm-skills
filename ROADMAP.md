@@ -17,7 +17,7 @@ Cinco capas: **vigilar → entender → decidir → ejecutar → aprender**.
 
 | Capa | Estado |
 |---|---|
-| **Vigilar** | No existe. Todo es a demanda, disparado a mano. |
+| **Vigilar** | v0.1 — colector de vacantes (Cat3/Cat4, `predictleads`). Falta noticias (Cat1/2) y barrido continuo. |
 | **Entender** | Sólido, pero solo para 2 de las 7 categorías del ICP. |
 | **Decidir** | Sólido. committee con tiers, match funcional, seniority, banca. |
 | **Ejecutar** | De Zadrac (email). LinkedIn es mío. Bloqueado por warm-up. |
@@ -65,6 +65,12 @@ El descubrimiento firmográfico lleva semanas roto (`industries`/`employeeSize`
 no existen en el schema real de AI Ark). Bajo el marco de vigilancia importa
 menos para corridas recurrentes, pero es **la herramienta correcta para
 enumerar** el universo de una vez.
+**Estado: HECHA (2026-08-10).** Validada en las 2 verticales Cat4 (Power &
+Electrical, Energy Storage). Commits: `26cc862` (formas del payload), `5c8e477`
+(Cat4 P&E: KEYWORD + exclude wholesale), `2fc8266` (Cat4 Energy Storage:
+INDUSTRY + exclude renewable), `90d9267` (roster). Regla: el `source` depende
+del tipo de término (producto→KEYWORD, industria→INDUSTRY); el `exclude` es
+por-categoría, nunca global.
 **Costo:** créditos para probar contra el API real. Requiere aprobación.
 
 ### Fase 4 — Enumerar el TAM completo
@@ -84,6 +90,16 @@ pagado y desconectado), vacantes de procurement, fondeo, permisos, expansiones.
 El output deja de ser "genera 20 leads" y pasa a ser "3 de tus cuentas se
 movieron esta semana". Aquí entra el bot de Slack — no para disparar a mano,
 sino para avisar.
+**Estado: EN PROGRESO.** v0.1 (vacantes) listo — skill `prima-signal-radar`,
+colector de vacantes de procurement para Cat3/Cat4 vía `predictleads`, validado
+end-to-end 2026-08-10. Falta: v0.2 (noticias, para cubrir Cat1/2 — hoy sin
+señal de vacantes por la limitación de categorización de `predictleads`),
+enumerar el universo completo desde Notion (hoy la lista de entrada al radar es
+un parámetro manual), y v0.3 (barrido continuo/programado en vez de a demanda).
+Nota: el cockpit del equipo (`outreach-cockpit.html`) es la superficie visual
+donde aterriza el feed del radar, más asignaciones (Zadrac) y warm intros
+(Gaby/Daniel). Dependencias humanas: export de conexiones de LinkedIn de Gaby y
+Daniel; definir con Zadrac dónde viven las asignaciones y los follow-ups.
 **Depende de:** Fase 4 (sin watchlist no hay qué vigilar).
 
 ### Fase 7 — Cerrar el ciclo de aprender

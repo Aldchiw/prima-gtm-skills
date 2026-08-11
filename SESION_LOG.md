@@ -1,3 +1,39 @@
+## 2026-08-11 · cuenta: trabajo
+**Avancé — Fase 3 (Tier 0) cerrada, Fase 6 (Vigilar) arrancada, cockpit del equipo:**
+- FASE 3 (Arreglar Tier 0): HECHA y validada en las 2 verticales Cat4 (Power &
+  Electrical, Energy Storage). Commits 26cc862 (formas del payload), 5c8e477
+  (Cat4 P&E: KEYWORD + exclude wholesale), 2fc8266 (Cat4 Energy Storage:
+  INDUSTRY + exclude renewable), 90d9267 (roster). Regla: el `source` depende
+  del tipo de término (producto→KEYWORD, industria→INDUSTRY); el `exclude` es
+  por-categoría, nunca global. Scope de Tier 0 queda en Cat3/Cat4; Cat1/2 se
+  cubren por curación + señal, no por Tier 0.
+- FASE 6 (Vigilar): arrancada. Skill nueva prima-signal-radar v0.1 = colector
+  de vacantes de procurement vía predictleads. Salidas: output/signal_radar_feed.csv
+  y output/signal_radar_sweeplog.csv. Safeguards: source_url obligatorio, dedup
+  por (account, url), nunca inventar, sample-first con aprobación de costo.
+  Validado end-to-end: Rosendin 2/2 señales frescas, PTT con su única vacante
+  de purchasing correctamente filtrada por estar cerrada.
+- LinkedIn: prima-committee ahora captura profile_url también en contactos
+  resueltos por Tier 2 (Wiza/ai_ark), no solo Tier 1 (WebSearch). Blank si el
+  proveedor no lo trae, nunca inventado.
+- Cockpit del equipo: outreach-cockpit.html (estilo Deepline), 3 features:
+  vista por usuario, conteo de follow-up (solo front por ahora), y warm intros
+  (Gaby + Daniel). Corre con data de muestra. Es la superficie visual de la
+  Fase 6.
+
+**PENDIENTES:**
+- Push: main sigue adelante de origin, sin push. (El fix de LinkedIn en
+  prima-committee y prima-signal-radar + sus 2 CSV ya están comiteados —
+  348484b y d68a0b3 — lo que falta es solo el push, no el commit.)
+- v0.2 del radar: colector de noticias, para cubrir Cat1/2 (hoy sin señal de
+  vacantes por la limitación de categorización de predictleads).
+- Enumerar el universo de cuentas desde Notion — hoy la lista de entrada al
+  radar es un parámetro manual, no se lee sola de ninguna fuente.
+- v0.3 del radar: barrido continuo / programado, no a demanda.
+- Zadrac: acceso al repo y al radar en docs/.
+- Afinar el keyword fallback del filtro de vacantes con más data real.
+- Pedir acceso a los monitors nativos de Deepline (hoy bloqueados).
+
 ## 2026-08-10 · cuenta: trabajo
 **Avancé — Fix Tier 0 (Fase 3) + arranque capa Vigilar (Signal Radar):**
 - Tier 0 firmográfico desbloqueado (llevaba semanas roto). 2 verticales Cat4.
