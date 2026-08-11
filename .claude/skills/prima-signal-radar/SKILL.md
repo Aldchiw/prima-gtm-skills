@@ -112,6 +112,126 @@ pair already exists as a row in `output/signal_radar_feed.csv`. If it does, skip
 and don't update the existing row's `status` (that column is for a human/downstream process to
 change, this skill only ever writes new rows with `status = new`).
 
+## v0.2 — News collector (Cat1/Cat2)
+
+Runs only on `Cat1`/`Cat2` accounts that have a `domain` — this is what "watched via news" (see
+"Category branch" above) resolves to now, instead of a no-op log line. It exists specifically
+because the v0.1 job-opening collector doesn't work for these categories (see the "Why" note in
+"Category branch") — Cat1/Cat2 accounts buy infrastructure directly and self-fund/self-build, so the
+signal that actually indicates a buying window is a capacity/expansion or financing announcement, not
+a procurement job posting.
+
+### 1. Search — 2 WebSearch queries per account, free
+
+- **Capacity/expansion query:** `"{account_name}" data center capacity expansion OR new facility OR
+  new campus`
+- **New plant / funding query:** `"{account_name}" groundbreaking OR "new site" OR financing OR
+  funding data center construction`
+
+No paid provider here — `predictleads_company_news_events` was already ruled out (no `url` field in
+its schema, confirmed 2026-08-10, see the note near the top of this file) and nothing has replaced it
+yet. WebSearch is free, so there's no cost gate on this step itself — the cost gate that matters for
+this skill is still the v0.1 provider call, unaffected by this section.
+
+### 2. Keep a result only if ALL THREE hold
+
+- **(a) Real article URL.** No URL → discard, never invent one. Same hard rule as v0.1's `source_url`
+  gate, same reasoning.
+- **(b) BUILDOUT signal, not demand-side.** Counts: new capacity announced, a named plant/site,
+  self-build, or financing **explicitly earmarked for the physical facility** — land, civil works,
+  power/substation, construction. Does **not** count: cloud contracts, ARR/revenue figures, stock
+  moves, GPU counts/inventory, or any other demand-side news that doesn't describe the account
+  building or funding physical infrastructure. **Financing needs the same test — what is the money
+  actually for, not just that money changed hands.** A GPU-backed loan (or any equipment/working-capital/
+  capital-markets financing) finances compute, not the electrical/civil work — it is **not** a buy
+  window for Prima, even when the headline number is large and the source is primary. Confirmed
+  2026-08-11: CoreWeave's $3.1B GPU-backed DDTL loan facility was initially miscounted as BUILDOUT —
+  it funds GPU acquisition/balance-sheet capacity, not a facility, and was corrected to a drop. Use
+  this as the standing example of what financing does **not** qualify.
+- **(c) Fresh.** Event/article date within `FRESHNESS_DAYS_NEWS = 180` of the run date — a separate
+  constant from v0.1's `FRESHNESS_DAYS = 45` for job postings, deliberately much wider. **Why:** a
+  vacancy expires fast — once it's filled or pulled, the buying window it implied is gone. A buildout
+  doesn't work that way: an announced campus expansion (e.g. a 1.5GW build) leaves the electrical
+  buy-window open for many months while the project moves through land/power/construction, not 90
+  days. Confirmed 2026-08-11: at `90`, Core Scientific's Pecos (1.5GW, ~2026-04-27, ~106 days old) and
+  Muskogee (1.5GW, ~2026-05-06, ~97 days old) expansions were both dropped for being 7-16 days over the
+  line — while still being live, multi-hundred-million-dollar buy-windows. `180` was chosen to cover
+  that gap without being unbounded; still excludes genuinely old news (e.g. a Denton, TX announcement
+  from Feb 2025 stays correctly dropped at either window).
+
+### 3. Drop list — explicit exclusions, not just "low quality"
+
+Social media (X, Reddit), directory listings (e.g. Baxtel), the company's own product/marketing
+pages (not a news event), SEO/opinion blogs with no primary event cited, and anything stale or
+demand-side per (b)/(c) above.
+
+### 4. Dedup by EVENT, not by URL
+
+Unlike v0.1's exact-match `(account_name, source_url)` key, the same real-world announcement
+routinely gets covered by multiple outlets with different URLs — deduping by URL alone would write
+the same event to the feed several times. Group candidate results that describe the same
+announcement (same account, same facility/round, same approximate date) and keep **one** row,
+priority order when more than one source covers it:
+
+1. Primary source (company's own IR page, official press release, SEC filing)
+2. Specialized trade press (DataCenterDynamics, Bloomberg, Reuters, CoinDesk)
+3. Aggregator (anything else)
+
+This is a judgment call, not a strict key match like v0.1's — say so in the run output when a dedup
+decision was non-obvious, don't silently pick one.
+
+### 5. Classify self_build vs colo — the test is "does THIS account buy the physical infrastructure?"
+
+Not "does the article say lease" — **`lease` is directionally ambiguous on its own** and will
+misclassify if read literally. The account leasing space *from* a landlord is the tenant, not the
+buyer — that's `colo`. The account building the facility and leasing capacity *out* to a customer is
+the one buying the infrastructure — that's `self_build`, and a strong signal, regardless of the word
+"lease" appearing in the article. Concretely: Core Scientific signing "529MW lease agreements" with
+AMD is Core Scientific **building and leasing outward** — Core Scientific is the buyer of the
+infrastructure → `self_build`. CoreWeave leasing space *inward* at an EdgeConneX campus is CoreWeave
+as the tenant — EdgeConneX is the buyer → `colo`, lessor = EdgeConneX.
+
+Mark in `signal_detail` whether the buildout is `self_build` or `colo` for **the account this row is
+about**. **If `colo`: note `"colo — comprador probable: <lessor>"` in `signal_detail`, and do not add
+the lessor as a new account anywhere** — the lessor isn't the buyer, it's the landlord; conflating the
+two would misattribute the buying signal.
+
+### 6. Output — same `output/signal_radar_feed.csv`, `signal_type = "news"`
+
+Same 13-column schema as v0.1 (see "Output" below) — no new columns, no separate file:
+
+- `signal_type` = `"news"`
+- `signal_detail` = one factual line describing the event, including the `self_build`/`colo` marker
+  **and always a geo tag** — e.g. `"geo: TX, US"` or `"geo: South Australia (offshore)"`. Mandatory,
+  every row, not just offshore ones. **Why:** a `baja` from being offshore and a `baja` from being a
+  garbage/aggregator-only source look identical without it — confirmed 2026-08-11 when reviewing the
+  first sample, where an offshore `baja` (IREN, real primary-source self-build signal, just not NA)
+  was indistinguishable at a glance from a low-quality `baja`. The geo tag is what lets a human
+  re-sort those two cases apart later without re-reading every source.
+- **`signal_detail` must be a faithful transcription of what the cited `source_url` actually says —
+  nothing enriched, no inferred construction status, no detail added that isn't in that specific
+  source.** If a fact (construction progress, dollar amount, date) isn't in the source you're citing,
+  it doesn't go in the row — full stop, even if it's true and you found it somewhere else; cite that
+  other source separately instead of blending it in. **Standard example of what NOT to do (caught
+  2026-08-11):** a Core Scientific Pecos row cited `investors.corescientific.com/.../detail/134`
+  (2026-04-27, which only announces the *plan* to scale to 1.5GW) but the `signal_detail` also claimed
+  "foundational footings set, precast concrete walls arriving on site" — a live-construction detail
+  that isn't in that press release and wasn't verified in any other cited source. It came from a
+  WebSearch summary blending multiple results together, not from the specific URL in the row. Caught
+  on operator review, not caught before writing — a reminder that WebSearch's synthesized answer text
+  is not itself a verified source; only what the cited URL actually says is.
+- `source_url` = the chosen (post-dedup) article's URL
+- `signal_date` = the event/article date
+- `match_reason` = blank for news rows — that column exists specifically to audit v0.1's job-title
+  keyword fallback; it doesn't apply here
+- `relevance_conf` = `"alta"` \| `"media"` \| `"baja"`, per this rule:
+  - **`alta`** — primary source AND (`self_build` or a named plant) AND North America (NA)
+  - **`media`** — specialized press AND funding/pipeline-stage (not yet confirmed under construction)
+  - **`baja`** — offshore (outside NA) OR sourced only from an aggregator. **Offshore still gets kept
+    in the feed at `baja` for now — this rule only sets the confidence tier, it doesn't drop the row.**
+    Whether offshore signal should be dropped outright instead of just down-weighted is a separate,
+    open decision — not resolved here.
+
 ## Safeguards (hard rules)
 
 These are non-negotiable — each is elaborated where cross-referenced, this is the consolidated list:
