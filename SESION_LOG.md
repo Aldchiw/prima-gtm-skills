@@ -1,4 +1,43 @@
 ## 2026-08-11 · cuenta: trabajo
+**Avancé — Primer pull de leads US Cat1-4 (37 cuentas), pipeline de enrichment validado:**
+- Cerré la lista final: Cat1=7 (Nebius de vuelta por regla US-buildout), Cat2=10,
+  Cat3=10 (paginado firmográfico a 10 US), Cat4=10 (P&E 5 con Switchgear Power
+  Systems confirmado). 37 cuentas total.
+- Enriquecí las 37 con el pipeline validado en la muestra: committee vía
+  ai_ark_people_search como fuente primaria (cuenta + función), WebSearch solo
+  de respaldo cuando el paid search da 0; waterfall de email Hunter → Lusha,
+  blank solo si ambos fallan. Reglas de calidad aplicadas: descarta título sin
+  match funcional, descarta contacto que ya no trabaje ahí (dato Lusha, ej. Joe
+  Arellano se fue de FSG a Sodecia), marca conflicto de dominio como
+  FOUND_UNVERIFIED sin elegir a ciegas (Joseph Harris/Riot, Cedrick
+  McDuffie/Cleveland Electric).
+- Carry-forward: consolidé 3 emails ya pagados en la muestra que se habían
+  quedado fuera del CSV final por bug de merge (Hammons/Lambda,
+  Jackson/Applied Digital, Tyndall/Core Scientific) — sin re-cobro.
+- Re-source de blancos con contactout_search_people (nueva herramienta;
+  confirmado que contactout_enrich_person NO sirve para esto — es enrich-only,
+  necesita identidad ya conocida): recuperó 9 de 12 cuentas en blanco.
+- Resultado final: 34/37 cuentas con contacto, 78% email VERIFIED, 76% con
+  LinkedIn. Output: output/leads_pull_2026-08-12.csv.
+
+**PENDIENTES:**
+- 5 emails bloqueados por crédito insuficiente en Deepline (workspace quedó en
+  -22.94): Frank Basso/Voltage Park, Brent Shinall/MARA Holdings, Bradley
+  Audiss/CleanSpark, Joseph Rivera/Hut 8, Adam Ziskind/Cipher Mining — nombre +
+  título + LinkedIn reales, solo falta el email. Requiere recargar créditos.
+- 3 cuentas 100% en blanco: RunPod, Federal Pacific (ni ContactOut encontró
+  nada), Mitsubishi Electric Power Products (Cat4 4A — sin dictionary de
+  committee todavía, por regla de prima-committee no se inventa).
+- Domain de Lambda sin forzar a uno solo: matt@lambda.ai y
+  tandon@lambdalabs.com ambos verifican como deliverable — Lambda corre los
+  dos dominios de correo vivos post-rebranding, no es un bug a resolver.
+- LECCIÓN DE COSTO: contactout_search_people cobra por perfil devuelto, no por
+  match relevante — un diagnóstico de 1 cuenta (2 perfiles, $0.28) no predijo
+  el costo real en cuentas más grandes (hasta 12 perfiles, $9.52 en 11
+  cuentas). Sample-first tiene que probar el rango de tamaño de resultado por
+  herramienta/pricing model, nunca extrapolar de un solo diagnóstico barato.
+
+## 2026-08-11 · cuenta: trabajo
 **Avancé — Fase 3 (Tier 0) cerrada, Fase 6 (Vigilar) arrancada, cockpit del equipo:**
 - FASE 3 (Arreglar Tier 0): HECHA y validada en las 2 verticales Cat4 (Power &
   Electrical, Energy Storage). Commits 26cc862 (formas del payload), 5c8e477
