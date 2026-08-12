@@ -72,3 +72,32 @@ Aldahir does afterward (an automated Google Sheets API write is a logged future 
 - When a skill's behavior seems to need to change, check the Ejecutable Maestro v2 doc and the Notion
   "Data Centers GTM" page first — this repo's skills should stay a thin execution layer over those, not
   grow independent logic that duplicates or contradicts them.
+
+## Cost control
+
+Applies to any skill run or ad-hoc batch that calls paid provider APIs in a loop — committee sourcing,
+email waterfall, firmographic discovery, etc. — not just the skills that name a cost explicitly.
+
+1. **Hard spend ceiling per run.** No paid batch runs without a pre-agreed USD ceiling. If none was
+   explicitly agreed for this run, the ceiling defaults to **$5** — a backstop for when we forget to
+   set one, not a target. It can be raised per run if agreed beforehand. If the running total is
+   projected to cross the ceiling mid-batch, STOP and ask for approval before continuing — never
+   finish the batch because it's "almost done."
+2. **New paid tool → sample before batch.** Before using a paid tool across a batch of accounts for the
+   first time, confirm its billing model (per call / per result / per profile returned / billed-on-match)
+   and run a real multi-account sample. Never estimate a batch's cost from a single diagnostic call —
+   result volume (and therefore cost) can vary wildly per account even under the identical query shape.
+3. **Prefer billed-on-match tools.** Tools that only charge when they find a match are the default
+   choice. Tools billed per result or per profile returned — regardless of relevance — require both a
+   hard ceiling and the mandatory multi-account sample above before any batch run.
+4. **Check credit balance before any batch projected above $2.** Keep a buffer — never run a batch down
+   toward zero balance; a mid-batch failure on insufficient credits silently drops the rest of the
+   batch instead of pausing it. Samples projected under $2 skip this check.
+
+**Case 2026-08-12 (why this section exists):** a "cheap" re-source pass over 11 accounts used
+`contactout_search_people`, which bills per profile returned, not per relevant match. A single
+diagnostic call (1 account, 2 profiles) cost $0.28 and was used to judge the whole batch as cheap. The
+real batch returned up to 12 profiles per account, mostly irrelevant (Marketing/Finance/HR titles, not
+the procurement/infra function being searched for) — actual cost was $9.52, not the couple of dollars
+expected. The same batch also ran the Deepline workspace credit balance to -22.94, silently failing the
+next 5 email lookups with `INSUFFICIENT_CREDITS` instead of stopping cleanly.
