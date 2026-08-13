@@ -1,3 +1,45 @@
+## 2026-08-12 · cuenta: trabajo
+**Primer pull de leads US (4 categorías) + cost control. CRÍTICO: el pull salió SIN
+señal — hay que correr signal-scan antes de que Zadrac escriba correos.**
+
+- LEADS PULL (commit a59e1a9) → output/leads_pull_2026-08-12.csv. 37 cuentas (Cat1=7,
+  Cat2=10, Cat3=10, Cat4=10), 34 con ≥1 contacto, 78% email VERIFIED, 76% LinkedIn.
+  NO se usó prima-generate-leads completo — armado a mano: committee=ai_ark_people_search
+  (WebSearch solo backup); email=waterfall Hunter→Lusha (billed-on-match), blank si ambos
+  fallan; LinkedIn junto al email; máx 2-3 contactos/cuenta. Gates: descartar título sin
+  match funcional, descartar contacto que ya no trabaja ahí (Lusha), conflicto de dominio→
+  FOUND_UNVERIFIED, offshore marcado no descalificado. US ESTRICTO (regla: US=construye/opera
+  en US, no HQ → IREN y Nebius entran; Nscale fuera). Cat1/Cat2 NO firmográficas → curadas y
+  clasificadas A MANO contra el ICP con fuente.
+- HUECO CRÍTICO — SIN SEÑAL: signal_source/detail/url/date en BLANCO; se saltó signal-scan.
+  El correo es signal-first, así que estos leads NO son escribibles hasta correr signal-scan
+  sobre las 37. Noticias (Cat1/2)=WebSearch GRATIS; vacantes (Cat3/4)=predictleads PAGADO.
+  ES EL SIGUIENTE PASO.
+- RADAR v0.2 (commit 9a9218a): colector de noticias Cat1/2 (buildout filter, freshness 180d,
+  geo tag, safeguard transcripción fiel) en prima-signal-radar.
+- COST CONTROL (commit 318c5e5, CLAUDE.md): techo default $5/corrida, balance-check antes de
+  batch >$2, sample-first por tool/pricing, preferir billed-on-match. Caso: contactout_search_people
+  cobra por perfil devuelto (no por match) → $9.52 no previstos, workspace a -22.94 créditos.
+
+PENDIENTES:
+1. signal-scan sobre las 37 → cada lead con gancho o "sin señal, no contactar". SIN ESTO el
+   pull no le sirve a Zadrac. (noticias gratis ya)
+2. 5 emails bloqueados por crédito (Deepline -22.94): Frank Basso/Voltage Park, Brent Shinall/MARA,
+   Bradley Audiss/CleanSpark, Joseph Rivera/Hut 8, Adam Ziskind/Cipher. Recargar → cerrar (~$0.50).
+3. 3 cuentas blanco: RunPod, Federal Pacific, Mitsubishi (por regla: committee no soporta 4A).
+4. Pasar el CSV a Zadrac (manual). Puede arrancar con 34 — tracker aditivo.
+5. LECCIÓN: pull por UNA vertical firmográfica con prima-generate-leads + signal-scan = barato
+   + con señal. 4 cats a mano + sin signal = caro + manco. Regla: firmográfico con skill madura;
+   manual solo para Cat1/Cat2 con techo de gasto.
+
+FRENTES PAUSADOS: universo de vigilancia + radar v0.3 continuo (watchlist desde Notion con
+dominios → noticias automáticas, alimenta el front); cockpit del equipo (une leads+feed del radar+
+asignaciones+warm intros — warm intros necesitan export LinkedIn de Gaby+Daniel); sync CSV→Google
+Sheet de Zadrac.
+
+Guardrails: nunca inventar (blank si no hay); excluir Crusoe/Antora; outreach gateado a 20/semana
++ sign-off de Gaby (el pull es inventario, no envío); no comitear sin visto bueno (excepto SESION_LOG).
+
 ## 2026-08-11 · cuenta: trabajo
 **Avancé — Primer pull de leads US Cat1-4 (37 cuentas), pipeline de enrichment validado:**
 - Cerré la lista final: Cat1=7 (Nebius de vuelta por regla US-buildout), Cat2=10,
