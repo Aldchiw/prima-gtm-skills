@@ -1,4 +1,25 @@
 ## 2026-08-12 · cuenta: trabajo
+**signal-scan Cat1/Cat2 corrido — 17 cuentas ahora escribibles.**
+
+- Corrí signal-scan sobre las 17 cuentas Cat1/Cat2 del pull, solo vía WebSearch, $0 gastado.
+  Resultado 16/17 CON señal (fuente + fecha), 1 SIN señal (Voltage Park — ruido fuera de ventana,
+  marcada "no contactar", no inventada). Commit 8ee17eb, local sin push.
+- Scope estricto respetado: Cat3/Cat4 sin tocar. 22 filas modificadas = 17 cuentas (5 con 2
+  contactos comparten señal).
+- Señales de alta calidad: leases Anthropic (Riot, TeraWulf), AMD (Core Scientific), NVIDIA (IREN),
+  rondas grandes (Together AI $800M, TensorWave $350M, RunPod, Lambda).
+
+PENDIENTES:
+1. signal-scan Cat3/Cat4: BLOQUEADO por predictleads/Deepline (créditos negativos). Recargar para
+   desbloquear.
+2. Cat1/Cat2 ya escribibles → siguiente fase hook/draft cuando toque.
+3. Nota para Zadrac/draft: varias Cat2 son cripto-mineras pivoteando a AI (Riot, MARA, TeraWulf,
+   Cipher, CleanSpark) — señal de "lease de XMW" puede necesitar ángulo distinto al de un OEM que
+   abre planta.
+4. Los 5 emails y las 3 cuentas blanco del pull siguen igual (bloqueados por crédito / sin
+   dictionary committee 4A).
+
+## 2026-08-12 · cuenta: trabajo
 **Primer pull de leads US (4 categorías) + cost control. CRÍTICO: el pull salió SIN
 señal — hay que correr signal-scan antes de que Zadrac escriba correos.**
 
