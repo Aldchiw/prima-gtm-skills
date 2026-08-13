@@ -62,6 +62,13 @@ import steps. None of these files connect to Sheets/Canva/Slack automatically �
 Aldahir does afterward (an automated Google Sheets API write is a logged future improvement in
 `SPRINT2_GABY_REVIEW.md`, not built yet).
 
+`output/leads_master.csv` es el archivo maestro unificado — TODOS los leads de todas las fuentes
+(accounts_processed, leads_final, account_roster, pulls) en un solo lugar, 1 fila por contacto,
+agrupado por company_category (Cat1-Cat7). Es la fuente que se conecta al Google Sheet en vivo y al
+cockpit. Regla: cuando entren leads nuevos, se mergean aquí por account_name (banca de contactos =
+unión, no reemplazo; dedup por contact_name dentro de cuenta); nunca se resetean stage/contact_count
+de cuentas existentes. Los 4 CSVs originales quedan como fuentes históricas.
+
 ## Working conventions
 
 - Treat `prima-signal-scan` and `prima-hook` outputs as strictly evidence-based: an empty result is
