@@ -1,3 +1,34 @@
+## 2026-08-14 · cuenta: trabajo
+**leads_master.csv unificado + subido a Google Sheets en vivo.**
+
+- Signal-scan Cat1/Cat2 ya estaba cerrado (16/17 con señal, commit 8ee17eb).
+- Construí output/leads_master.csv: unifiqué los 4 CSVs (accounts_processed, leads_final,
+  account_roster, pull) en un maestro único. 100 cuentas, 179 filas (1 por contacto), 23
+  columnas. Por categoría: Cat1=9, Cat2=10, Cat3=13, Cat4=68. 19 excluidas marcadas (no
+  perdidas). Conflicto de fuente: gana el más reciente + columna source_files. Banca de
+  roster UNIDA (union+dedup por contact_name) en 9 cuentas → +27 contactos. Commit 118434d.
+  Regla del maestro documentada en CLAUDE.md.
+- Nota de arquitectura: el pull 2026-08-12 se generó por fuera del pipeline estándar (esquema
+  ad-hoc signal_source/detail/url); el maestro normalizó a un solo esquema. Los 4 CSVs
+  originales quedan como fuentes históricas intactas.
+- Conecté terminal → Google Sheets vía service account. Google Cloud: proyecto
+  prima-leads-sheet, robot prima-leads-bot@prima-leads-sheet.iam.gserviceaccount.com (Editor
+  en el Sheet), API Sheets habilitada, llave en google-key.json protegida por .gitignore.
+  Subí las 179 filas al Sheet en vivo con Node.js (googleapis + csv-parse, sin ensuciar el
+  repo). Sheet: docs.google.com/spreadsheets/d/1lRWfcD4wIwvmTV8nuIpbpm2J9wCI8NQUF8RrF63v69g.
+  OJO: el Sheet NO auto-actualiza — se alimenta del leads_master.csv local vía comando manual.
+- Push a origin: 6 commits, main al día (3203c88..6c531f8).
+
+PENDIENTES:
+1. Automatizar la subida al Sheet (hoy comando manual; guardar el script Node como
+   reutilizable).
+2. Conectar el Sheet al cockpit (outreach-cockpit.html) — hoy corre con data de muestra.
+3. Cat3/Cat4 signal-scan: bloqueado por Deepline (créditos negativos). Recargar para
+   desbloquear + cerrar 5 emails colgados.
+4. (Seguridad, decisión de Aldahir: NO rotar por ahora) La llave del service account quedó
+   en el historial de git (commit 19a15ba, repo privado). Registrado como opcional, no
+   bloqueador.
+
 ## 2026-08-12 · cuenta: trabajo
 **signal-scan Cat1/Cat2 corrido — 17 cuentas ahora escribibles.**
 
