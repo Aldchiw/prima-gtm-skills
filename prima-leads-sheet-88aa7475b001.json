@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "prima-leads-sheet",
+  "private_key_id": "88aa7475b001f000533fa1a400cf014814a66850",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCvtCbdph6kK4C3\nDpMzErOWDkOPgBkJ/nCRBBVyOPXlsBaNp23nbUufIVK0RMWGCkTqFLsQvzw85FjA\nQjY9MdSd01mcpWWcgpCurNBsAnQuaV/CIcCblhUhz2p0YvocLOgHDXX6fLaygmWJ\nnVmB5YAoQPff87n/pxu/qsnvjFxS+0Gz3Btu1+he0Fr50DFDLwAzLwo92YMlr2/d\nHvpdB6T56nI9bnmqSsWv/Zay4wZdvdmJm5wTmVAqqFh4dQTBGI9yAbNBnHDdMHsB\nehJQOUt3Pb+w5WXkyK5++M6JuCsX3ZUAoqFM0q9YVJkk6q84/OK8+BlF+jp9FUtb\noOC5TIuhAgMBAAECggEAA9iAKAZteeOJnoAZOtNCRuLWqdi4e5R0DWmC6GhMogeO\n09CGBlxpHQFZRoCxl9WoVN0Jq+P6pxzKoEEmv6PEQwTT65q/aMu/C9K0oGOUnEoy\nRk0PspwYJ/B6tJPQxH57YOGjmx0hENLLswWUlqQxwBfNcRt8HwdO4zzjTPzkDa0g\nuvm2VrWmC4A2MJ9OHoy0dS+UI3EYq1ieoe1E8OIC+FTqD1Mr7V/tgYzryyi6bp5u\nZO5Gn6b6aJyv0PIIVk3bj7vs2yTvbye1mA8ydmGoa/GIPjcRODPOpp2uqg/jBTm/\nEjcRbNeVx++P0vhwvWrYsz9QKRrmz/6NpLRscSFCAQKBgQDpnQMLPgaD0R7M2kjW\nQBMM6fTSMr3hwv/Yw1kC96SLlRLg1+0omnbs9p/p9tnCvGrnH2Nhz2n2u0Py1xIi\n3ijG9eOrFAqd5T4J7ac9gnnkpUoHH3/S72nZ5YLF+hVkAu3pAnPptySPWaIrV5ho\nput1WQZLDHzc1z78sFpzOBPLAQKBgQDAioE+9ood3W8Kx1VXckfuFdsYBBsWGiSo\nR++M737mPxVb+EaAC9OlD8045R/VzLz80B3ITjpWJp3GnWitPtiP0Pg8kWolUKRU\nOrX+Z+7XlQZe933Vvw5NET4Isij+GLbpM+6ZnkRfUyD80L4+hTP5IsHNnVHhEBUg\nHwKg8DngoQKBgCufpEffJzxKOqQqRturT2Nj9NGjpA2aakhCAkcpk1J1XfcamzCv\n13FchHQeIn/Yy2WpWNeU8cafJYsdWkekkJzGoeL6dRkTC8iy1j4INVba/r3hxe7P\nwkZsM0Vg88mfOmn+iUKlbnBOXpgVXWJ9eQ6Kt0AgbtiWYS6yh9FoMVoBAoGANgio\nrNrTd/4ko4m9UYUo2pAXpG3CjDlaAD/v4kVz/3nErMLIRjcLdk8w8L6caIvEnc5q\nDUSm6nZ74LlcHwJ8FCA5CgZlG4O+GkU/vd29EZMo7o3WKp4rjUVBe39EMcsNyfRh\nCYt49KeHomuSeEk5hLlUWjfEOr0gsJsDSdcg5wECgYBYKSidIWAXjDhqKeb4z1aQ\nexYyuRvfCE1qTJJ/4iIiRFZaVnGEu8e+fStdcASiXqqk2NtiTfDZuPc8jB6Dmfr/\nk0eAFt4a3jSLxdR4QvQVEi8Bj34e1lDqAMmXvRYhWvVnaLXvVJ5wz5q/zOhwm1VB\npsVQiyLXmIXe4hD++pLsbQ==\n-----END PRIVATE KEY-----\n",
+  "client_email": "prima-leads-bot@prima-leads-sheet.iam.gserviceaccount.com",
+  "client_id": "111916004750711929623",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/prima-leads-bot%40prima-leads-sheet.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
