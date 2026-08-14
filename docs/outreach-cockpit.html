@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prima · Outreach Cockpit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#2b2bff; --blue-soft:rgba(43,43,255,.06);
+    --ink:#0f0f14; --ink-2:#565d6b; --ink-3:#9298a5;
+    --bg:#f3f4f7; --surface:#ffffff; --border:#e7e8ef; --border-2:#d8dae4;
+    --cat1:#0f8cff; --cat2:#e5484d; --cat3:#8e4ec6; --cat4:#d98016;
+    --good:#1a9d5a; --stale:#9298a5;
+    --sans:"Space Grotesk",-apple-system,BlinkMacSystemFont,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+    --shadow:0 1px 2px rgba(15,15,20,.03),0 3px 10px rgba(15,15,20,.04);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--sans);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased;
+    background:var(--bg);
+    background-image:radial-gradient(rgba(15,15,20,.05) 1px,transparent 1px);
+    background-size:22px 22px;padding-bottom:48px}
+  .wrap{max-width:1000px;margin:0 auto;padding:0 24px}
+  .mono{font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;font-weight:500}
+
+  header{background:rgba(243,244,247,.9);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);
+    position:sticky;top:0;z-index:20;padding:16px 0 15px;margin-bottom:26px}
+  .htop{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:11px}
+  .logo{width:28px;height:28px;border-radius:6px;background:var(--ink);position:relative}
+  .logo::before{content:"";position:absolute;inset:8px;border:1.8px solid #fff;border-radius:2px}
+  .logo::after{content:"";position:absolute;left:13px;top:6px;bottom:6px;width:1.8px;background:var(--blue)}
+  h1{font-size:17px;font-weight:600;letter-spacing:-.01em}
+  h1 span{color:var(--blue);font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;font-weight:500}
+
+  .userbar{display:flex;align-items:center;gap:12px;margin-top:16px;flex-wrap:wrap}
+  .ulabel{font-size:10.5px;color:var(--ink-3)}
+  .useg{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:3px;flex-wrap:wrap}
+  .useg button{border:none;background:transparent;color:var(--ink-2);font-family:var(--sans);font-size:13px;font-weight:500;
+    padding:6px 12px;border-radius:5px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:.12s}
+  .useg button:hover{color:var(--ink)}
+  .useg button.on{background:var(--ink);color:#fff}
+  .avatar{width:19px;height:19px;border-radius:4px;font-size:9px;font-weight:600;display:flex;
+    align-items:center;justify-content:center;color:#fff;font-family:var(--mono)}
+  .useg button.on .avatar{outline:1px solid rgba(255,255,255,.4)}
+
+  .secmark{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+  .secnum{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--blue);border:1px solid var(--border-2);
+    border-radius:4px;padding:2px 6px;background:var(--surface)}
+  .sectxt{font-family:var(--mono);text-transform:uppercase;letter-spacing:.09em;font-size:11px;color:var(--ink-2);font-weight:500}
+
+  .controls{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+  .chips{display:flex;gap:7px;flex-wrap:wrap}
+  .chip{font-family:var(--mono);text-transform:uppercase;letter-spacing:.05em;font-size:11px;font-weight:500;
+    padding:6px 11px;border-radius:6px;cursor:pointer;border:1px solid var(--border);background:var(--surface);
+    color:var(--ink-2);transition:.12s;display:flex;align-items:center;gap:7px}
+  .chip:hover{border-color:var(--border-2);color:var(--ink)}
+  .chip.on{color:var(--blue);border-color:var(--blue);background:var(--blue-soft)}
+  .chip .cd{width:7px;height:7px;border-radius:1px}
+  .chip .ct{opacity:.55}
+  .toggle{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;
+    font-family:var(--mono);text-transform:uppercase;letter-spacing:.05em;font-size:11px;color:var(--ink-2);font-weight:500}
+  .switch{width:34px;height:19px;border-radius:4px;background:#e3e5ec;border:1px solid var(--border);position:relative;transition:.15s}
+  .switch::after{content:"";position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:2px;background:#fff;box-shadow:0 1px 2px rgba(15,15,20,.2);transition:.15s}
+  .toggle.on .switch{background:var(--blue);border-color:var(--blue)}
+  .toggle.on .switch::after{left:16px}
+
+  .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:26px}
+  @media(max-width:640px){.tiles{grid-template-columns:repeat(2,1fr)}}
+  .tile{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:15px 16px;box-shadow:var(--shadow)}
+  .tile .n{font-size:27px;font-weight:600;letter-spacing:-.02em;line-height:1}
+  .tile .l{font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;font-size:10px;color:var(--ink-3);margin-top:8px;font-weight:500}
+  .tile.warm .n{color:var(--blue)}
+  .tile.fresh .n{color:var(--good)}
+
+  .list{display:flex;flex-direction:column;gap:12px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);transition:.14s}
+  .card:hover{border-color:var(--border-2)}
+  .card.haswarm{border-color:rgba(43,43,255,.3)}
+  .warmbar{background:var(--blue-soft);border-bottom:1px solid rgba(43,43,255,.14);
+    padding:9px 18px;display:flex;align-items:center;gap:9px;font-size:12.5px}
+  .warmbar .wl{font-family:var(--mono);text-transform:uppercase;letter-spacing:.07em;font-size:10px;color:var(--blue);font-weight:600}
+  .warmbar .who{color:var(--ink);font-weight:500}
+  .warmbar .who b{color:var(--blue);font-weight:600}
+  .warmbar .lvl{margin-left:auto;font-family:var(--mono);text-transform:uppercase;font-size:9.5px;letter-spacing:.06em;
+    color:var(--blue);border:1px solid rgba(43,43,255,.35);border-radius:4px;padding:2px 7px;font-weight:500}
+  .cbody{padding:16px 18px;display:grid;grid-template-columns:1fr auto;gap:18px}
+  .co{font-size:16px;font-weight:600;letter-spacing:-.01em;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .badge{font-family:var(--mono);text-transform:uppercase;font-size:9.5px;font-weight:600;letter-spacing:.05em;
+    padding:2.5px 7px;border-radius:4px;display:inline-flex;align-items:center;gap:5px}
+  .badge .cd{width:6px;height:6px;border-radius:1px}
+  .contact{font-size:12.5px;color:var(--ink-2);margin-top:4px}
+  .contact b{color:var(--ink);font-weight:500}
+  .srow{margin-top:11px}
+  .rlabel{font-family:var(--mono);text-transform:uppercase;letter-spacing:.07em;font-size:9.5px;color:var(--ink-3);font-weight:500;margin-bottom:4px}
+  .signal{display:flex;align-items:center;gap:8px;font-size:12.5px;flex-wrap:wrap}
+  .sdot{width:7px;height:7px;border-radius:50%;flex:none}
+  .signal .stext{color:var(--ink);font-weight:500}
+  .signal a{color:var(--blue);text-decoration:none;font-family:var(--mono);text-transform:uppercase;font-size:9.5px;letter-spacing:.05em;font-weight:500}
+  .signal a:hover{text-decoration:underline}
+  .signal .age{color:var(--ink-3);font-size:11px;font-family:var(--mono)}
+  .right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;text-align:right;min-width:150px}
+  .cadlabel{font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em;font-size:9.5px;color:var(--ink-3);font-weight:500}
+  .cadlabel b{color:var(--ink);font-weight:600}
+  .steps{display:flex;gap:5px;align-items:center;margin:5px 0 3px}
+  .step{display:flex;flex-direction:column;align-items:center;gap:3px}
+  .step .s{width:9px;height:9px;border-radius:2px;background:#e6e8ef;border:1px solid var(--border)}
+  .step.done .s{background:var(--good);border-color:var(--good)}
+  .step.now .s{background:#fff;border-color:var(--blue);box-shadow:0 0 0 2px rgba(43,43,255,.16)}
+  .step .t{font-family:var(--mono);font-size:7.5px;color:var(--ink-3);letter-spacing:.02em}
+  .step.done .t,.step.now .t{color:var(--ink-2)}
+  .next{font-family:var(--mono);text-transform:uppercase;font-size:9.5px;letter-spacing:.05em;color:var(--ink-3)}
+  .next b{color:var(--blue);font-weight:600}
+  .empty{text-align:center;color:var(--ink-3);padding:52px 20px;font-size:13px;font-family:var(--mono)}
+  .foot{margin-top:30px;padding-top:20px;border-top:1px solid var(--border);font-size:11.5px;color:var(--ink-3);line-height:1.8}
+  .foot b{color:var(--ink-2);font-weight:500}
+  .foot .fl{font-family:var(--mono);text-transform:uppercase;letter-spacing:.07em;font-size:10px;color:var(--blue);display:block;margin-bottom:6px;font-weight:500}
+  .ico{width:13px;height:13px;flex:none;stroke:var(--blue);fill:none;stroke-width:1.8}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="htop">
+      <div class="brand">
+        <div class="logo"></div>
+        <h1>Outreach Cockpit <span>// Data Centers</span></h1>
+      </div>
+    </div>
+    <div class="userbar">
+      <span class="ulabel mono">Viewing as</span>
+      <div class="useg" id="userseg"></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="secmark">
+    <span class="secnum">01</span>
+    <span class="sectxt">Your pipeline — by category</span>
+  </div>
+
+  <div class="controls">
+    <div class="chips" id="catchips"></div>
+    <div class="toggle" id="warmtoggle"><span>Warm intros only</span><div class="switch"></div></div>
+  </div>
+
+  <div class="tiles" id="tiles"></div>
+  <div class="list" id="list"></div>
+
+  <div class="foot">
+    <span class="fl">// How this works</span>
+    <b>Each teammate sees only the leads assigned to them, grouped by category.</b> Every lead updates live with its buy-window signal, its follow-up stage, and — the edge — whether Gaby or Daniel has a warm path in.<br>
+    Live wiring: signals from the Signal Radar · assignments &amp; follow-ups from Zadrac · warm intros from Gaby &amp; Daniel's exported connections (matched locally, zero API cost).
+  </div>
+</div>
+
+<script>
+const CATS = {
+  Cat1:{name:"Cat 1", full:"AI Operators", color:"#0f8cff"},
+  Cat2:{name:"Cat 2", full:"Crypto→AI", color:"#e5484d"},
+  Cat3:{name:"Cat 3", full:"Contractors", color:"#8e4ec6"},
+  Cat4:{name:"Cat 4", full:"Manufacturers", color:"#d98016"}
+};
+const USERS = [
+  {id:"manuel", name:"Manuel Ibarra", color:"#2b2bff"},
+  {id:"gustavo", name:"Gustavo Rivas", color:"#0f8cff"},
+  {id:"gabriela", name:"Gabriela Zacarias", color:"#8e4ec6"}
+];
+const STEPS = ["E1","LI","E2","E3"];
+
+const LEADS = [
+  {co:"CoreWeave", cat:"Cat1", contact:"David Kim", title:"Dir. Data Center Deployment",
+   signal:{type:"news", text:"Announced 200 MW Texas campus", age:3, url:"#"}, stage:1,
+   warm:{who:"Daniel", target:"David Kim", level:"contact"}, user:"manuel"},
+  {co:"Rosendin Electric", cat:"Cat3", contact:"Sarah Chen", title:"Procurement Manager",
+   signal:{type:"job", text:"Opened: Procurement Specialist", age:6, url:"#"}, stage:1,
+   warm:{who:"Gaby", target:"Rosendin Electric", level:"company"}, user:"manuel"},
+  {co:"Form Energy", cat:"Cat4", contact:"Lisa Park", title:"Supply Chain Lead",
+   signal:{type:"job", text:"Opened: Strategic Sourcing Manager", age:4, url:"#"}, stage:2,
+   warm:null, user:"manuel"},
+  {co:"Riot Platforms", cat:"Cat2", contact:"Tom Reyes", title:"Head of Infrastructure",
+   signal:{type:"news", text:"New 100 MW site announced", age:8, url:"#"}, stage:0,
+   warm:{who:"Gaby", target:"Riot Platforms", level:"company"}, user:"gustavo"},
+  {co:"Pennsylvania Transformer", cat:"Cat4", contact:"Mike Doyle", title:"VP Operations",
+   signal:{type:"none", text:"Watching — no fresh signal", age:null, url:null}, stage:0,
+   warm:null, user:"gustavo"},
+  {co:"Nebius", cat:"Cat1", contact:"Elena Vos", title:"VP Infrastructure",
+   signal:{type:"news", text:"EU capacity expansion", age:2, url:"#"}, stage:0,
+   warm:null, user:"gustavo"},
+  {co:"STULZ USA", cat:"Cat4", contact:"Hans Weber", title:"Plant Manager",
+   signal:{type:"job", text:"Opened: Purchasing Manager", age:5, url:"#"}, stage:1,
+   warm:{who:"Daniel", target:"Hans Weber", level:"contact"}, user:"gabriela"},
+  {co:"Excellerate", cat:"Cat3", contact:"Priya Nair", title:"Procurement Director",
+   signal:{type:"job", text:"Opened: Buyer II", age:11, url:"#"}, stage:3,
+   warm:null, user:"gabriela"},
+  {co:"Mainspring Energy", cat:"Cat4", contact:"Raj Patel", title:"Procurement Lead",
+   signal:{type:"job", text:"Opened: Strategic Sourcing", age:9, url:"#"}, stage:2,
+   warm:{who:"Daniel", target:"Raj Patel", level:"contact"}, user:"gabriela"}
+];
+
+const state = {user:"manuel", cat:"all", warmOnly:false};
+const el = s => document.querySelector(s);
+const initials = n => n.split(" ").map(w=>w[0]).slice(0,2).join("");
+function sigColor(s){ if(s.type==="none") return "var(--stale)"; return s.age<=7 ? "var(--good)" : "var(--stale)"; }
+function fresh(s){ return s.type!=="none" && s.age!=null && s.age<=14; }
+
+function filtered(){
+  return LEADS.filter(l => l.user===state.user)
+    .filter(l => state.cat==="all" || l.cat===state.cat)
+    .filter(l => !state.warmOnly || l.warm)
+    .sort((a,b)=>{
+      if((!!b.warm) - (!!a.warm)) return (!!b.warm) - (!!a.warm);
+      const av=a.signal.age==null?999:a.signal.age, bv=b.signal.age==null?999:b.signal.age;
+      return av-bv;
+    });
+}
+
+function renderUsers(){
+  el("#userseg").innerHTML = USERS.map(u=>`
+    <button data-u="${u.id}" class="${state.user===u.id?'on':''}">
+      <span class="avatar" style="background:${u.color}">${initials(u.name)}</span>${u.name}
+    </button>`).join("");
+  el("#userseg").querySelectorAll("button").forEach(b=>b.onclick=()=>{state.user=b.dataset.u;renderAll();});
+}
+function renderChips(){
+  const mine = LEADS.filter(l=>l.user===state.user);
+  const chips = [{k:"all",name:"All",c:null}].concat(
+    Object.keys(CATS).map(k=>({k,name:CATS[k].name,c:CATS[k].color})));
+  el("#catchips").innerHTML = chips.map(c=>{
+    const count = c.k==="all"? mine.length : mine.filter(l=>l.cat===c.k).length;
+    return `<div class="chip ${state.cat===c.k?'on':''}" data-c="${c.k}">
+      ${c.c?`<span class="cd" style="background:${c.c}"></span>`:""}${c.name}<span class="ct">${count}</span></div>`;
+  }).join("");
+  el("#catchips").querySelectorAll(".chip").forEach(ch=>ch.onclick=()=>{state.cat=ch.dataset.c;renderAll();});
+}
+function renderTiles(){
+  const mine = LEADS.filter(l=>l.user===state.user);
+  const f = mine.filter(l=>fresh(l.signal)).length;
+  const w = mine.filter(l=>l.warm).length;
+  const nf = mine.filter(l=>l.stage>0 && l.stage<4).length;
+  el("#tiles").innerHTML = `
+    <div class="tile"><div class="n">${mine.length}</div><div class="l">My leads</div></div>
+    <div class="tile fresh"><div class="n">${f}</div><div class="l">Fresh signals</div></div>
+    <div class="tile warm"><div class="n">${w}</div><div class="l">Warm intros</div></div>
+    <div class="tile"><div class="n">${nf}</div><div class="l">In sequence</div></div>`;
+}
+function cadence(stage){
+  const dots = STEPS.map((s,i)=>{
+    const cls = i<stage?"done":(i===stage?"now":"");
+    return `<div class="step ${cls}"><span class="s"></span><span class="t">${s}</span></div>`;
+  }).join("");
+  const label = stage===0 ? "Not started" : `Follow-up ${stage}/4`;
+  const next = stage>=4 ? `<span class="next">Complete</span>` : `<span class="next">Next: <b>${STEPS[stage]==="LI"?"LinkedIn":STEPS[stage]}</b></span>`;
+  return `<span class="cadlabel"><b>${label}</b></span><div class="steps">${dots}</div>${next}`;
+}
+function warmText(w){
+  return w.level==="contact" ? `<span class="who">${w.who} knows <b>${w.target}</b></span>`
+    : `<span class="who">${w.who} — contact at <b>${w.target}</b></span>`;
+}
+const peopleIco = `<svg class="ico" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M16 6a3 3 0 0 1 0 6"/><path d="M18 20a6 6 0 0 0-3-5"/></svg>`;
+
+function renderList(){
+  const rows = filtered();
+  if(!rows.length){ el("#list").innerHTML = `<div class="empty">No leads match this filter</div>`; return; }
+  el("#list").innerHTML = rows.map(l=>{
+    const c = CATS[l.cat].color;
+    const warm = l.warm ? `<div class="warmbar">${peopleIco}<span class="wl">Warm intro</span>${warmText(l.warm)}
+      <span class="lvl">${l.warm.level==="contact"?"Direct":"Company"}</span></div>` : "";
+    const sig = l.signal.type==="none"
+      ? `<div class="signal"><span class="sdot" style="background:var(--stale)"></span><span class="stext" style="color:var(--ink-3);font-weight:400">${l.signal.text}</span></div>`
+      : `<div class="signal"><span class="sdot" style="background:${sigColor(l.signal)}"></span>
+         <span class="stext">${l.signal.text}</span><span class="age">${l.signal.age}d</span>
+         <a href="${l.signal.url}" target="_blank">source →</a></div>`;
+    return `<div class="card ${l.warm?'haswarm':''}">${warm}
+      <div class="cbody">
+        <div>
+          <div class="co">${l.co}<span class="badge" style="color:${c};background:${c}12;border:1px solid ${c}33"><span class="cd" style="background:${c}"></span>${l.cat}</span></div>
+          <div class="contact"><b>${l.contact}</b> · ${l.title}</div>
+          <div class="srow"><div class="rlabel">Signal</div>${sig}</div>
+        </div>
+        <div class="right">${cadence(l.stage)}</div>
+      </div></div>`;
+  }).join("");
+}
+function renderAll(){ renderUsers(); renderChips(); renderTiles(); renderList(); }
+el("#warmtoggle").onclick = function(){ state.warmOnly=!state.warmOnly; this.classList.toggle("on",state.warmOnly); renderList(); };
+renderAll();
+</script>
+</body>
+</html>
