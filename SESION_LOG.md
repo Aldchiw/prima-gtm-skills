@@ -1,4 +1,35 @@
 ## 2026-08-14 · cuenta: trabajo
+**Cockpit al repo + Impeccable instalado + primer pase de rediseño (en pausa para iterar).**
+
+- Subí docs/outreach-cockpit.html al repo (commit ffd8e97, pusheado). Antes solo vivía como
+  artefacto en el otro Claude, no en el repo.
+- Instalé Impeccable (npx skills add pbakaus/impeccable) en .agents/skills. Corrí
+  /impeccable audit sobre el cockpit: score 12/20, "aceptable". Fondo bueno (taxonomía Cat1-4,
+  warm intros, cadencia E1/LI/E2/E3 son específicos de Prima, no genéricos), pero con 3 P1 de
+  accesibilidad/legibilidad.
+- Corrí /impeccable harden: arregló los 3 P1 (teclado/ARIA en filtros y toggle, contraste del
+  texto ilegible --ink-3 de 2.6:1 a 5.0:1 sobre todo la edad de señal, tamaño de labels de
+  cadencia). 15 líneas, 0 en datos/lógica.
+- Backup creado: docs/outreach-cockpit-backup.html (pre-rediseño).
+- Corrí rediseño visual (typeset+colorize+layout+polish) con dirección de marca: estilo
+  Linear/Vercel minimalista, negro/blanco + rojo SOLO como acento sutil (5 lugares
+  deliberados), quitó Space Grotesk/mono genérico y el grid punteado, paleta de categorías
+  apagada sin rojo. Datos (CATS/USERS) intactos.
+- APRENDIZAJE / próximo paso: los cambios funcionales y de accesibilidad gustan, PERO el
+  rediseño mantuvo la ESTRUCTURA (mismo layout de cards) y sigue sintiéndose algo "AI". La
+  estructura genérica es lo que da el look AI, no solo la piel. Impeccable por defecto es
+  conservador con el layout.
+
+PENDIENTES:
+1. PRÓXIMA SESIÓN = ITERAR el diseño: darle a Impeccable permiso explícito para reestructurar
+   el layout (no solo repintar), con contexto de qué necesita ver cada usuario de un vistazo.
+   Considerar /impeccable bolder o /impeccable layout con dirección fuerte.
+2. Push del cockpit rediseñado a GitHub cuando quede aprobado (hoy el rediseño está local, no
+   pusheado; backup en docs/outreach-cockpit-backup.html).
+3. Conectar el cockpit a leads_master.csv (datos reales) — Aldahir lo hará en el otro Claude.
+4. Automatizar subida al Sheet + Cat3/Cat4 signal-scan (bloqueado por Deepline).
+
+## 2026-08-14 · cuenta: trabajo
 **leads_master.csv unificado + subido a Google Sheets en vivo.**
 
 - Signal-scan Cat1/Cat2 ya estaba cerrado (16/17 con señal, commit 8ee17eb).
