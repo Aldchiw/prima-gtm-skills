@@ -1,4 +1,31 @@
 ## 2026-08-15 · cuenta: trabajo
+**Cockpit — pulido final, paleta de marca Prima real y logo.**
+
+- /impeccable polish + delight: refinamiento de espaciados/jerarquía + micro-interacciones
+  sutiles (hover en cards, transiciones) con mesura de modo Operate.
+- /impeccable colorize con la paleta REAL de Prima extraída de capturas del ERP: negro cálido
+  #1A1A1A, rojo-CORAL #DA5551 (no rojo puro — el real de Prima, más suave), azul acero
+  #2E6DA4 SOLO para navegación/links (source→). Disciplina de color: rojo=estado/urgencia,
+  azul=navegación, selección simple en negro/blanco. Contraste AA verificado.
+- Logo de Prima real agregado al header (docs/assets/prima-logo.png) junto a "Outreach
+  Cockpit", alineado al centro. Quitado el subtítulo "Data Centers" del header para limpieza.
+  Nota: el PNG tiene ~67px de padding transparente arriba/abajo (afecta alineaciones finas si
+  se reusa).
+- SHOW_WARM_INTROS quedó en true tras la iteración.
+- Todo verificado: LEADS/USERS/CATS byte-igual. Backups acumulados: outreach-cockpit-backup,
+  -pre-shape, -pre-polish, -pre-brand.
+
+ESTADO DEL COCKPIT: diseño terminado. Estructura reorganizada por categoría, nombres reales,
+filtros de selección única, sort, feature flag warm-intros, paleta de marca Prima real, logo.
+Listo para recibir datos reales.
+
+PENDIENTES (otro Claude / Cowork): conectar cockpit a leads_master.csv (datos reales) — ahí
+se ven noticias/radar reales y el sort trabajando.
+PENDIENTES (Deepline recargado): Cat3/Cat4 signal-scan + 5 emails colgados.
+PENDIENTE (futuro): detección de contactos en común para prender warm-intros (Sales Nav API
+vs lista manual).
+
+## 2026-08-15 · cuenta: trabajo
 **Iteración de diseño del cockpit con Impeccable — reestructura + feature flag.**
 
 - /impeccable init creó el brief que faltaba: PRODUCT.md + DESIGN.md (modo Operate, North Star
