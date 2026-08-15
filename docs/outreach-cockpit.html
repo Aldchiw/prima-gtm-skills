@@ -62,7 +62,8 @@
   .sortctl{display:flex;align-items:center;gap:10px}
 
   .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
-  @media(max-width:640px){.tiles{grid-template-columns:repeat(2,1fr)}}
+  .tiles.cols-3{grid-template-columns:repeat(3,1fr)}
+  @media(max-width:640px){.tiles,.tiles.cols-3{grid-template-columns:repeat(2,1fr)}}
   .tile{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 17px;
     text-align:left;cursor:pointer;appearance:none;-webkit-appearance:none;font-family:var(--sans);transition:.12s}
   .tile:hover{border-color:var(--border-2)}
@@ -186,6 +187,12 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 </div>
 
 <script>
+// Feature flag: warm-intro detection (common-contact matching) isn't resolved yet
+// (future: Sales Navigator API or a manual list). Flip to true once that's decided —
+// every warm-intro banner, stat tile, and sort option reappears exactly as built, nothing
+// to rebuild.
+const SHOW_WARM_INTROS = false;
+
 const CATS = {
   Cat1:{name:"Cat 1", full:"AI Operators", color:"#0f8cff"},
   Cat2:{name:"Cat 2", full:"Crypto→AI", color:"#e5484d"},
@@ -234,7 +241,7 @@ const LEADS = [
    warm:{who:"Daniel", target:"Raj Patel", level:"contact"}, user:"gabriela"}
 ];
 
-const state = {user:"manuel", cat:"all", warmOnly:false, freshOnly:false, sequenceOnly:false, sort:"warm"};
+const state = {user:"manuel", cat:"all", warmOnly:false, freshOnly:false, sequenceOnly:false, sort: SHOW_WARM_INTROS ? "warm" : "fresh"};
 const el = s => document.querySelector(s);
 const initials = n => n.split(" ").map(w=>w[0]).slice(0,2).join("");
 function sigColor(s){ if(s.type==="none") return "var(--stale)"; return s.age<=7 ? "var(--good)" : "var(--stale)"; }
@@ -281,7 +288,8 @@ function renderChips(){
   el("#catchips").querySelectorAll(".chip").forEach(ch=>ch.onclick=()=>{state.cat=ch.dataset.c;renderAll();});
 }
 function renderSort(){
-  el("#sortseg").innerHTML = SORTS.map(s=>`
+  const opts = SHOW_WARM_INTROS ? SORTS : SORTS.filter(s=>s.k!=="warm");
+  el("#sortseg").innerHTML = opts.map(s=>`
     <button type="button" data-s="${s.k}" class="${state.sort===s.k?'on':''}" aria-pressed="${state.sort===s.k}">${s.label}</button>`).join("");
   el("#sortseg").querySelectorAll("button").forEach(b=>b.onclick=()=>{state.sort=b.dataset.s;renderAll();});
 }
@@ -291,10 +299,14 @@ function renderTiles(){
   const w = mine.filter(l=>l.warm).length;
   const nf = mine.filter(l=>l.stage>0 && l.stage<4).length;
   const allActive = !state.warmOnly && !state.freshOnly && !state.sequenceOnly;
+  el("#tiles").classList.toggle("cols-3", !SHOW_WARM_INTROS);
+  const warmTile = SHOW_WARM_INTROS
+    ? `<button type="button" class="tile warm ${state.warmOnly?'on':''}" data-t="warm" aria-pressed="${state.warmOnly}"><div class="n">${w}</div><div class="l">Warm intros</div></button>`
+    : "";
   el("#tiles").innerHTML = `
     <button type="button" class="tile ${allActive?'on':''}" data-t="all" aria-pressed="${allActive}"><div class="n">${mine.length}</div><div class="l">My leads</div></button>
     <button type="button" class="tile fresh ${state.freshOnly?'on':''}" data-t="fresh" aria-pressed="${state.freshOnly}"><div class="n">${f}</div><div class="l">Fresh signals</div></button>
-    <button type="button" class="tile warm ${state.warmOnly?'on':''}" data-t="warm" aria-pressed="${state.warmOnly}"><div class="n">${w}</div><div class="l">Warm intros</div></button>
+    ${warmTile}
     <button type="button" class="tile ${state.sequenceOnly?'on':''}" data-t="seq" aria-pressed="${state.sequenceOnly}"><div class="n">${nf}</div><div class="l">In sequence</div></button>`;
   el("#tiles").querySelectorAll(".tile").forEach(t=>t.onclick=()=>{
     const k = t.dataset.t;
@@ -321,14 +333,15 @@ function warmText(w){
 const peopleIco = `<svg class="ico" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M16 6a3 3 0 0 1 0 6"/><path d="M18 20a6 6 0 0 0-3-5"/></svg>`;
 
 function cardHtml(l){
-  const warm = l.warm ? `<div class="warmbar">${peopleIco}<span class="wl">Warm intro</span>${warmText(l.warm)}
+  const showWarm = SHOW_WARM_INTROS && l.warm;
+  const warm = showWarm ? `<div class="warmbar">${peopleIco}<span class="wl">Warm intro</span>${warmText(l.warm)}
     <span class="lvl">${l.warm.level==="contact"?"Direct":"Company"}</span></div>` : "";
   const sig = l.signal.type==="none"
     ? `<div class="signal"><span class="sdot" style="background:var(--stale)"></span><span class="stext" style="color:var(--ink-3);font-weight:400">${l.signal.text}</span></div>`
     : `<div class="signal"><span class="sdot" style="background:${sigColor(l.signal)}"></span>
        <span class="stext">${l.signal.text}</span><span class="age">${l.signal.age}d</span>
        <a href="${l.signal.url}" target="_blank">source →</a></div>`;
-  return `<div class="card ${l.warm?'haswarm':''}" role="listitem">${warm}
+  return `<div class="card ${showWarm?'haswarm':''}" role="listitem">${warm}
     <div class="cbody">
       <div>
         <div class="co">${l.co}<span class="badge cat-${l.cat}" title="${CATS[l.cat].full}"><span class="cd" aria-hidden="true"></span>${l.cat}</span></div>
