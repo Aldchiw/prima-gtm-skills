@@ -9,28 +9,30 @@
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --red:#DA5551; --red-soft:rgba(218,85,81,.05); --red-text:#B83530;
-    --link:#2E6DA4;
-    --ink:#1A1A1A; --ink-2:#52525B; --ink-3:#64646D;
-    --bg:#F5F6F7; --surface:#FFFFFF; --border:#E4E4E7; --border-2:#D4D4D8;
+    --red:#C81E3A; --red-soft:rgba(200,30,58,.05);
+    --ink:#0A0A0C; --ink-2:#52525B; --ink-3:#64646D;
+    --bg:#FAFAFA; --surface:#FFFFFF; --border:#E4E4E7; --border-2:#D4D4D8;
     --cat1:#4C5A92; --cat2:#8A6A22; --cat3:#7A5C8A; --cat4:#3D7A6C;
     --good:#3D7A52; --stale:#8B8B93;
     --sans:"Archivo",-apple-system,BlinkMacSystemFont,sans-serif;
     --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
-    --shadow:0 1px 2px rgba(26,26,26,.04),0 4px 12px rgba(26,26,26,.05);
+    --shadow:0 1px 2px rgba(10,10,12,.04),0 4px 12px rgba(10,10,12,.05);
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:var(--sans);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased;
     background:var(--bg);padding-bottom:56px}
   .wrap{max-width:1000px;margin:0 auto;padding:0 24px}
 
-  header{background:rgba(245,246,247,.88);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);
+  header{background:rgba(250,250,250,.88);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);
     position:sticky;top:0;z-index:20;padding:18px 0 16px;margin-bottom:32px}
   .htop{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
   .brand{display:flex;align-items:center;gap:11px}
-  .logo{height:28px;width:auto;flex:none;display:block}
-  .wordmark{display:flex;align-items:baseline;gap:9px;line-height:1}
+  .logo{width:26px;height:26px;border-radius:6px;background:var(--ink);position:relative;flex:none}
+  .logo::before{content:"";position:absolute;inset:8px;border:1.6px solid #fff;border-radius:2px}
+  .logo::after{content:"";position:absolute;left:12px;top:6px;bottom:6px;width:1.6px;background:var(--red)}
+  .wordmark{display:flex;align-items:baseline;gap:9px}
   h1{font-size:16px;font-weight:600;letter-spacing:-.01em;color:var(--ink)}
+  .subtag{font-size:12px;color:var(--ink-3);font-weight:500}
 
   .userbar{display:flex;align-items:center;gap:12px;margin-top:16px;flex-wrap:wrap}
   .ulabel{font-size:12px;color:var(--ink-3);font-weight:500}
@@ -86,13 +88,13 @@
   .list{display:flex;flex-direction:column;gap:14px}
   .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:.14s}
   .card:hover{border-color:var(--border-2);box-shadow:var(--shadow)}
-  .card.haswarm{border-color:rgba(218,85,81,.22)}
-  .warmbar{background:var(--red-soft);border-bottom:1px solid rgba(218,85,81,.14);
+  .card.haswarm{border-color:rgba(200,30,58,.22)}
+  .warmbar{background:var(--red-soft);border-bottom:1px solid rgba(200,30,58,.14);
     padding:10px 20px;display:flex;align-items:center;gap:9px;font-size:12.5px}
-  .warmbar .wl{font-size:11px;font-weight:600;color:var(--red-text)}
+  .warmbar .wl{font-size:11px;font-weight:600;color:var(--red)}
   .warmbar .who{color:var(--ink);font-weight:400}
   .warmbar .who b{color:var(--ink);font-weight:600}
-  .warmbar .lvl{margin-left:auto;font-size:10.5px;color:var(--red-text);border:1px solid rgba(218,85,81,.28);border-radius:999px;padding:3px 9px;font-weight:500}
+  .warmbar .lvl{margin-left:auto;font-size:10.5px;color:var(--red);border:1px solid rgba(200,30,58,.28);border-radius:999px;padding:3px 9px;font-weight:500}
   .cbody{padding:18px 20px;display:grid;grid-template-columns:1fr auto;gap:18px}
   .co{font-size:16px;font-weight:600;letter-spacing:-.01em;display:flex;align-items:center;gap:9px;flex-wrap:wrap;color:var(--ink)}
   .badge{font-family:var(--sans);font-size:11px;font-weight:600;
@@ -106,9 +108,9 @@
   .signal{display:flex;align-items:center;gap:8px;font-size:12.5px;flex-wrap:wrap}
   .sdot{width:7px;height:7px;border-radius:50%;flex:none}
   .signal .stext{color:var(--ink);font-weight:500}
-  .signal a{color:var(--link);text-decoration:none;font-size:11px;font-weight:500;
+  .signal a{color:var(--ink-2);text-decoration:none;font-size:11px;font-weight:500;
     display:inline-flex;align-items:center;gap:1px}
-  .signal a:hover{text-decoration:underline;text-underline-offset:2px}
+  .signal a:hover{color:var(--ink);text-decoration:underline;text-underline-offset:2px}
   .signal a .arrow{transition:transform .15s}
   .signal a:hover .arrow{transform:translateX(2px)}
   .signal .age{color:var(--ink-3);font-size:11px;font-family:var(--mono);font-weight:500}
@@ -119,7 +121,7 @@
   .step{display:flex;flex-direction:column;align-items:center;gap:3px}
   .step .s{width:9px;height:9px;border-radius:2px;background:#EDEDF0;border:1px solid var(--border)}
   .step.done .s{background:var(--ink-3);border-color:var(--ink-3)}
-  .step.now .s{background:#fff;border-color:var(--red);box-shadow:0 0 0 2px rgba(218,85,81,.14)}
+  .step.now .s{background:#fff;border-color:var(--red);box-shadow:0 0 0 2px rgba(200,30,58,.14)}
   .step .t{font-family:var(--mono);font-size:10px;color:var(--ink-3);letter-spacing:.02em}
   .step.done .t,.step.now .t{color:var(--ink-2)}
   .next{font-size:11px;color:var(--ink-3)}
@@ -135,7 +137,7 @@
   .ico{width:13px;height:13px;flex:none;stroke:var(--red);fill:none;stroke-width:1.8}
   .useg button:focus-visible,.chip:focus-visible,.tile:focus-visible,.empty .clearbtn:focus-visible,.signal a:focus-visible{outline:2px solid var(--red);outline-offset:2px}
   .signal a:focus-visible{border-radius:2px}
-  ::selection{background:rgba(218,85,81,.18);color:var(--ink)}
+  ::selection{background:rgba(200,30,58,.18);color:var(--ink)}
   @media (prefers-reduced-motion: reduce){
     *{transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}
   }
@@ -155,9 +157,10 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
   <div class="wrap">
     <div class="htop">
       <div class="brand">
-        <img class="logo" src="assets/prima-logo.png" alt="Prima" width="1042" height="334">
+        <div class="logo"></div>
         <div class="wordmark">
           <h1>Outreach Cockpit</h1>
+          <span class="subtag">Data Centers</span>
         </div>
       </div>
     </div>
