@@ -48,7 +48,7 @@
   .sechead{margin-bottom:18px}
   .sechead h2{font-size:13px;font-weight:600;color:var(--ink-2);letter-spacing:-.005em}
 
-  .controls{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+  .controls{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:22px}
   .chips{display:flex;gap:7px;flex-wrap:wrap}
   .chip{font-family:var(--sans);font-size:12.5px;font-weight:500;
     padding:7px 13px;border-radius:999px;cursor:pointer;border:1px solid var(--border);background:var(--surface);
@@ -59,30 +59,21 @@
   .chip .ct{opacity:.55}
   .cat-Cat1{--catc:var(--cat1)} .cat-Cat2{--catc:var(--cat2)} .cat-Cat3{--catc:var(--cat3)} .cat-Cat4{--catc:var(--cat4)}
 
-  .sortctl{display:flex;align-items:center;gap:10px}
+  .toggle{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;
+    font-family:var(--sans);font-size:12.5px;color:var(--ink-2);font-weight:500;
+    border:none;background:none;appearance:none;-webkit-appearance:none;text-align:left}
+  .switch{width:32px;height:18px;border-radius:999px;background:#E4E4E7;border:1px solid var(--border);position:relative;transition:.15s}
+  .switch::after{content:"";position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(10,10,12,.2);transition:.15s}
+  .toggle.on .switch{background:var(--red);border-color:var(--red)}
+  .toggle.on .switch::after{left:16px}
 
-  .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+  .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px}
   @media(max-width:640px){.tiles{grid-template-columns:repeat(2,1fr)}}
-  .tile{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 17px;
-    text-align:left;cursor:pointer;appearance:none;-webkit-appearance:none;font-family:var(--sans);transition:.12s}
-  .tile:hover{border-color:var(--border-2)}
+  .tile{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 17px}
   .tile .n{font-size:26px;font-weight:600;letter-spacing:-.02em;line-height:1;color:var(--ink)}
   .tile .l{font-size:11.5px;color:var(--ink-3);margin-top:8px;font-weight:500}
   .tile.warm .n{color:var(--red)}
   .tile.fresh .n{color:var(--good)}
-  .tile.on{background:var(--ink);border-color:var(--ink)}
-  .tile.on .n,.tile.on .l{color:#fff}
-
-  .summary{font-size:11px;color:var(--ink-3);margin-bottom:14px}
-  .summary:empty{display:none;margin-bottom:0}
-
-  .section{margin-bottom:28px}
-  .section:last-child{margin-bottom:0}
-  .sechead2{display:flex;align-items:baseline;gap:9px;margin-bottom:12px;padding-bottom:9px;border-bottom:1px solid var(--border)}
-  .sechead2 .catdot{width:8px;height:8px;border-radius:50%;background:var(--catc);flex:none}
-  .sechead2 h3{font-size:14px;font-weight:600;color:var(--ink);letter-spacing:-.005em}
-  .sechead2 .catcode{font-size:10.5px;color:var(--ink-3);font-weight:500}
-  .sechead2 .seccount{margin-left:auto;font-size:11px;color:var(--ink-3);font-weight:500}
 
   .list{display:flex;flex-direction:column;gap:14px}
   .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:.14s}
@@ -123,14 +114,11 @@
   .next{font-size:11px;color:var(--ink-3)}
   .next b{color:var(--ink);font-weight:600}
   .empty{text-align:center;color:var(--ink-3);padding:56px 20px;font-size:13px}
-  .empty .clearbtn{margin-top:16px;display:inline-block;font-family:var(--sans);font-size:12px;font-weight:500;
-    color:var(--ink);background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:7px 15px;cursor:pointer}
-  .empty .clearbtn:hover{border-color:var(--border-2)}
   .foot{margin-top:34px;padding-top:22px;border-top:1px solid var(--border);font-size:11.5px;color:var(--ink-3);line-height:1.8}
   .foot b{color:var(--ink-2);font-weight:500}
   .foot .fl{font-size:11px;font-weight:600;color:var(--ink);display:block;margin-bottom:7px}
   .ico{width:13px;height:13px;flex:none;stroke:var(--red);fill:none;stroke-width:1.8}
-  .useg button:focus-visible,.chip:focus-visible,.tile:focus-visible,.empty .clearbtn:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+  .useg button:focus-visible,.chip:focus-visible,.toggle:focus-visible{outline:2px solid var(--red);outline-offset:2px}
 </style>
 </head>
 <body>
@@ -138,7 +126,7 @@
 THESIS: A sales floor status board reads like a printed manifest, not a startup landing page — quiet paper-white ground, black ink type, and exactly one reserved red mark per row for what needs eyes now.
 OWN-WORLD: Near-black ink on off-white paper, 1px hairlines, Archivo for UI text, JetBrains Mono reserved for true measurements (signal age, cadence codes). Category identity carried by four muted, non-red hues — indigo, ochre, plum, teal — so red stays uncontested.
 STORY: A teammate scans their row and instantly reads: is there a warm path in (red), how fresh is the signal, where they sit in the follow-up cadence.
-STRUCTURE (2026-08-14 shape pass): leads group into real Cat1-4 sections (not a flat filtered stack), each section named by its full category, not its code. Sort order is a user choice (warm-first / freshest / most-advanced), not a hidden default. Stat tiles are real filters, one entry point per signal instead of duplicated controls.
+FIRST VIEWPORT: Flat header, viewing-as switcher, category filters, four plain stat counts, then the lead list.
 FORM: Restrained/editorial-manifest, brief-pinned (Linear/Vercel, Prima black-white-red).
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md.
 -->
@@ -168,15 +156,11 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 
   <div class="controls">
     <div class="chips" id="catchips" role="group" aria-label="Filter by category"></div>
-    <div class="sortctl">
-      <span class="ulabel" id="sortlabel">Sort</span>
-      <div class="useg" id="sortseg" role="group" aria-labelledby="sortlabel"></div>
-    </div>
+    <button type="button" class="toggle" id="warmtoggle" role="switch" aria-checked="false"><span>Warm intros only</span><div class="switch" aria-hidden="true"></div></button>
   </div>
 
   <div class="tiles" id="tiles"></div>
-  <div class="summary" id="summary"></div>
-  <div id="list"></div>
+  <div class="list" id="list"></div>
 
   <div class="foot">
     <span class="fl">How this works</span>
@@ -198,11 +182,6 @@ const USERS = [
   {id:"gabriela", name:"Gabriela Zacarias", color:"#8e4ec6"}
 ];
 const STEPS = ["E1","LI","E2","E3"];
-const SORTS = [
-  {k:"warm", label:"Warm intro first"},
-  {k:"fresh", label:"Freshest signal"},
-  {k:"stage", label:"Most advanced"}
-];
 
 const LEADS = [
   {co:"CoreWeave", cat:"Cat1", contact:"David Kim", title:"Dir. Data Center Deployment",
@@ -234,32 +213,21 @@ const LEADS = [
    warm:{who:"Daniel", target:"Raj Patel", level:"contact"}, user:"gabriela"}
 ];
 
-const state = {user:"manuel", cat:"all", warmOnly:false, freshOnly:false, sequenceOnly:false, sort:"warm"};
+const state = {user:"manuel", cat:"all", warmOnly:false};
 const el = s => document.querySelector(s);
 const initials = n => n.split(" ").map(w=>w[0]).slice(0,2).join("");
 function sigColor(s){ if(s.type==="none") return "var(--stale)"; return s.age<=7 ? "var(--good)" : "var(--stale)"; }
 function fresh(s){ return s.type!=="none" && s.age!=null && s.age<=14; }
 
-function compareLeads(a,b){
-  if(state.sort==="fresh"){
-    const av=a.signal.age==null?999:a.signal.age, bv=b.signal.age==null?999:b.signal.age;
-    return av-bv;
-  }
-  if(state.sort==="stage"){
-    return b.stage-a.stage;
-  }
-  if((!!b.warm) - (!!a.warm)) return (!!b.warm) - (!!a.warm);
-  const av=a.signal.age==null?999:a.signal.age, bv=b.signal.age==null?999:b.signal.age;
-  return av-bv;
-}
-
 function filtered(){
   return LEADS.filter(l => l.user===state.user)
     .filter(l => state.cat==="all" || l.cat===state.cat)
     .filter(l => !state.warmOnly || l.warm)
-    .filter(l => !state.freshOnly || fresh(l.signal))
-    .filter(l => !state.sequenceOnly || (l.stage>0 && l.stage<4))
-    .sort(compareLeads);
+    .sort((a,b)=>{
+      if((!!b.warm) - (!!a.warm)) return (!!b.warm) - (!!a.warm);
+      const av=a.signal.age==null?999:a.signal.age, bv=b.signal.age==null?999:b.signal.age;
+      return av-bv;
+    });
 }
 
 function renderUsers(){
@@ -280,30 +248,16 @@ function renderChips(){
   }).join("");
   el("#catchips").querySelectorAll(".chip").forEach(ch=>ch.onclick=()=>{state.cat=ch.dataset.c;renderAll();});
 }
-function renderSort(){
-  el("#sortseg").innerHTML = SORTS.map(s=>`
-    <button type="button" data-s="${s.k}" class="${state.sort===s.k?'on':''}" aria-pressed="${state.sort===s.k}">${s.label}</button>`).join("");
-  el("#sortseg").querySelectorAll("button").forEach(b=>b.onclick=()=>{state.sort=b.dataset.s;renderAll();});
-}
 function renderTiles(){
   const mine = LEADS.filter(l=>l.user===state.user);
   const f = mine.filter(l=>fresh(l.signal)).length;
   const w = mine.filter(l=>l.warm).length;
   const nf = mine.filter(l=>l.stage>0 && l.stage<4).length;
-  const allActive = !state.warmOnly && !state.freshOnly && !state.sequenceOnly;
   el("#tiles").innerHTML = `
-    <button type="button" class="tile ${allActive?'on':''}" data-t="all" aria-pressed="${allActive}"><div class="n">${mine.length}</div><div class="l">My leads</div></button>
-    <button type="button" class="tile fresh ${state.freshOnly?'on':''}" data-t="fresh" aria-pressed="${state.freshOnly}"><div class="n">${f}</div><div class="l">Fresh signals</div></button>
-    <button type="button" class="tile warm ${state.warmOnly?'on':''}" data-t="warm" aria-pressed="${state.warmOnly}"><div class="n">${w}</div><div class="l">Warm intros</div></button>
-    <button type="button" class="tile ${state.sequenceOnly?'on':''}" data-t="seq" aria-pressed="${state.sequenceOnly}"><div class="n">${nf}</div><div class="l">In sequence</div></button>`;
-  el("#tiles").querySelectorAll(".tile").forEach(t=>t.onclick=()=>{
-    const k = t.dataset.t;
-    if(k==="all"){ state.warmOnly=false; state.freshOnly=false; state.sequenceOnly=false; }
-    else if(k==="fresh"){ const next=!state.freshOnly; state.freshOnly=next; state.warmOnly=false; state.sequenceOnly=false; }
-    else if(k==="warm"){ const next=!state.warmOnly; state.warmOnly=next; state.freshOnly=false; state.sequenceOnly=false; }
-    else if(k==="seq"){ const next=!state.sequenceOnly; state.sequenceOnly=next; state.warmOnly=false; state.freshOnly=false; }
-    renderAll();
-  });
+    <div class="tile"><div class="n">${mine.length}</div><div class="l">My leads</div></div>
+    <div class="tile fresh"><div class="n">${f}</div><div class="l">Fresh signals</div></div>
+    <div class="tile warm"><div class="n">${w}</div><div class="l">Warm intros</div></div>
+    <div class="tile"><div class="n">${nf}</div><div class="l">In sequence</div></div>`;
 }
 function cadence(stage){
   const dots = STEPS.map((s,i)=>{
@@ -320,44 +274,30 @@ function warmText(w){
 }
 const peopleIco = `<svg class="ico" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M16 6a3 3 0 0 1 0 6"/><path d="M18 20a6 6 0 0 0-3-5"/></svg>`;
 
-function cardHtml(l){
-  const warm = l.warm ? `<div class="warmbar">${peopleIco}<span class="wl">Warm intro</span>${warmText(l.warm)}
-    <span class="lvl">${l.warm.level==="contact"?"Direct":"Company"}</span></div>` : "";
-  const sig = l.signal.type==="none"
-    ? `<div class="signal"><span class="sdot" style="background:var(--stale)"></span><span class="stext" style="color:var(--ink-3);font-weight:400">${l.signal.text}</span></div>`
-    : `<div class="signal"><span class="sdot" style="background:${sigColor(l.signal)}"></span>
-       <span class="stext">${l.signal.text}</span><span class="age">${l.signal.age}d</span>
-       <a href="${l.signal.url}" target="_blank">source →</a></div>`;
-  return `<div class="card ${l.warm?'haswarm':''}" role="listitem">${warm}
-    <div class="cbody">
-      <div>
-        <div class="co">${l.co}<span class="badge cat-${l.cat}" title="${CATS[l.cat].full}"><span class="cd" aria-hidden="true"></span>${l.cat}</span></div>
-        <div class="contact"><b>${l.contact}</b> · ${l.title}</div>
-        <div class="srow"><div class="rlabel">Signal</div>${sig}</div>
-      </div>
-      <div class="right">${cadence(l.stage)}</div>
-    </div></div>`;
-}
-
-function renderSections(){
+function renderList(){
   const rows = filtered();
-  const mine = LEADS.filter(l=>l.user===state.user);
-  el("#summary").textContent = rows.length===mine.length ? "" : `Showing ${rows.length} of ${mine.length}`;
-  if(!rows.length){
-    el("#list").innerHTML = `<div class="empty">No leads match this filter<br><button type="button" class="clearbtn">Clear filters</button></div>`;
-    el(".clearbtn").onclick = () => { state.cat="all"; state.warmOnly=false; state.freshOnly=false; state.sequenceOnly=false; renderAll(); };
-    return;
-  }
-  const groups = Object.keys(CATS)
-    .map(k=>({k, full:CATS[k].full, code:CATS[k].name, rows: rows.filter(l=>l.cat===k)}))
-    .filter(g=>g.rows.length>0);
-  el("#list").innerHTML = groups.map(g=>`
-    <div class="section cat-${g.k}">
-      <div class="sechead2"><span class="catdot" aria-hidden="true"></span><h3>${g.full}</h3><span class="catcode">${g.code}</span><span class="seccount">${g.rows.length}</span></div>
-      <div class="list" role="list">${g.rows.map(cardHtml).join("")}</div>
-    </div>`).join("");
+  if(!rows.length){ el("#list").innerHTML = `<div class="empty">No leads match this filter</div>`; return; }
+  el("#list").innerHTML = rows.map(l=>{
+    const warm = l.warm ? `<div class="warmbar">${peopleIco}<span class="wl">Warm intro</span>${warmText(l.warm)}
+      <span class="lvl">${l.warm.level==="contact"?"Direct":"Company"}</span></div>` : "";
+    const sig = l.signal.type==="none"
+      ? `<div class="signal"><span class="sdot" style="background:var(--stale)"></span><span class="stext" style="color:var(--ink-3);font-weight:400">${l.signal.text}</span></div>`
+      : `<div class="signal"><span class="sdot" style="background:${sigColor(l.signal)}"></span>
+         <span class="stext">${l.signal.text}</span><span class="age">${l.signal.age}d</span>
+         <a href="${l.signal.url}" target="_blank">source →</a></div>`;
+    return `<div class="card ${l.warm?'haswarm':''}">${warm}
+      <div class="cbody">
+        <div>
+          <div class="co">${l.co}<span class="badge cat-${l.cat}"><span class="cd" aria-hidden="true"></span>${l.cat}</span></div>
+          <div class="contact"><b>${l.contact}</b> · ${l.title}</div>
+          <div class="srow"><div class="rlabel">Signal</div>${sig}</div>
+        </div>
+        <div class="right">${cadence(l.stage)}</div>
+      </div></div>`;
+  }).join("");
 }
-function renderAll(){ renderUsers(); renderChips(); renderSort(); renderTiles(); renderSections(); }
+function renderAll(){ renderUsers(); renderChips(); renderTiles(); renderList(); }
+el("#warmtoggle").onclick = function(){ state.warmOnly=!state.warmOnly; this.classList.toggle("on",state.warmOnly); this.setAttribute("aria-checked",state.warmOnly); renderList(); };
 renderAll();
 </script>
 </body>
