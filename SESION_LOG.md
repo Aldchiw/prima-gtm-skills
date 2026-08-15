@@ -1,4 +1,29 @@
 ## 2026-08-14 · cuenta: trabajo
+**Iteración de diseño del cockpit con Impeccable — reestructuración a fondo.**
+
+- Corrí /impeccable init con brief de marca de Prima → creó PRODUCT.md y DESIGN.md (modo
+  Operate, North Star "The Sales Ledger", regla del rojo en 5 lugares, mono solo para datos).
+  Esto era el paso que faltaba antes: los comandos previos corrían sin brief.
+- /impeccable critique reveló los problemas estructurales reales (no de piel): la lista
+  prometía agrupar "by category" pero era plana; mostraba códigos Cat1-4 sin los nombres
+  reales que sí existen en los datos; orden fijo y escondido; stat-tiles que parecían botones
+  sin serlo.
+- /impeccable shape reestructuró: agrupación real por categoría con secciones y encabezados,
+  nombres completos visibles (AI Operators, etc.), selector Sort (warm intro / freshest / most
+  advanced) conectado a compareLeads(), stat-tiles ahora son filtros funcionales.
+- Fix de 2 bugs de comportamiento: tiles de filtro ahora son selección única (una a la vez);
+  Sort funciona pero no se nota con datos de muestra (1 lead por sección) — se verá con datos
+  reales.
+- Datos (LEADS/USERS/CATS) intactos byte-igual en todo. Backups: outreach-cockpit-backup.html
+  y outreach-cockpit-pre-shape.html.
+
+PENDIENTES:
+1. Iterar más el diseño si se quiere (polish final, o typeset/delight). El look base ya gusta.
+2. Push del cockpit + briefs a GitHub cuando se apruebe (hoy commit local).
+3. Conectar el cockpit a leads_master.csv (datos reales) — en el otro Claude. Ahí el Sort se
+   verá trabajar.
+
+## 2026-08-14 · cuenta: trabajo
 **Cockpit al repo + Impeccable instalado + primer pase de rediseño (en pausa para iterar).**
 
 - Subí docs/outreach-cockpit.html al repo (commit ffd8e97, pusheado). Antes solo vivía como
