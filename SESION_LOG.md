@@ -1,3 +1,32 @@
+## 2026-08-15 · cuenta: trabajo
+**Iteración de diseño del cockpit con Impeccable — reestructura + feature flag.**
+
+- /impeccable init creó el brief que faltaba: PRODUCT.md + DESIGN.md (modo Operate, North Star
+  "The Sales Ledger", regla del rojo en 5 lugares, mono solo para datos). Los rediseños
+  previos corrían sin brief — por eso quedaban conservadores.
+- /impeccable critique identificó problemas ESTRUCTURALES (no de piel): lista plana aunque
+  prometía "by category"; códigos Cat1-4 sin los nombres reales que sí existen en datos;
+  orden fijo escondido; stat-tiles que parecían botones sin serlo.
+- /impeccable shape reestructuró: agrupación real por categoría con encabezados, nombres
+  completos (AI Operators, etc.), selector Sort (warm/freshest/most-advanced) conectado a
+  compareLeads(), stat-tiles ahora son filtros funcionales.
+- Fixes: tiles de filtro ahora selección única (una a la vez); Sort funciona pero no se nota
+  con data de muestra (1 lead/sección) — se verá con datos reales.
+- Feature flag SHOW_WARM_INTROS=false: la función de warm-intro ("Daniel knows X") existe
+  pero apagada por default hasta resolver detección de contactos en común (Sales Nav API o
+  lista manual, decisión futura). Con flag apagado el cockpit se ve limpio; en true todo
+  reaparece sin reescribir.
+- Datos LEADS/USERS/CATS intactos byte-igual. Backups: outreach-cockpit-backup.html,
+  outreach-cockpit-pre-shape.html.
+
+PENDIENTES (para el OTRO Claude / Cowork):
+1. Conectar el cockpit a leads_master.csv (datos reales). Ahí el Sort se verá trabajar y
+   aparecen noticias/radar reales. NO requiere recargar Deepline — los leads ya existen.
+2. Detección de contactos en común para prender SHOW_WARM_INTROS (Sales Navigator API vs
+   lista manual — decisión aparte, más grande).
+
+PENDIENTES (Deepline, cuando se recargue): Cat3/Cat4 signal-scan + 5 emails colgados.
+
 ## 2026-08-14 · cuenta: trabajo
 **Iteración de diseño del cockpit con Impeccable — reestructuración a fondo.**
 
