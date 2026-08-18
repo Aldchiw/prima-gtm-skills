@@ -1,3 +1,14 @@
+## 2026-08-18 — Pull acotado + front en data real + sourcing Cat1/Cat2
+- Deepline recargado (77 cr). Enriquecimiento bajo cost-control (techo $5/corrida, sample-first, billed_on_match, sin contactout).
+- Muestra Cat1/Cat3 + reintento 5 colgados: 6 VERIFIED, 3.44 cr. Commit fff82b8.
+- Backfill Cat4 (2 enviables/cuenta): 14 VERIFIED en 14 cuentas, 23 fallidos registrados, 4.34 cr. Commit 071a056.
+- Sourcing Cat1/Cat2 desde Notion (OAuth Notion conectado): 3 cuentas nuevas (Lancium P1, Bitdeer P1, Nscale P2) + 6 contactos VERIFIED, 1.8 cr; xAI senal sin contacto. Descubrimiento gratis (Wiza+WebSearch). Commit 5dcff33.
+- Total sesion: 26 VERIFIED + 3 cuentas nuevas, 9.58 cr (~$0.96). Saldo 67.48.
+- Front: cockpit regenerado; Sheet via nuevo scripts/sync-sheet.js (clean-and-rewrite).
+- Waterfall real: Apollo sin API key, Lusha caida por su limite -> Hunter->icypeas. Committee gratis via WebSearch+Wiza (ai_ark no usado).
+- Senales viejas a refrescar antes de outreach: Bitdeer (nov-2025), Nscale (oct-2025), xAI (ene-2026). Lancium fresca.
+- Pendientes: cerrar 4 Cat4 con candidatos sin intentar (Prolec/PCX/Switchgear/PTT); CleanSpark cuando Lusha reviva; discrepancia Fluidstack (Cat2 master vs Cat1 Notion); asignar owner Cat1/Cat2; Volta/Gcore/Panthalassa en watch por falta de US.
+
 ## 2026-08-18 — Pull de leads acotado + front conectado a data real
 - Deepline recargado (77 cr). Enriquecimiento bajo cost-control (techo $5/corrida, sample-first, billed_on_match, sin contactout).
 - Muestra Cat1/Cat3 + reintento de 5 colgados: 6 VERIFIED, 3.44 cr. Commit fff82b8.
