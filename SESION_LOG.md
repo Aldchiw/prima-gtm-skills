@@ -1,3 +1,13 @@
+## 2026-08-18 — Pull de leads acotado + front conectado a data real
+- Deepline recargado (77 cr). Enriquecimiento bajo cost-control (techo $5/corrida, sample-first, billed_on_match, sin contactout).
+- Muestra Cat1/Cat3 + reintento de 5 colgados: 6 VERIFIED, 3.44 cr. Commit fff82b8.
+- Backfill Cat4 (regla 2 enviables/cuenta): 14 VERIFIED en 14 cuentas, 23 fallidos registrados, 4.34 cr. Commit 071a056.
+- Total sesion: 20 VERIFIED nuevos, 7.78 cr (~$0.78), ~$0.039/lead. Saldo 69.28.
+- Front: cockpit regenerado desde leads_master (commit 80bb929, solo bloque DATA); Sheet via nuevo scripts/sync-sheet.js.
+- Enviables ahora: 65 (Cat1 9, Cat2 10, Cat3 12, Cat4 34).
+- Waterfall: Apollo sin API key (fuera), Lusha caida por su limite -> orden real Hunter->icypeas.
+- Pendientes: cerrar 4 cuentas con candidatos sin intentar (Prolec, PCX, Switchgear, PTT); CleanSpark cuando Lusha reviva; sourcing net-new Cat1/2/3.
+
 ## 2026-08-15 · cuenta: trabajo
 **Cockpit — pulido final, paleta de marca Prima real y logo.**
 
