@@ -1,3 +1,17 @@
+## 2026-08-18 — Cat3 poblado por firmográfico-enriquecido (método Cat4); merge final al master
+- Cat3 poblado por firmografico-enriquecido (metodo Cat4): +cuentas, +VERIFIED. Corregido el error de
+  gatear enrichment por señal de noticia (Cat3 signal-first daba 2/126 = 1.6%; el fit firmografico ahora
+  califica, la señal pasa a post-hoc para secuenciar outreach, no a filtro de entrada).
+- 84 cuentas del TAM firmografico enriquecidas (Wiza gratis -> Hunter -> icypeas, techo 40cr/$4): 29
+  VERIFIED, 64 filas con contacto mergeadas al master. Dedup: Gurtz Electric Co. y The ProLift Rigging
+  Company ya estaban en master (lote signal-first previo) -> 0 duplicados, saltadas correctamente.
+- Merge deterministico: backup output/leads_master-pre-cat3-final.csv, append puro (0 filas existentes
+  tocadas, header/BOM/quoting verificados).
+- Cockpit + Sheet regenerados. Enviables post-merge: Cat1 9/12, Cat2 10/11, Cat3 35/58, Cat4 26/68 —
+  total 80/149 cuentas.
+- Costo real: ultimo tramo (59 cuentas restantes de 84) 5.38 cr (~$0.54); batch completo de 84 cuentas
+  8.66 cr (~$0.87).
+
 ## 2026-08-18 — Cat3 firmográfico-puro validado como fuente pobre + pivote a signal-first
 - Cat3 firmografico-puro = fuente pobre (2/126, 1.6%); tamaño NO predice señal. 2 leads reales metidos (Gurtz/Vantage $15B, ProLift/Atlanta DC boom, 3 VERIFIED). TAM 127 guardado. Pivote: Cat3 signal-first desde proyectos DC conocidos.
 
