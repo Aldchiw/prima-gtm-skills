@@ -1,3 +1,6 @@
+## 2026-08-18 — Cat3 firmográfico-puro validado como fuente pobre + pivote a signal-first
+- Cat3 firmografico-puro = fuente pobre (2/126, 1.6%); tamaño NO predice señal. 2 leads reales metidos (Gurtz/Vantage $15B, ProLift/Atlanta DC boom, 3 VERIFIED). TAM 127 guardado. Pivote: Cat3 signal-first desde proyectos DC conocidos.
+
 ## 2026-08-18 — Pull acotado + front en data real + sourcing Cat1/Cat2
 - Deepline recargado (77 cr). Enriquecimiento bajo cost-control (techo $5/corrida, sample-first, billed_on_match, sin contactout).
 - Muestra Cat1/Cat3 + reintento 5 colgados: 6 VERIFIED, 3.44 cr. Commit fff82b8.
