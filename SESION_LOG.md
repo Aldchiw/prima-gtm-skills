@@ -1,3 +1,23 @@
+## 2026-08-23 — Pull Cat4 no recuperable + pivote a proyecto "cockpit portable"
+- Se pidió cerrar una sesión previa de pull Cat4 (ai_ark search de ~210 cuentas + muestra de 12
+  enriquecidas) pero esa data NO aparece en ningún archivo del repo ni en contexto disponible al
+  retomar — ni `output/cat4_tam_2026-08-23.csv`, ni cambios de Cat4 pendientes en `leads_master.csv`
+  (lo único sin commitear ahí son 21 filas Cat3 de `cat3_icp_pull_2026-08-18`, ya presentes antes de
+  hoy). Se decidió NO escribir cifras de costo/resultado no verificables (evita registro falso de
+  gasto) — si esa corrida existe en otro lado (Sheet, screenshot), pendiente traerla para loggearla
+  con datos reales.
+- Apollo en PAUSA: su plan Free no expone email/teléfono vía API.
+- Foco de sesión pivoteó a arrancar el proyecto "cockpit portable" — hoy el cockpit es HTML local
+  (`docs/outreach-cockpit.html`); objetivo: abierto y operable para el equipo, no solo para Aldahir.
+  Plan en 3 piezas: (1) publicación segura — repo privado por la data sensible, Aldahir es non-admin
+  en cuentas Prima, pendiente resolver con Zadrac/Mike; (2) usar el Google Sheet en vivo como capa de
+  persistencia en vez de backend nuevo; (3) botones que operen de verdad (no solo vista). Explícito:
+  no poblar más leads esta sesión. Diagnóstico completo de las 3 piezas en
+  `docs/cockpit-portable-diagnostico.md`: pieza 1 (publicación) bloqueada por permisos, pendiente de
+  Zadrac/Mike; pieza 2 (`sync-sheet.js` es unidireccional CSV→Sheet, sin camino de vuelta) y pieza 3
+  (HTML sin `fetch`/`localStorage`, botones de stage/secuencia solo mutan el DOM) quedan listas para
+  construirse en la próxima sesión, no dependen de permisos de org.
+
 ## 2026-08-18 — Cat3 poblado por firmográfico-enriquecido (método Cat4); merge final al master
 - Cat3 poblado por firmografico-enriquecido (metodo Cat4): +cuentas, +VERIFIED. Corregido el error de
   gatear enrichment por señal de noticia (Cat3 signal-first daba 2/126 = 1.6%; el fit firmografico ahora
