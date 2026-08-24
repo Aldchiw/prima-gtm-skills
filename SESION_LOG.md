@@ -1,3 +1,25 @@
+## 2026-08-23 (cierre) — sync-sheet.js preserva columnas de equipo (team_status/notes)
+- `scripts/sync-sheet.js` ahora preserva `team_status` y `notes` (columnas 24-25, editadas a mano por
+  el equipo en el Sheet) casando cada fila por `account_name|contact_name` antes del clear+rewrite —
+  ya no es un overwrite ciego que pisa lo que el equipo escribe. Fila nueva o sin match -> celdas
+  vacías, sin error; sheet vacío o primera corrida (columnas aún no existen) -> también sin error.
+  Commit 72decb1.
+- Validado end-to-end contra el Sheet real (no solo local): fila testigo Eos Energy Enterprises /
+  Will Nauman — escritura directa vía API (`team_status="PRUEBA_PURSUE"`, `notes="PRUEBA_NOTA_777"`),
+  corrida real de `node scripts/sync-sheet.js`, y relectura: ambos valores sobrevivieron intactos y la
+  fila no se movió (fila 3 antes y después). Valores de prueba limpiados al cierre (celdas vacías
+  confirmadas).
+- Diagnóstico previo (CSV local, 275 filas de datos): 0 llaves `account_name|contact_name`
+  duplicadas hoy, pero 38 filas con `contact_name` vacío — riesgo latente de colisión de llave si una
+  misma cuenta llega a tener 2+ filas sin contacto (no ocurre todavía).
+**Pendientes:**
+- (a) El HTML del cockpit (`docs/outreach-cockpit.html`) debe leer del Sheet para mostrar
+  `team_status`/`notes` — hoy solo se hornean datos desde el CSV local vía `generate-cockpit.js`, el
+  Sheet no se lee de vuelta.
+- (b) Compartir el Sheet en vivo con el equipo (permisos).
+- (c) Guard para cuentas con 2+ filas sin `contact_name`: hoy colisionarían bajo la misma llave y se
+  pisarían team_status/notes entre sí.
+
 ## 2026-08-23 — Pull Cat4 no recuperable + pivote a proyecto "cockpit portable"
 - Se pidió cerrar una sesión previa de pull Cat4 (ai_ark search de ~210 cuentas + muestra de 12
   enriquecidas) pero esa data NO aparece en ningún archivo del repo ni en contexto disponible al
