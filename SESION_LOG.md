@@ -1,3 +1,20 @@
+## 2026-08-24 — Milestone: cockpit lee del Sheet (team_status/notes visibles)
+- `scripts/generate-cockpit.js` ya no lee `output/leads_master.csv`: lee el Google Sheet en vivo,
+  reusando el mismo service account/spreadsheetId que `scripts/sync-sheet.js` (export agregado ahí,
+  guardado por `require.main === module` para que importar el archivo no dispare su `main()`/no toque
+  el Sheet). `loadRows()`/`build()`/`main()` pasaron a async.
+- Cada contacto ahora trae `team_status` y `notes` desde el Sheet, y `docs/outreach-cockpit.html` los
+  pinta: etiqueta discreta junto al nombre + nota chica debajo, reusando variables de estilo
+  existentes (`--ink-2`, `--ink-3`, `--border`) — vacío no renderiza nada. Exclusión, agrupación,
+  asignación de dueños y `stage:0` intactos, sin tocar.
+- Modo snapshot: el tablero solo refleja el Sheet al momento de correr `node scripts/generate-cockpit.js`,
+  no en vivo.
+- Validado end-to-end contra el Sheet real (Eos Energy Enterprises / Will Nauman): escritura directa
+  vía API, corrida del script, y confirmación de que `team_status`/`notes` llegaron intactos al bloque
+  DATA del HTML. Valor de prueba limpiado al cierre (celdas vacías confirmadas).
+- Commit c272ff7 (`generate-cockpit.js`, `sync-sheet.js`, `docs/outreach-cockpit.html`).
+**Pendiente:** (b) compartir el Sheet en vivo con el equipo (permisos).
+
 ## 2026-08-23 (cierre) — sync-sheet.js preserva columnas de equipo (team_status/notes)
 - `scripts/sync-sheet.js` ahora preserva `team_status` y `notes` (columnas 24-25, editadas a mano por
   el equipo en el Sheet) casando cada fila por `account_name|contact_name` antes del clear+rewrite —
