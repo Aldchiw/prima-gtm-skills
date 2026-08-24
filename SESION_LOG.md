@@ -1,3 +1,13 @@
+## 2026-08-24 (cierre) — Sheet compartido con el equipo; milestone "cockpit funcional v1 (Sheet-cerebro)" CERRADO
+- Sheet compartido con Manu, Gustavo y Gaby como Editor; acceso general en Restringido (sin link
+  público). Aviso ("mostrar advertencia al editar") puesto en columnas A:W (las del engine) para que
+  nadie las toque por error — `team_status`/`notes` quedan libres para el equipo. Acción de navegador,
+  sin cambios de repo.
+- Con esto cierra el milestone "cockpit funcional v1 (Sheet-cerebro)": generate-cockpit lee del Sheet,
+  team_status/notes visibles en el HTML, Sheet compartido y protegido.
+- Nueva dirección decidida: construir una app editable de verdad (el equipo edita sin tocar el Sheet
+  directamente) como proyecto aparte de varias sesiones — se planea en chat nueva, no arranca hoy.
+
 ## 2026-08-24 — Milestone: cockpit lee del Sheet (team_status/notes visibles)
 - `scripts/generate-cockpit.js` ya no lee `output/leads_master.csv`: lee el Google Sheet en vivo,
   reusando el mismo service account/spreadsheetId que `scripts/sync-sheet.js` (export agregado ahí,
