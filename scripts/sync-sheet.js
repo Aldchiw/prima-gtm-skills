@@ -137,4 +137,11 @@ async function main() {
   console.log('Match local row count:', afterCount === newRows.length);
 }
 
-main().then(() => process.exit(0)).catch(e => { console.error('ERROR:', e.message); process.exit(1); });
+if (require.main === module) {
+  main().then(() => process.exit(0)).catch(e => { console.error('ERROR:', e.message); process.exit(1); });
+}
+
+// Exported so other scripts (generate-cockpit.js) can read from the same
+// Sheet without duplicating the service account / spreadsheet ID by hand.
+// Requiring this file no longer runs main() as a side effect.
+module.exports = { SPREADSHEET_ID, SHEET_TAB, KEY_PATH };

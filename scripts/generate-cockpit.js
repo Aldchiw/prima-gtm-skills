@@ -1,13 +1,16 @@
-// Reads output/leads_master.csv and regenerates the CATS/USERS/LEADS block in
-// docs/outreach-cockpit.html between the DATA:START / DATA:END markers.
+// Reads the live Google Sheet (same source sync-sheet.js writes to) and
+// regenerates the CATS/USERS/LEADS block in docs/outreach-cockpit.html
+// between the DATA:START / DATA:END markers. Snapshot, not live -- the board
+// only reflects the Sheet's state as of the last time this script ran.
 // One LEADS entry per ACCOUNT (not per contact) — contacts live inside
 // entry.contacts[], sorted ALTA-first.
 // Usage: node scripts/generate-cockpit.js
 'use strict';
 const fs = require('fs');
 const path = require('path');
+const { google } = require('googleapis');
+const { SPREADSHEET_ID, SHEET_TAB, KEY_PATH } = require('./sync-sheet.js');
 
-const CSV_PATH = path.join(__dirname, '..', 'output', 'leads_master.csv');
 const HTML_PATH = path.join(__dirname, '..', 'docs', 'outreach-cockpit.html');
 
 const BASE_CATS = {
@@ -29,43 +32,24 @@ const FIXED_USERS = [
   { id: 'unassigned', name: 'Sin asignar', color: '#8B8B93' },
 ];
 
-// RFC4180-ish CSV parser: honors quoted fields (with embedded commas/semicolons/
-// newlines) and "" as an escaped quote. Deliberately not split(',').
-function parseCSV(text) {
-  const rows = [];
-  let row = [];
-  let field = '';
-  let inQuotes = false;
-  let i = 0;
-  const n = text.length;
-  while (i < n) {
-    const c = text[i];
-    if (inQuotes) {
-      if (c === '"') {
-        if (text[i + 1] === '"') { field += '"'; i += 2; continue; }
-        inQuotes = false; i++; continue;
-      }
-      field += c; i++; continue;
-    }
-    if (c === '"') { inQuotes = true; i++; continue; }
-    if (c === ',') { row.push(field); field = ''; i++; continue; }
-    if (c === '\r') { i++; continue; }
-    if (c === '\n') {
-      row.push(field); field = '';
-      rows.push(row); row = [];
-      i++; continue;
-    }
-    field += c; i++;
-  }
-  if (field.length > 0 || row.length > 0) { row.push(field); rows.push(row); }
-  return rows.filter(r => !(r.length === 1 && r[0] === ''));
-}
-
-function loadRows() {
-  const raw = fs.readFileSync(CSV_PATH, 'utf8').replace(/^﻿/, '');
-  const table = parseCSV(raw);
-  const header = table[0];
-  return table.slice(1).map(cols => {
+// Reads the whole used range of the Sheet and returns the same shape
+// loadRows() used to build from the CSV: an array of row objects keyed by
+// the header. A cell trimmed by the Sheets API (short row) or genuinely
+// blank both come back as '' -- never undefined, never invented.
+async function loadRows() {
+  const key = JSON.parse(fs.readFileSync(KEY_PATH, 'utf8'));
+  const auth = new google.auth.GoogleAuth({
+    credentials: key,
+    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+  });
+  const sheets = google.sheets({ version: 'v4', auth });
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: SPREADSHEET_ID, range: `'${SHEET_TAB}'!A1:ZZ10000`,
+  });
+  const values = res.data.values || [];
+  if (values.length === 0) return [];
+  const header = values[0];
+  return values.slice(1).map(cols => {
     const obj = {};
     header.forEach((h, idx) => { obj[h] = cols[idx] !== undefined ? cols[idx] : ''; });
     return obj;
@@ -149,8 +133,8 @@ function assignAccountOwners(order, data) {
   return { owner, buckets: { core, cat3, cat4, other } };
 }
 
-function build() {
-  const rows = loadRows();
+async function build() {
+  const rows = await loadRows();
   const today = new Date();
 
   let excludedCount = 0;
@@ -186,6 +170,8 @@ function build() {
         email_status: (r.email_status || '').trim(),
         linkedin: (r.linkedin_url || '').trim(),
         priority_tier: (r.priority_tier || '').trim(),
+        team_status: (r.team_status || '').trim(),
+        notes: (r.notes || '').trim(),
         stage: 0,
       }))
       .sort((a, b) => tierRank(a.priority_tier) - tierRank(b.priority_tier));
@@ -250,7 +236,7 @@ function usersToJS(users) {
 }
 
 function contactsToJS(contacts) {
-  const items = contacts.map(c => `{name:${jsStringLiteral(c.name)}, title:${jsStringLiteral(c.title)}, email:${jsStringLiteral(c.email)}, email_status:${jsStringLiteral(c.email_status)}, linkedin:${jsStringLiteral(c.linkedin)}, priority_tier:${jsStringLiteral(c.priority_tier)}, stage:${c.stage}}`);
+  const items = contacts.map(c => `{name:${jsStringLiteral(c.name)}, title:${jsStringLiteral(c.title)}, email:${jsStringLiteral(c.email)}, email_status:${jsStringLiteral(c.email_status)}, linkedin:${jsStringLiteral(c.linkedin)}, priority_tier:${jsStringLiteral(c.priority_tier)}, team_status:${jsStringLiteral(c.team_status)}, notes:${jsStringLiteral(c.notes)}, stage:${c.stage}}`);
   return `[${items.join(', ')}]`;
 }
 
@@ -262,11 +248,11 @@ function accountsToJS(accounts) {
   return `const LEADS = [\n${lines.join(',\n')}\n];`;
 }
 
-function main() {
+async function main() {
   const {
     cats, users, accounts, excludedCount, newCats, noContactAccounts,
     totalRows, keptRows, accountCount, perUserReport, bucketSizes,
-  } = build();
+  } = await build();
 
   const html = fs.readFileSync(HTML_PATH, 'utf8');
   const startMarker = '/* DATA:START — generado por scripts/generate-cockpit.js, no editar a mano */';
@@ -296,4 +282,4 @@ function main() {
   }, null, 2));
 }
 
-main();
+main().catch(e => { console.error('ERROR:', e.message); process.exit(1); });
