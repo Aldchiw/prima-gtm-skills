@@ -1,3 +1,12 @@
+## 2026-08-24 (cierre 2) — Arranca proyecto "app editable"; stack decidido (Supabase + Vercel)
+- Recap del cierre de hoy: (a) Sheet compartido con Manu/Gustavo/Gaby como Editor, acceso general
+  Restringido, aviso en columnas A:W para proteger las columnas del engine; (b) milestone "cockpit
+  funcional v1 (Sheet-cerebro)" CERRADO (detalle completo en la entrada de abajo).
+- (c) Nueva dirección: arranca como proyecto aparte, de varias sesiones, "app editable de verdad" (el
+  equipo edita sin tocar el Sheet directamente). Stack DECIDIDO: Supabase (DB + auth + API) + Vercel
+  (frontend). El resto del plan/contexto se documentará en `app-cockpit-brief.md` cuando ese archivo
+  se agregue al repo -- no existe todavía, no se creó hoy para evitar registrar un documento inventado.
+
 ## 2026-08-24 (cierre) — Sheet compartido con el equipo; milestone "cockpit funcional v1 (Sheet-cerebro)" CERRADO
 - Sheet compartido con Manu, Gustavo y Gaby como Editor; acceso general en Restringido (sin link
   público). Aviso ("mostrar advertencia al editar") puesto en columnas A:W (las del engine) para que
