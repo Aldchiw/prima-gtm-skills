@@ -111,6 +111,13 @@
   .team-status{font-family:var(--sans);font-size:10px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;
     color:var(--ink-2);border:1px solid var(--border);border-radius:999px;padding:2px 8px}
   .team-notes{margin-top:4px;font-size:11.5px;color:var(--ink-3)}
+  .stagewrap{display:inline-flex;align-items:center;gap:6px}
+  .stagesel{font-family:var(--sans);font-size:11.5px;color:var(--ink-2);background:var(--surface);
+    border:1px solid var(--border);border-radius:6px;padding:3px 7px;cursor:pointer}
+  .stagesel:hover{border-color:var(--border-2)}
+  .stagesave{font-size:11px;font-weight:600}
+  .stagesave.ok{color:var(--good)}
+  .stagesave.err{color:var(--red-text)}
   .srow{margin-top:12px}
   .rlabel{font-size:11px;color:var(--ink-3);font-weight:500;margin-bottom:5px}
   .signal{display:flex;align-items:center;gap:8px;font-size:12.5px;flex-wrap:wrap}
@@ -415,8 +422,11 @@ function contactBlock(l, active){
   if(active.linkedin) links.push(`<a href="${active.linkedin}" target="_blank">LinkedIn</a>`);
   const teamStatus = active.team_status ? `<span class="team-status">${active.team_status}</span>` : "";
   const notes = active.notes ? `<div class="team-notes">${active.notes}</div>` : "";
+  const stageSelect = active.id
+    ? `<span class="stagewrap"><select class="stagesel" data-contact-id="${escAttr(active.id)}" aria-label="Stage for ${escAttr(active.name)}">${[0,1,2,3,4].map(n=>`<option value="${n}" ${n===active.stage?"selected":""}>${stageLabel(n)}</option>`).join("")}</select><span class="stagesave"></span></span>`
+    : "";
   return `<div class="contact">
-    <div class="contact-row"><b>${active.name}</b> · ${active.title||"—"}${teamStatus}${selector}</div>
+    <div class="contact-row"><b>${active.name}</b> · ${active.title||"—"}${teamStatus}${stageSelect}${selector}</div>
     ${links.length?`<div class="contact-links">${links.join("")}</div>`:""}
     ${notes}
   </div>`;
@@ -528,6 +538,9 @@ function renderSections(){
   el("#list").querySelectorAll(".contactsel").forEach(sel=>{
     sel.onchange = () => { state.activeContact[sel.dataset.co] = parseInt(sel.value,10); renderSections(); };
   });
+  el("#list").querySelectorAll(".stagesel").forEach(sel=>{
+    sel.onchange = () => saveStage(sel);
+  });
   el("#list").querySelectorAll(".seq-open").forEach(b=>{
     b.onclick = () => openSequence(b.dataset.co);
   });
@@ -548,6 +561,12 @@ function stageFromText(s){
   if (t === "Replied") return 4;
   return 0; // "Not Contacted" or anything else
 }
+// Inverse of stageFromText, for saving an edited stage back to Supabase.
+// Known simplification: 1 always writes back as Email (can't recover which
+// of Email/LinkedIn it originally was), and 4 collapses FUP3+/Replied to
+// "FUP 3" -- accepted for now per the same lossy mapping stageFromText does.
+const STAGE_TO_TEXT = ["Not Contacted", "First Touch (Email)", "FUP 1", "FUP 2", "FUP 3"];
+function stageToText(n){ return STAGE_TO_TEXT[n] || "Not Contacted"; }
 function tierRankApp(tier){ return (tier || "").trim().toUpperCase() === "ALTA" ? 0 : 1; }
 function daysSince(dateStr){
   if (!dateStr) return 999;
@@ -572,6 +591,7 @@ async function loadLeads(){
       .slice()
       .sort((x, y) => tierRankApp(x.priority_tier) - tierRankApp(y.priority_tier))
       .map(c => ({
+        id: c.id,
         name: c.contact_name,
         title: c.contact_title,
         email: c.contact_email,
@@ -586,6 +606,32 @@ async function loadLeads(){
     user: "me",
   }));
   renderAll();
+}
+
+function findContactById(id){
+  for (const l of LEADS) {
+    const c = l.contacts.find(c => c.id === id);
+    if (c) return c;
+  }
+  return null;
+}
+
+async function saveStage(sel){
+  const contactId = sel.dataset.contactId;
+  const newStage = parseInt(sel.value, 10);
+  const note = sel.nextElementSibling;
+  const { error } = await sb.from("contacts").update({ stage: stageToText(newStage) }).eq("id", contactId);
+  if (error) {
+    if (note) { note.textContent = "Error al guardar"; note.className = "stagesave err"; }
+    return;
+  }
+  const contact = findContactById(contactId);
+  if (contact) contact.stage = newStage;
+  if (note) {
+    note.textContent = "Guardado ✓";
+    note.className = "stagesave ok";
+    setTimeout(() => { note.textContent = ""; note.className = "stagesave"; }, 2000);
+  }
 }
 
 function showLogin(msg, ok){
