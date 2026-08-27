@@ -533,7 +533,7 @@ function renderSections(){
   });
 }
 function renderAll(){ renderChips(); renderSort(); renderTiles(); renderSections(); }
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Sheet/CSV stage was always text ("Not Contacted", "First Touch (Email)",
 // "FUP 2", ...) -- the UI needs the 0-4 number SEQUENCE_STEPS/stageLabel
@@ -556,7 +556,7 @@ function daysSince(dateStr){
 }
 
 async function loadLeads(){
-  const { data, error } = await supabase.from("accounts").select("*, contacts(*)");
+  const { data, error } = await sb.from("accounts").select("*, contacts(*)");
   if (error) { console.error("loadLeads error:", error.message); return; }
   LEADS = (data || []).map(a => ({
     co: a.account_name,
@@ -599,15 +599,15 @@ function hideLogin(){ el("#loginView").style.display = "none"; }
 el("#sendBtn").onclick = async () => {
   const email = el("#loginEmail").value.trim();
   if (!email) { showLogin("Escribe tu correo.", false); return; }
-  const { error } = await supabase.auth.signInWithOtp({
+  const { error } = await sb.auth.signInWithOtp({
     email, options: { emailRedirectTo: window.location.origin },
   });
   showLogin(error ? error.message : "Revisa tu correo -- te mandamos un Magic Link.", !error);
 };
 
-el("#signoutBtn").onclick = async () => { await supabase.auth.signOut(); };
+el("#signoutBtn").onclick = async () => { await sb.auth.signOut(); };
 
-supabase.auth.onAuthStateChange((event, session) => {
+sb.auth.onAuthStateChange((event, session) => {
   if (session) {
     el("#sessionEmail").textContent = session.user.email;
     hideLogin();
@@ -618,7 +618,7 @@ supabase.auth.onAuthStateChange((event, session) => {
   }
 });
 
-supabase.auth.getSession().then(({ data }) => {
+sb.auth.getSession().then(({ data }) => {
   if (data.session) {
     el("#sessionEmail").textContent = data.session.user.email;
     hideLogin();
