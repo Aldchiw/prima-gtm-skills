@@ -119,6 +119,15 @@
   .stagesave{font-size:11px;font-weight:600}
   .stagesave.ok{color:var(--good)}
   .stagesave.err{color:var(--red-text)}
+  .startwrap{display:inline-flex;align-items:center;gap:6px}
+  .start-seq,.start-channel{font-family:var(--sans);font-size:11.5px;color:var(--ink-2);background:var(--surface);
+    border:1px solid var(--border);border-radius:6px;padding:3px 9px;cursor:pointer}
+  .start-seq:hover,.start-channel:hover:not(:disabled){border-color:var(--border-2);color:var(--ink)}
+  .start-channel:disabled{opacity:.5;cursor:default}
+  .startpick-label{font-size:11px;color:var(--ink-3)}
+  .startpick-note{font-size:11px;font-weight:600}
+  .startpick-note.ok{color:var(--good)}
+  .startpick-note.err{color:var(--red-text)}
   .fu-section{margin-bottom:28px;background:var(--red-soft);border-radius:14px;padding:16px 16px 4px}
   .fu-section.fu-ontime{background:color-mix(in srgb, var(--good) 6%, transparent)}
   .fu-badge{display:flex;align-items:center;gap:8px;margin-top:5px}
@@ -452,8 +461,8 @@ function followupAccounts(predicate){
 function followupTagHtml(worst){
   const overdue = worst.delay >= 1;
   const delayTag = overdue
-    ? `<span class="fu-tag fu-over">${worst.delay} día${worst.delay===1?"":"s"} de delay</span>`
-    : `<span class="fu-tag fu-ok">faltan ${7 - worst.days} día${(7 - worst.days)===1?"":"s"}</span>`;
+    ? `<span class="fu-tag fu-over">${worst.delay} day${worst.delay===1?"":"s"} overdue</span>`
+    : `<span class="fu-tag fu-ok">${7 - worst.days} day${(7 - worst.days)===1?"":"s"} left</span>`;
   return `<div class="fu-badge"><span class="fu-stagereal">${worst.c.stage_text || "—"}</span>${delayTag}</div>`;
 }
 
@@ -493,16 +502,64 @@ async function markDone(btn){
   const { error } = await sb.from("contacts").update({ stage: next, last_touch_at: touchedAt }).eq("id", contactId);
   if (error) {
     btn.disabled = false;
-    if (note) { note.textContent = "Error"; note.className = "fu-donenote err"; }
+    if (note) { note.textContent = "Save error"; note.className = "fu-donenote err"; }
     return;
   }
   contact.stage = stageFromText(next);
   contact.stage_text = next;
   contact.last_touch_at = touchedAt;
-  if (note) { note.textContent = "Guardado ✓"; note.className = "fu-donenote ok"; }
-  // Brief pause so "Guardado ✓" is actually visible before the re-render
+  if (note) { note.textContent = "Saved ✓"; note.className = "fu-donenote ok"; }
+  // Brief pause so "Saved ✓" is actually visible before the re-render
   // moves/removes this card (its delay just reset).
   setTimeout(() => { renderFollowups(); renderFupOnTime(); }, 800);
+}
+
+// Expands a pipeline card's "Start sequence" button into an inline
+// Email/LinkedIn channel picker, in place.
+function showChannelPicker(btn){
+  const wrap = btn.parentElement;
+  const contactId = wrap.dataset.contactId;
+  wrap.innerHTML = `<span class="startpick-label">Channel:</span>
+    <button type="button" class="start-channel" data-contact-id="${escAttr(contactId)}" data-channel="Email">Email</button>
+    <button type="button" class="start-channel" data-contact-id="${escAttr(contactId)}" data-channel="LinkedIn">LinkedIn</button>`;
+  wrap.querySelectorAll(".start-channel").forEach(b => { b.onclick = () => startSequence(b); });
+}
+
+// Same safe-save pattern as saveStage()/markDone(): write to Supabase
+// first, only touch memory (and only report success) if that write
+// didn't error. Buttons stay disabled during the request and re-enable on
+// error so the user can retry.
+async function startSequence(btn){
+  const contactId = btn.dataset.contactId;
+  const channel = btn.dataset.channel;
+  const contact = findContactById(contactId);
+  if (!contact) return;
+  const stageText = channel === "LinkedIn" ? "First Touch (LinkedIn)" : "First Touch (Email)";
+  const wrap = btn.parentElement;
+  let note = wrap.querySelector(".startpick-note");
+  if (!note) {
+    note = document.createElement("span");
+    note.className = "startpick-note";
+    wrap.appendChild(note);
+  }
+  const touchedAt = new Date().toISOString();
+  wrap.querySelectorAll("button").forEach(b => { b.disabled = true; });
+  const { error } = await sb.from("contacts").update({ stage: stageText, last_touch_at: touchedAt }).eq("id", contactId);
+  if (error) {
+    wrap.querySelectorAll("button").forEach(b => { b.disabled = false; });
+    note.textContent = "Save error";
+    note.className = "startpick-note err";
+    return;
+  }
+  contact.stage = stageFromText(stageText);
+  contact.stage_text = stageText;
+  contact.last_touch_at = touchedAt;
+  note.textContent = "Saved ✓";
+  note.className = "startpick-note ok";
+  // Brief pause so "Saved ✓" is visible before the re-render (the contact
+  // now qualifies for FUP on Time and disappears from the pipeline card's
+  // stage control).
+  setTimeout(() => { renderFollowups(); renderFupOnTime(); renderSections(); }, 800);
 }
 
 // Reuses cardHtml() -- same design, same signal, same contact block, same
@@ -526,11 +583,11 @@ function renderFollowupSection(selector, rows, title, extraClass, emptyText){
 
 function renderFollowups(){
   renderFollowupSection("#followups", followupAccounts(d => d >= 1), "Followups", "",
-    "Sin contactos vencidos.");
+    "No overdue contacts.");
 }
 function renderFupOnTime(){
   renderFollowupSection("#fupontime", followupAccounts(d => d <= 0), "FUP on Time", "fu-ontime",
-    "Sin contactos en tiempo.");
+    "No contacts on track.");
 }
 
 function cadence(stage){
@@ -549,7 +606,25 @@ const peopleIco = `<svg class="ico" viewBox="0 0 24 24"><circle cx="9" cy="8" r=
 
 function escAttr(s){ return String(s==null?"":s).replace(/"/g,"&quot;"); }
 
-function contactBlock(l, active){
+// The old numeric 0-4 stage select -- kept only for followup/FUP-on-time
+// cards (followupWorst truthy). Pipeline cards use startSequenceHtml()
+// instead (see contactBlock below).
+function stageSelectHtml(active){
+  return `<span class="stagewrap"><select class="stagesel" data-contact-id="${escAttr(active.id)}" aria-label="Stage for ${escAttr(active.name)}">${[0,1,2,3,4].map(n=>`<option value="${n}" ${n===active.stage?"selected":""}>${stageLabel(n)}</option>`).join("")}</select><span class="stagesave"></span></span>`;
+}
+
+// Pipeline-only, stage-0 contacts only: a single button that expands into
+// an inline Email/LinkedIn channel picker (see showChannelPicker/startSequence).
+function startSequenceHtml(active){
+  return `<span class="startwrap" data-contact-id="${escAttr(active.id)}"><button type="button" class="start-seq">Start sequence</button></span>`;
+}
+
+// `followupWorst` truthy = a followup/FUP-on-time card (keeps the old
+// numeric stage select). Falsy = a pipeline card: no select at all: a
+// "Start sequence" button on not-yet-contacted (stage 0) contacts, nothing
+// on contacts already in flow (their progress lives in cadence()/the
+// followup sections instead).
+function contactBlock(l, active, followupWorst){
   const contacts = l.contacts;
   if(!contacts.length){
     return `<div class="contact contact-empty">No contact identified yet</div>`;
@@ -564,11 +639,11 @@ function contactBlock(l, active){
   if(active.linkedin) links.push(`<a href="${active.linkedin}" target="_blank">LinkedIn</a>`);
   const teamStatus = active.team_status ? `<span class="team-status">${active.team_status}</span>` : "";
   const notes = active.notes ? `<div class="team-notes">${active.notes}</div>` : "";
-  const stageSelect = active.id
-    ? `<span class="stagewrap"><select class="stagesel" data-contact-id="${escAttr(active.id)}" aria-label="Stage for ${escAttr(active.name)}">${[0,1,2,3,4].map(n=>`<option value="${n}" ${n===active.stage?"selected":""}>${stageLabel(n)}</option>`).join("")}</select><span class="stagesave"></span></span>`
-    : "";
+  const stageControl = !active.id ? ""
+    : followupWorst ? stageSelectHtml(active)
+    : (active.stage === 0 ? startSequenceHtml(active) : "");
   return `<div class="contact">
-    <div class="contact-row"><b>${active.name}</b> · ${active.title||"—"}${teamStatus}${stageSelect}${selector}</div>
+    <div class="contact-row"><b>${active.name}</b> · ${active.title||"—"}${teamStatus}${stageControl}${selector}</div>
     ${links.length?`<div class="contact-links">${links.join("")}</div>`:""}
     ${notes}
   </div>`;
@@ -660,7 +735,7 @@ function cardHtml(l, followupWorst){
       <div>
         <div class="co">${l.co}<span class="badge cat-${l.cat}" title="${CATS[l.cat].full}"><span class="cd" aria-hidden="true"></span>${l.cat}</span></div>
         ${badge}
-        ${contactBlock(l, active)}
+        ${contactBlock(l, active, followupWorst)}
         <div class="srow"><div class="rlabel">Signal</div>${sig}</div>
       </div>
       <div class="right">${cadence(active?active.stage:0)}</div>
@@ -694,6 +769,9 @@ function renderSections(){
   });
   el("#list").querySelectorAll(".seq-open").forEach(b=>{
     b.onclick = () => openSequence(b.dataset.co);
+  });
+  el("#list").querySelectorAll(".start-seq").forEach(b=>{
+    b.onclick = () => showChannelPicker(b);
   });
 }
 function renderAll(){ renderFollowups(); renderFupOnTime(); renderChips(); renderSort(); renderTiles(); renderSections(); }
@@ -777,7 +855,7 @@ async function saveStage(sel){
   const note = sel.nextElementSibling;
   const { error } = await sb.from("contacts").update({ stage: newStageText, last_touch_at: touchedAt }).eq("id", contactId);
   if (error) {
-    if (note) { note.textContent = "Error al guardar"; note.className = "stagesave err"; }
+    if (note) { note.textContent = "Save error"; note.className = "stagesave err"; }
     return;
   }
   const contact = findContactById(contactId);
@@ -789,7 +867,7 @@ async function saveStage(sel){
   renderFollowups();
   renderFupOnTime();
   if (note) {
-    note.textContent = "Guardado ✓";
+    note.textContent = "Saved ✓";
     note.className = "stagesave ok";
     setTimeout(() => { note.textContent = ""; note.className = "stagesave"; }, 2000);
   }
