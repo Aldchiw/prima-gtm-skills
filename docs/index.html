@@ -61,6 +61,7 @@
 
   .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
   .tiles.cols-3{grid-template-columns:repeat(3,1fr)}
+  .tiles.cols-2{grid-template-columns:repeat(2,1fr)}
   @media(max-width:640px){.tiles,.tiles.cols-3{grid-template-columns:repeat(2,1fr)}}
   .tile{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;
     text-align:left;cursor:pointer;appearance:none;-webkit-appearance:none;font-family:var(--sans);transition:.12s}
@@ -119,9 +120,12 @@
   .stagesave.ok{color:var(--good)}
   .stagesave.err{color:var(--red-text)}
   .startwrap{display:inline-flex;align-items:center;gap:6px}
-  .start-seq,.start-channel{font-family:var(--sans);font-size:11.5px;color:var(--ink-2);background:var(--surface);
+  .start-seq{font-family:var(--sans);font-size:12px;font-weight:600;color:#fff;
+    background:var(--link);border:none;border-radius:8px;padding:6px 14px;cursor:pointer}
+  .start-seq:hover{background:color-mix(in srgb, var(--link) 85%, black)}
+  .start-channel{font-family:var(--sans);font-size:11.5px;color:var(--ink-2);background:var(--surface);
     border:1px solid var(--border);border-radius:6px;padding:3px 9px;cursor:pointer}
-  .start-seq:hover,.start-channel:hover:not(:disabled){border-color:var(--border-2);color:var(--ink)}
+  .start-channel:hover:not(:disabled){border-color:var(--border-2);color:var(--ink)}
   .start-channel:disabled{opacity:.5;cursor:default}
   .startpick-label{font-size:11px;color:var(--ink-3)}
   .startpick-note{font-size:11px;font-weight:600}
@@ -336,7 +340,7 @@ const SORTS = [
   {k:"stage", label:"Most advanced"}
 ];
 
-const state = {user:"me", cat:"all", warmOnly:false, freshOnly:false, sequenceOnly:false, sort: SHOW_WARM_INTROS ? "warm" : "fresh", activeContact:{}};
+const state = {user:"me", cat:"all", warmOnly:false, freshOnly:false, sort: SHOW_WARM_INTROS ? "warm" : "fresh", activeContact:{}};
 const el = s => document.querySelector(s);
 const initials = n => n.split(" ").map(w=>w[0]).slice(0,2).join("");
 function sigColor(s){ if(s.type==="none") return "var(--stale)"; return s.age<=7 ? "var(--good)" : "var(--stale)"; }
@@ -362,12 +366,23 @@ function compareLeads(a,b){
   return av-bv;
 }
 
+// An account is "in sequence" once ANY of its contacts has stage > 0 --
+// that account belongs to Followups/FUP on Time now, not the cold pipeline.
+function accountInSequence(l){
+  return l.contacts.some(c => c.stage > 0);
+}
+// The pipeline's base set: this user's accounts, minus anything already in
+// sequence. Shared by filtered()/renderChips()/renderTiles()/renderSections()
+// so the top counters and the pipeline listing always agree.
+function myOpenLeads(){
+  return LEADS.filter(l => l.user===state.user && !accountInSequence(l));
+}
+
 function filtered(){
-  return LEADS.filter(l => l.user===state.user)
+  return myOpenLeads()
     .filter(l => state.cat==="all" || l.cat===state.cat)
     .filter(l => !state.warmOnly || l.warm)
     .filter(l => !state.freshOnly || fresh(l.signal))
-    .filter(l => !state.sequenceOnly || (activeStage(l)>0 && activeStage(l)<4))
     .sort(compareLeads);
 }
 
@@ -379,7 +394,7 @@ function renderUsers(){
   el("#userseg").querySelectorAll("button").forEach(b=>b.onclick=()=>{state.user=b.dataset.u;renderAll();});
 }
 function renderChips(){
-  const mine = LEADS.filter(l=>l.user===state.user);
+  const mine = myOpenLeads();
   const chips = [{k:"all",name:"All"}].concat(
     Object.keys(CATS).map(k=>({k,name:CATS[k].name})));
   el("#catchips").innerHTML = chips.map(c=>{
@@ -396,26 +411,26 @@ function renderSort(){
   el("#sortseg").querySelectorAll("button").forEach(b=>b.onclick=()=>{state.sort=b.dataset.s;renderAll();});
 }
 function renderTiles(){
-  const mine = LEADS.filter(l=>l.user===state.user);
+  const mine = myOpenLeads();
   const f = mine.filter(l=>fresh(l.signal)).length;
   const w = mine.filter(l=>l.warm).length;
-  const nf = mine.filter(l=>activeStage(l)>0 && activeStage(l)<4).length;
-  const allActive = !state.warmOnly && !state.freshOnly && !state.sequenceOnly;
-  el("#tiles").classList.toggle("cols-3", !SHOW_WARM_INTROS);
+  const allActive = !state.warmOnly && !state.freshOnly;
+  // 3 tiles with the warm tile shown, 2 without it -- keep the grid matched
+  // to however many actually render.
+  el("#tiles").classList.toggle("cols-3", SHOW_WARM_INTROS);
+  el("#tiles").classList.toggle("cols-2", !SHOW_WARM_INTROS);
   const warmTile = SHOW_WARM_INTROS
     ? `<button type="button" class="tile warm ${state.warmOnly?'on':''}" data-t="warm" aria-pressed="${state.warmOnly}"><div class="n">${w}</div><div class="l">Warm intros</div></button>`
     : "";
   el("#tiles").innerHTML = `
     <button type="button" class="tile ${allActive?'on':''}" data-t="all" aria-pressed="${allActive}"><div class="n">${mine.length}</div><div class="l">My leads</div></button>
     <button type="button" class="tile fresh ${state.freshOnly?'on':''}" data-t="fresh" aria-pressed="${state.freshOnly}"><div class="n">${f}</div><div class="l">Fresh signals</div></button>
-    ${warmTile}
-    <button type="button" class="tile ${state.sequenceOnly?'on':''}" data-t="seq" aria-pressed="${state.sequenceOnly}"><div class="n">${nf}</div><div class="l">In sequence</div></button>`;
+    ${warmTile}`;
   el("#tiles").querySelectorAll(".tile").forEach(t=>t.onclick=()=>{
     const k = t.dataset.t;
-    if(k==="all"){ state.warmOnly=false; state.freshOnly=false; state.sequenceOnly=false; }
-    else if(k==="fresh"){ const next=!state.freshOnly; state.freshOnly=next; state.warmOnly=false; state.sequenceOnly=false; }
-    else if(k==="warm"){ const next=!state.warmOnly; state.warmOnly=next; state.freshOnly=false; state.sequenceOnly=false; }
-    else if(k==="seq"){ const next=!state.sequenceOnly; state.sequenceOnly=next; state.warmOnly=false; state.freshOnly=false; }
+    if(k==="all"){ state.warmOnly=false; state.freshOnly=false; }
+    else if(k==="fresh"){ const next=!state.freshOnly; state.freshOnly=next; state.warmOnly=false; }
+    else if(k==="warm"){ const next=!state.warmOnly; state.warmOnly=next; state.freshOnly=false; }
     renderAll();
   });
 }
@@ -565,10 +580,12 @@ async function startSequence(btn){
 // E1/LI/E2/E3 bar -- for both followup sections. "Abrir secuencia" is
 // swapped for the "Done" button only inside cardHtml, only when a `worst`
 // object is passed; the pipeline's own cardHtml(l) call (no second arg)
-// is untouched.
+// is untouched. Also reuses groupByCategory()/categorySectionsHtml() so
+// these sections get the same category headers as the pipeline.
 function renderFollowupSection(selector, rows, title, extraClass, emptyText){
-  const body = rows.length
-    ? `<div class="list" role="list">${rows.map(r => cardHtml(r.l, r.worst)).join("")}</div>`
+  const groups = groupByCategory(rows, r => r.l.cat);
+  const body = groups.length
+    ? categorySectionsHtml(groups, r => cardHtml(r.l, r.worst))
     : `<div class="fu-empty">${emptyText}</div>`;
   const container = el(selector);
   container.innerHTML = `<div class="fu-section ${extraClass}">
@@ -743,23 +760,35 @@ function cardHtml(l, followupWorst){
     </div>`;
 }
 
+// Groups arbitrary items into CATS-ordered category sections, skipping
+// empty categories. `catOf` extracts the category key from an item -- the
+// pipeline groups lead objects directly (l => l.cat), the followup sections
+// group {l, worst} pairs (r => r.l.cat). Shared so category headers/counts
+// render identically in the pipeline and both followup sections.
+function groupByCategory(items, catOf){
+  return Object.keys(CATS)
+    .map(k=>({k, full:CATS[k].full, code:CATS[k].name, rows: items.filter(item => catOf(item)===k)}))
+    .filter(g=>g.rows.length>0);
+}
+function categorySectionsHtml(groups, cardFn){
+  return groups.map(g=>`
+    <div class="section cat-${g.k}">
+      <div class="sechead2"><span class="catdot" aria-hidden="true"></span><h3>${g.full}</h3><span class="catcode">${g.code}</span><span class="seccount">${g.rows.length}</span></div>
+      <div class="list" role="list">${g.rows.map(cardFn).join("")}</div>
+    </div>`).join("");
+}
+
 function renderSections(){
   const rows = filtered();
-  const mine = LEADS.filter(l=>l.user===state.user);
+  const mine = myOpenLeads();
   el("#summary").textContent = rows.length===mine.length ? "" : `Showing ${rows.length} of ${mine.length}`;
   if(!rows.length){
     el("#list").innerHTML = `<div class="empty">No leads match this filter<br><button type="button" class="clearbtn">Clear filters</button></div>`;
-    el(".clearbtn").onclick = () => { state.cat="all"; state.warmOnly=false; state.freshOnly=false; state.sequenceOnly=false; renderAll(); };
+    el(".clearbtn").onclick = () => { state.cat="all"; state.warmOnly=false; state.freshOnly=false; renderAll(); };
     return;
   }
-  const groups = Object.keys(CATS)
-    .map(k=>({k, full:CATS[k].full, code:CATS[k].name, rows: rows.filter(l=>l.cat===k)}))
-    .filter(g=>g.rows.length>0);
-  el("#list").innerHTML = groups.map(g=>`
-    <div class="section cat-${g.k}">
-      <div class="sechead2"><span class="catdot" aria-hidden="true"></span><h3>${g.full}</h3><span class="catcode">${g.code}</span><span class="seccount">${g.rows.length}</span></div>
-      <div class="list" role="list">${g.rows.map(l=>cardHtml(l)).join("")}</div>
-    </div>`).join("");
+  const groups = groupByCategory(rows, l => l.cat);
+  el("#list").innerHTML = categorySectionsHtml(groups, l=>cardHtml(l));
   el("#list").querySelectorAll(".contactsel").forEach(sel=>{
     sel.onchange = () => { state.activeContact[sel.dataset.co] = parseInt(sel.value,10); renderSections(); };
   });
