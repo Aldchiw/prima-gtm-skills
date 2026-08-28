@@ -62,7 +62,6 @@
 
   .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
   .tiles.cols-3{grid-template-columns:repeat(3,1fr)}
-  .tiles.cols-2{grid-template-columns:repeat(2,1fr)}
   @media(max-width:640px){.tiles,.tiles.cols-3{grid-template-columns:repeat(2,1fr)}}
   .tile{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;
     text-align:left;cursor:pointer;appearance:none;-webkit-appearance:none;font-family:var(--sans);transition:.12s}
@@ -133,7 +132,6 @@
   .startpick-note.ok{color:var(--good)}
   .startpick-note.err{color:var(--red-text)}
   .fu-section{margin-bottom:28px;background:var(--red-soft);border-radius:14px;padding:16px 16px 4px}
-  .fu-section.fu-ontime{background:color-mix(in srgb, var(--good) 6%, transparent)}
   .fu-badge{display:flex;align-items:center;gap:8px;margin-top:5px}
   .fu-stagereal{font-family:var(--mono);font-size:11px;color:var(--ink-2)}
   .fu-tag{font-size:11.5px;font-weight:600}
@@ -293,8 +291,6 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
   <div class="summary" id="summary"></div>
   <div id="list"></div>
 
-  <div id="fupontime"></div>
-
   <div class="foot">
     <span class="fl">How this works</span>
     <b>Each teammate sees only the leads assigned to them, grouped by category.</b> Every lead updates live with its buy-window signal, its follow-up stage, and — the edge — whether Gaby or Daniel has a warm path in.<br>
@@ -341,7 +337,7 @@ const SORTS = [
   {k:"stage", label:"Most advanced"}
 ];
 
-const state = {user:"me", cat:"all", warmOnly:false, freshOnly:false, sort: SHOW_WARM_INTROS ? "warm" : "fresh", activeContact:{}};
+const state = {user:"me", cat:"all", warmOnly:false, freshOnly:false, view:"pipeline", sort: SHOW_WARM_INTROS ? "warm" : "fresh", activeContact:{}};
 const el = s => document.querySelector(s);
 const initials = n => n.split(" ").map(w=>w[0]).slice(0,2).join("");
 function sigColor(s){ if(s.type==="none") return "var(--stale)"; return s.age<=7 ? "var(--good)" : "var(--stale)"; }
@@ -368,19 +364,33 @@ function compareLeads(a,b){
 }
 
 // An account is "in sequence" once ANY of its contacts has stage > 0 --
-// that account belongs to Followups/FUP on Time now, not the cold pipeline.
+// that account belongs to the "In sequence" view/tile now, not the cold
+// pipeline (Followups is a further, overdue-only subset of "in sequence").
 function accountInSequence(l){
   return l.contacts.some(c => c.stage > 0);
 }
-// The pipeline's base set: this user's accounts, minus anything already in
-// sequence. Shared by filtered()/renderChips()/renderTiles()/renderSections()
-// so the top counters and the pipeline listing always agree.
+function myAllLeads(){
+  return LEADS.filter(l => l.user===state.user);
+}
+// The "cold" pipeline set: this user's accounts, minus anything already in
+// sequence.
 function myOpenLeads(){
-  return LEADS.filter(l => l.user===state.user && !accountInSequence(l));
+  return myAllLeads().filter(l => !accountInSequence(l));
+}
+// The mirror set for the "In sequence" tile/view: accounts with at least
+// one contact past stage 0.
+function myInSequenceLeads(){
+  return myAllLeads().filter(l => accountInSequence(l));
+}
+// Which of the two above state.view currently browses. Shared by
+// filtered()/renderChips()/renderSections() so the pipeline listing and the
+// "All"/category counters always agree on what's on screen.
+function currentBaseLeads(){
+  return state.view === "insequence" ? myInSequenceLeads() : myOpenLeads();
 }
 
 function filtered(){
-  return myOpenLeads()
+  return currentBaseLeads()
     .filter(l => state.cat==="all" || l.cat===state.cat)
     .filter(l => !state.warmOnly || l.warm)
     .filter(l => !state.freshOnly || fresh(l.signal))
@@ -395,7 +405,7 @@ function renderUsers(){
   el("#userseg").querySelectorAll("button").forEach(b=>b.onclick=()=>{state.user=b.dataset.u;renderAll();});
 }
 function renderChips(){
-  const mine = myOpenLeads();
+  const mine = currentBaseLeads();
   const chips = [{k:"all",name:"All"}].concat(
     Object.keys(CATS).map(k=>({k,name:CATS[k].name})));
   el("#catchips").innerHTML = chips.map(c=>{
@@ -413,25 +423,28 @@ function renderSort(){
 }
 function renderTiles(){
   const mine = myOpenLeads();
+  const mineSeq = myInSequenceLeads();
   const f = mine.filter(l=>fresh(l.signal)).length;
   const w = mine.filter(l=>l.warm).length;
-  const allActive = !state.warmOnly && !state.freshOnly;
-  // 3 tiles with the warm tile shown, 2 without it -- keep the grid matched
-  // to however many actually render.
-  el("#tiles").classList.toggle("cols-3", SHOW_WARM_INTROS);
-  el("#tiles").classList.toggle("cols-2", !SHOW_WARM_INTROS);
+  const allActive = state.view==="pipeline" && !state.warmOnly && !state.freshOnly;
+  const seqActive = state.view==="insequence";
+  // 4 tiles with the warm tile shown, 3 without it (base .tiles is already
+  // a 4-column grid, so only the warm-hidden case needs the override).
+  el("#tiles").classList.toggle("cols-3", !SHOW_WARM_INTROS);
   const warmTile = SHOW_WARM_INTROS
     ? `<button type="button" class="tile warm ${state.warmOnly?'on':''}" data-t="warm" aria-pressed="${state.warmOnly}"><div class="n">${w}</div><div class="l">Warm intros</div></button>`
     : "";
   el("#tiles").innerHTML = `
     <button type="button" class="tile ${allActive?'on':''}" data-t="all" aria-pressed="${allActive}"><div class="n">${mine.length}</div><div class="l">My leads</div></button>
     <button type="button" class="tile fresh ${state.freshOnly?'on':''}" data-t="fresh" aria-pressed="${state.freshOnly}"><div class="n">${f}</div><div class="l">Fresh signals</div></button>
-    ${warmTile}`;
+    ${warmTile}
+    <button type="button" class="tile ${seqActive?'on':''}" data-t="seq" aria-pressed="${seqActive}"><div class="n">${mineSeq.length}</div><div class="l">In sequence</div></button>`;
   el("#tiles").querySelectorAll(".tile").forEach(t=>t.onclick=()=>{
     const k = t.dataset.t;
-    if(k==="all"){ state.warmOnly=false; state.freshOnly=false; }
+    if(k==="all"){ state.view="pipeline"; state.warmOnly=false; state.freshOnly=false; }
     else if(k==="fresh"){ const next=!state.freshOnly; state.freshOnly=next; state.warmOnly=false; }
     else if(k==="warm"){ const next=!state.warmOnly; state.warmOnly=next; state.freshOnly=false; }
+    else if(k==="seq"){ state.view = state.view==="insequence" ? "pipeline" : "insequence"; state.warmOnly=false; state.freshOnly=false; }
     renderAll();
   });
 }
@@ -526,7 +539,7 @@ async function markDone(btn){
   if (note) { note.textContent = "Saved ✓"; note.className = "fu-donenote ok"; }
   // Brief pause so "Saved ✓" is actually visible before the re-render
   // moves/removes this card (its delay just reset).
-  setTimeout(() => { renderFollowups(); renderFupOnTime(); }, 800);
+  setTimeout(() => { renderFollowups(); }, 800);
 }
 
 // Expands a pipeline card's "Start sequence" button into an inline
@@ -571,10 +584,9 @@ async function startSequence(btn){
   contact.last_touch_at = touchedAt;
   note.textContent = "Saved ✓";
   note.className = "startpick-note ok";
-  // Brief pause so "Saved ✓" is visible before the re-render (the contact
-  // now qualifies for FUP on Time and disappears from the pipeline card's
-  // stage control).
-  setTimeout(() => { renderFollowups(); renderFupOnTime(); renderSections(); }, 800);
+  // Brief pause so "Saved ✓" is visible before the re-render: the account
+  // now counts as "in sequence" and leaves the cold pipeline/its counters.
+  setTimeout(() => { renderFollowups(); renderSections(); renderTiles(); renderChips(); }, 800);
 }
 
 // Reuses cardHtml() -- same design, same signal, same contact block, same
@@ -601,10 +613,6 @@ function renderFollowupSection(selector, rows, title, extraClass, emptyText){
 function renderFollowups(){
   renderFollowupSection("#followups", followupAccounts(d => d >= 1), "Followups", "",
     "No overdue contacts.");
-}
-function renderFupOnTime(){
-  renderFollowupSection("#fupontime", followupAccounts(d => d <= 0), "FUP on Time", "fu-ontime",
-    "No contacts on track.");
 }
 
 function cadence(stage){
@@ -781,7 +789,7 @@ function categorySectionsHtml(groups, cardFn){
 
 function renderSections(){
   const rows = filtered();
-  const mine = myOpenLeads();
+  const mine = currentBaseLeads();
   el("#summary").textContent = rows.length===mine.length ? "" : `Showing ${rows.length} of ${mine.length}`;
   if(!rows.length){
     el("#list").innerHTML = `<div class="empty">No leads match this filter<br><button type="button" class="clearbtn">Clear filters</button></div>`;
@@ -803,7 +811,7 @@ function renderSections(){
     b.onclick = () => showChannelPicker(b);
   });
 }
-function renderAll(){ renderFollowups(); renderFupOnTime(); renderChips(); renderSort(); renderTiles(); renderSections(); }
+function renderAll(){ renderFollowups(); renderChips(); renderSort(); renderTiles(); renderSections(); }
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Sheet/CSV stage was always text ("Not Contacted", "First Touch (Email)",
@@ -894,7 +902,9 @@ async function saveStage(sel){
     contact.last_touch_at = touchedAt;
   }
   renderFollowups();
-  renderFupOnTime();
+  renderSections();
+  renderTiles();
+  renderChips();
   if (note) {
     note.textContent = "Saved ✓";
     note.className = "stagesave ok";
