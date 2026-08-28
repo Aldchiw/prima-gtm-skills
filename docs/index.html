@@ -120,12 +120,21 @@
   .stagesave.ok{color:var(--good)}
   .stagesave.err{color:var(--red-text)}
   .fu-section{margin-bottom:28px;background:var(--red-soft);border-radius:14px;padding:16px 16px 4px}
+  .fu-section.fu-ontime{background:color-mix(in srgb, var(--good) 6%, transparent)}
   .fu-badge{display:flex;align-items:center;gap:8px;margin-top:5px}
   .fu-stagereal{font-family:var(--mono);font-size:11px;color:var(--ink-2)}
   .fu-tag{font-size:11.5px;font-weight:600}
   .fu-tag.fu-over{color:var(--red-text)}
   .fu-tag.fu-ok{color:var(--ink-3);font-weight:400}
   .fu-empty{color:var(--ink-3);font-size:12.5px;padding:14px 0}
+  .fu-donewrap{display:inline-flex;align-items:center;gap:8px}
+  .fu-done{font-family:var(--sans);font-size:12px;font-weight:500;color:var(--good);
+    background:none;border:1px solid var(--border);border-radius:8px;padding:5px 12px;cursor:pointer}
+  .fu-done:hover:not(:disabled){border-color:var(--good)}
+  .fu-done:disabled{color:var(--ink-3);cursor:default;opacity:.6}
+  .fu-donenote{font-size:11px;font-weight:600}
+  .fu-donenote.ok{color:var(--good)}
+  .fu-donenote.err{color:var(--red-text)}
   .srow{margin-top:12px}
   .rlabel{font-size:11px;color:var(--ink-3);font-weight:500;margin-bottom:5px}
   .signal{display:flex;align-items:center;gap:8px;font-size:12.5px;flex-wrap:wrap}
@@ -254,6 +263,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 
 <div class="wrap">
   <div id="followups"></div>
+  <div id="fupontime"></div>
 
   <div class="sechead">
     <h2>Your pipeline — by category</h2>
@@ -416,8 +426,9 @@ function daysSinceTouch(iso){
 // days since touch - 7, so day 8 is delay 1 (the design's "day 8 = 1 day of
 // delay"). When an account has multiple in-flow contacts, the badge reflects
 // whichever is most overdue (worst-case), and that same value drives the
-// account's sort position.
-function followupAccounts(){
+// account's sort position. `predicate(delay)` splits the same underlying
+// list into the two sections (overdue vs on-time) without two code paths.
+function followupAccounts(predicate){
   const rows = [];
   for (const l of LEADS) {
     let worst = null;
@@ -429,7 +440,7 @@ function followupAccounts(){
         if (!worst || delay > worst.delay) worst = { c, days, delay };
       }
     }
-    if (worst) rows.push({ l, worst });
+    if (worst && predicate(worst.delay)) rows.push({ l, worst });
   }
   return rows.sort((a, b) => b.worst.delay - a.worst.delay);
 }
@@ -445,18 +456,80 @@ function followupTagHtml(worst){
   return `<div class="fu-badge"><span class="fu-stagereal">${worst.c.stage_text || "—"}</span>${delayTag}</div>`;
 }
 
+// Fixed progression a "Done" click walks forward. Capped at FUP 10 -- what
+// happens at the cap (closing the flow) is out of scope here (Entrega B).
+const STAGE_SEQUENCE = ["Not Contacted","First Touch (Email)","FUP 1","FUP 2","FUP 3","FUP 4","FUP 5","FUP 6","FUP 7","FUP 8","FUP 9","FUP 10"];
+function nextStageText(stageText){
+  const t = (stageText || "Not Contacted").trim();
+  if (t === "Not Contacted") return STAGE_SEQUENCE[1];
+  // Both First Touch variants (Email/LinkedIn) are UI-equivalent (stage 1) --
+  // either one's "next" is FUP 1.
+  if (t.indexOf("First Touch") === 0) return "FUP 1";
+  const idx = STAGE_SEQUENCE.indexOf(t);
+  if (idx !== -1 && idx < STAGE_SEQUENCE.length - 1) return STAGE_SEQUENCE[idx + 1];
+  return null; // FUP 10, "Replied", or unrecognized -- no next step from here
+}
+
+// Done button for the followup card's worst-case contact. Disabled (not
+// hidden) once nextStageText() has nowhere left to go.
+function doneButtonHtml(worst){
+  const next = nextStageText(worst.c.stage_text);
+  if (!next) return `<span class="fu-donewrap"><button type="button" class="fu-done" disabled>Done ✓</button></span>`;
+  return `<span class="fu-donewrap"><button type="button" class="fu-done" data-contact-id="${escAttr(worst.c.id)}">Done ✓</button><span class="fu-donenote"></span></span>`;
+}
+
+// Same safe-save pattern as saveStage(): write to Supabase first, only touch
+// memory (and only report success) if that write didn't error.
+async function markDone(btn){
+  const contactId = btn.dataset.contactId;
+  const contact = findContactById(contactId);
+  if (!contact) return;
+  const next = nextStageText(contact.stage_text);
+  if (!next) return;
+  const note = btn.nextElementSibling;
+  const touchedAt = new Date().toISOString();
+  btn.disabled = true;
+  const { error } = await sb.from("contacts").update({ stage: next, last_touch_at: touchedAt }).eq("id", contactId);
+  if (error) {
+    btn.disabled = false;
+    if (note) { note.textContent = "Error"; note.className = "fu-donenote err"; }
+    return;
+  }
+  contact.stage = stageFromText(next);
+  contact.stage_text = next;
+  contact.last_touch_at = touchedAt;
+  if (note) { note.textContent = "Guardado ✓"; note.className = "fu-donenote ok"; }
+  // Brief pause so "Guardado ✓" is actually visible before the re-render
+  // moves/removes this card (its delay just reset).
+  setTimeout(() => { renderFollowups(); renderFupOnTime(); }, 800);
+}
+
 // Reuses cardHtml() -- same design, same signal, same contact block, same
-// E1/LI/E2/E3 bar, same "Abrir secuencia" -- just a different account
-// selection/order and one extra badge line inside the card.
-function renderFollowups(){
-  const rows = followupAccounts();
+// E1/LI/E2/E3 bar -- for both followup sections. "Abrir secuencia" is
+// swapped for the "Done" button only inside cardHtml, only when a `worst`
+// object is passed; the pipeline's own cardHtml(l) call (no second arg)
+// is untouched.
+function renderFollowupSection(selector, rows, title, extraClass, emptyText){
   const body = rows.length
-    ? `<div class="list" role="list">${rows.map(r => cardHtml(r.l, followupTagHtml(r.worst))).join("")}</div>`
-    : `<div class="fu-empty">Aún no hay contactos en flujo. Marca un primer toque para empezar.</div>`;
-  el("#followups").innerHTML = `<div class="fu-section">
-    <div class="sechead"><h2>Followups</h2></div>
+    ? `<div class="list" role="list">${rows.map(r => cardHtml(r.l, r.worst)).join("")}</div>`
+    : `<div class="fu-empty">${emptyText}</div>`;
+  const container = el(selector);
+  container.innerHTML = `<div class="fu-section ${extraClass}">
+    <div class="sechead"><h2>${title}</h2></div>
     ${body}
   </div>`;
+  container.querySelectorAll(".fu-done").forEach(b=>{
+    if (!b.disabled) b.onclick = () => markDone(b);
+  });
+}
+
+function renderFollowups(){
+  renderFollowupSection("#followups", followupAccounts(d => d >= 1), "Followups", "",
+    "Sin contactos vencidos.");
+}
+function renderFupOnTime(){
+  renderFollowupSection("#fupontime", followupAccounts(d => d <= 0), "FUP on Time", "fu-ontime",
+    "Sin contactos en tiempo.");
 }
 
 function cadence(stage){
@@ -563,7 +636,11 @@ function closeSequence(){
 el("#seqOverlay").addEventListener("click", e => { if(e.target.id==="seqOverlay") closeSequence(); });
 document.addEventListener("keydown", e => { if(e.key==="Escape" && !el("#seqOverlay").hidden) closeSequence(); });
 
-function cardHtml(l, followupTag){
+// `followupWorst` is undefined for the pipeline's own cardHtml(l) call --
+// badge and footer fall back to the original pipeline behavior exactly.
+// Passing the worst-in-flow-contact object (from followupAccounts) swaps in
+// the followup badge and the Done button instead of "Abrir secuencia".
+function cardHtml(l, followupWorst){
   const active = activeContactOf(l);
   const showWarm = SHOW_WARM_INTROS && l.warm;
   const warm = showWarm ? `<div class="warmbar">${peopleIco}<span class="wl">Warm intro</span>${warmText(l.warm)}
@@ -573,17 +650,21 @@ function cardHtml(l, followupTag){
     : `<div class="signal"><span class="sdot" style="background:${sigColor(l.signal)}"></span>
        <span class="stext">${l.signal.text}</span><span class="age">${l.signal.age}d</span>
        <a href="${l.signal.url}" target="_blank">source <span class="arrow">→</span></a></div>`;
+  const badge = followupWorst ? followupTagHtml(followupWorst) : "";
+  const footer = followupWorst
+    ? doneButtonHtml(followupWorst)
+    : `<button type="button" class="seq-open" data-co="${escAttr(l.co)}">Abrir secuencia <span class="arrow">→</span></button>`;
   return `<div class="card ${showWarm?'haswarm':''}" role="listitem">${warm}
     <div class="cbody">
       <div>
         <div class="co">${l.co}<span class="badge cat-${l.cat}" title="${CATS[l.cat].full}"><span class="cd" aria-hidden="true"></span>${l.cat}</span></div>
-        ${followupTag || ""}
+        ${badge}
         ${contactBlock(l, active)}
         <div class="srow"><div class="rlabel">Signal</div>${sig}</div>
       </div>
       <div class="right">${cadence(active?active.stage:0)}</div>
     </div>
-    <div class="cfoot"><button type="button" class="seq-open" data-co="${escAttr(l.co)}">Abrir secuencia <span class="arrow">→</span></button></div>
+    <div class="cfoot">${footer}</div>
     </div>`;
 }
 
@@ -614,7 +695,7 @@ function renderSections(){
     b.onclick = () => openSequence(b.dataset.co);
   });
 }
-function renderAll(){ renderFollowups(); renderChips(); renderSort(); renderTiles(); renderSections(); }
+function renderAll(){ renderFollowups(); renderFupOnTime(); renderChips(); renderSort(); renderTiles(); renderSections(); }
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Sheet/CSV stage was always text ("Not Contacted", "First Touch (Email)",
@@ -705,6 +786,7 @@ async function saveStage(sel){
     contact.last_touch_at = touchedAt;
   }
   renderFollowups();
+  renderFupOnTime();
   if (note) {
     note.textContent = "Guardado ✓";
     note.className = "stagesave ok";
