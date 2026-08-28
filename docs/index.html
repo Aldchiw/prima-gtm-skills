@@ -118,14 +118,10 @@
   .stagesave{font-size:11px;font-weight:600}
   .stagesave.ok{color:var(--good)}
   .stagesave.err{color:var(--red-text)}
-  .fu-section{margin-bottom:28px}
-  .fu-list{display:flex;flex-direction:column;gap:8px}
-  .fu-row{background:var(--surface);border:1px solid var(--border);border-radius:10px;
-    padding:10px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-  .fu-who{font-size:13px;color:var(--ink)}
-  .fu-who b{font-weight:600}
-  .fu-stage{font-size:11.5px;color:var(--ink-2)}
-  .fu-tag{margin-left:auto;font-size:11.5px;font-weight:600}
+  .fu-section{margin-bottom:28px;background:var(--red-soft);border-radius:14px;padding:16px 16px 4px}
+  .fu-badge{display:flex;align-items:center;gap:8px;margin-top:5px}
+  .fu-stagereal{font-family:var(--mono);font-size:11px;color:var(--ink-2)}
+  .fu-tag{font-size:11.5px;font-weight:600}
   .fu-tag.fu-over{color:var(--red-text)}
   .fu-tag.fu-ok{color:var(--ink-3);font-weight:400}
   .fu-empty{color:var(--ink-3);font-size:12.5px;padding:14px 0}
@@ -414,41 +410,47 @@ function daysSinceTouch(iso){
   return Math.floor((Date.now() - d.getTime()) / 86400000);
 }
 
-// A contact is "in flow" once it has a first touch (stage > 0) with a
-// recorded date. Fixed 7-day cadence: delay = days since touch - 7, so day 8
-// is delay 1 (the design's "day 8 = 1 day of delay"). Sorted most-overdue
-// first; that ordering also happens to put not-yet-due contacts in
-// soonest-due order right after the overdue ones, for free.
-function followupsInFlow(){
+// An account has a followup badge once at least one of its contacts is "in
+// flow" (stage > 0 with a recorded touch date). Fixed 7-day cadence: delay =
+// days since touch - 7, so day 8 is delay 1 (the design's "day 8 = 1 day of
+// delay"). When an account has multiple in-flow contacts, the badge reflects
+// whichever is most overdue (worst-case), and that same value drives the
+// account's sort position.
+function followupAccounts(){
   const rows = [];
   for (const l of LEADS) {
+    let worst = null;
     for (const c of l.contacts) {
       if (c.stage > 0 && c.last_touch_at) {
         const days = daysSinceTouch(c.last_touch_at);
         if (days === null) continue;
-        rows.push({ contact: c, co: l.co, days, delay: days - 7 });
+        const delay = days - 7;
+        if (!worst || delay > worst.delay) worst = { c, days, delay };
       }
     }
+    if (worst) rows.push({ l, worst });
   }
-  return rows.sort((a, b) => b.delay - a.delay);
+  return rows.sort((a, b) => b.worst.delay - a.worst.delay);
 }
 
-function followupRowHtml(r){
-  const overdue = r.delay >= 1;
-  const tag = overdue
-    ? `<span class="fu-tag fu-over">${r.delay} día${r.delay===1?"":"s"} de delay</span>`
-    : `<span class="fu-tag fu-ok">faltan ${7 - r.days} día${(7 - r.days)===1?"":"s"}</span>`;
-  return `<div class="fu-row">
-    <div class="fu-who"><b>${r.contact.name}</b> · ${r.co}</div>
-    <div class="fu-stage">${r.contact.stage_text || "—"}</div>
-    ${tag}
-  </div>`;
+// Small badge injected into the shared cardHtml() output -- the account's
+// worst-case followup status, showing the REAL stage text (e.g. "FUP 7"),
+// not the 0-4 collapsed number cadence()/stagesel show elsewhere.
+function followupTagHtml(worst){
+  const overdue = worst.delay >= 1;
+  const delayTag = overdue
+    ? `<span class="fu-tag fu-over">${worst.delay} día${worst.delay===1?"":"s"} de delay</span>`
+    : `<span class="fu-tag fu-ok">faltan ${7 - worst.days} día${(7 - worst.days)===1?"":"s"}</span>`;
+  return `<div class="fu-badge"><span class="fu-stagereal">${worst.c.stage_text || "—"}</span>${delayTag}</div>`;
 }
 
+// Reuses cardHtml() -- same design, same signal, same contact block, same
+// E1/LI/E2/E3 bar, same "Abrir secuencia" -- just a different account
+// selection/order and one extra badge line inside the card.
 function renderFollowups(){
-  const rows = followupsInFlow();
+  const rows = followupAccounts();
   const body = rows.length
-    ? `<div class="fu-list">${rows.map(followupRowHtml).join("")}</div>`
+    ? `<div class="list" role="list">${rows.map(r => cardHtml(r.l, followupTagHtml(r.worst))).join("")}</div>`
     : `<div class="fu-empty">Aún no hay contactos en flujo. Marca un primer toque para empezar.</div>`;
   el("#followups").innerHTML = `<div class="fu-section">
     <div class="sechead"><h2>Followups</h2></div>
@@ -560,7 +562,7 @@ function closeSequence(){
 el("#seqOverlay").addEventListener("click", e => { if(e.target.id==="seqOverlay") closeSequence(); });
 document.addEventListener("keydown", e => { if(e.key==="Escape" && !el("#seqOverlay").hidden) closeSequence(); });
 
-function cardHtml(l){
+function cardHtml(l, followupTag){
   const active = activeContactOf(l);
   const showWarm = SHOW_WARM_INTROS && l.warm;
   const warm = showWarm ? `<div class="warmbar">${peopleIco}<span class="wl">Warm intro</span>${warmText(l.warm)}
@@ -574,6 +576,7 @@ function cardHtml(l){
     <div class="cbody">
       <div>
         <div class="co">${l.co}<span class="badge cat-${l.cat}" title="${CATS[l.cat].full}"><span class="cd" aria-hidden="true"></span>${l.cat}</span></div>
+        ${followupTag || ""}
         ${contactBlock(l, active)}
         <div class="srow"><div class="rlabel">Signal</div>${sig}</div>
       </div>
@@ -598,7 +601,7 @@ function renderSections(){
   el("#list").innerHTML = groups.map(g=>`
     <div class="section cat-${g.k}">
       <div class="sechead2"><span class="catdot" aria-hidden="true"></span><h3>${g.full}</h3><span class="catcode">${g.code}</span><span class="seccount">${g.rows.length}</span></div>
-      <div class="list" role="list">${g.rows.map(cardHtml).join("")}</div>
+      <div class="list" role="list">${g.rows.map(l=>cardHtml(l)).join("")}</div>
     </div>`).join("");
   el("#list").querySelectorAll(".contactsel").forEach(sel=>{
     sel.onchange = () => { state.activeContact[sel.dataset.co] = parseInt(sel.value,10); renderSections(); };
