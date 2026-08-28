@@ -127,10 +127,10 @@
   .fu-tag.fu-ok{color:var(--ink-3);font-weight:400}
   .fu-empty{color:var(--ink-3);font-size:12.5px;padding:14px 0}
   .fu-donewrap{display:inline-flex;align-items:center;gap:8px}
-  .fu-done{font-family:var(--sans);font-size:12px;font-weight:500;color:var(--good);
-    background:none;border:1px solid var(--border);border-radius:8px;padding:5px 12px;cursor:pointer}
-  .fu-done:hover:not(:disabled){border-color:var(--good)}
-  .fu-done:disabled{color:var(--ink-3);cursor:default;opacity:.6}
+  .fu-done{font-family:var(--sans);font-size:12px;font-weight:600;color:#fff;
+    background:var(--link);border:none;border-radius:8px;padding:6px 14px;cursor:pointer}
+  .fu-done:hover:not(:disabled){background:color-mix(in srgb, var(--link) 85%, black)}
+  .fu-done:disabled{background:var(--border);color:var(--ink-3);cursor:default}
   .fu-donenote{font-size:11px;font-weight:600}
   .fu-donenote.ok{color:var(--good)}
   .fu-donenote.err{color:var(--red-text)}
@@ -262,7 +262,6 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 
 <div class="wrap">
   <div id="followups"></div>
-  <div id="fupontime"></div>
 
   <div class="sechead">
     <h2>Your pipeline — by category</h2>
@@ -279,6 +278,8 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
   <div class="tiles" id="tiles"></div>
   <div class="summary" id="summary"></div>
   <div id="list"></div>
+
+  <div id="fupontime"></div>
 
   <div class="foot">
     <span class="fl">How this works</span>
@@ -473,8 +474,8 @@ function nextStageText(stageText){
 // hidden) once nextStageText() has nowhere left to go.
 function doneButtonHtml(worst){
   const next = nextStageText(worst.c.stage_text);
-  if (!next) return `<span class="fu-donewrap"><button type="button" class="fu-done" disabled>Done ✓</button></span>`;
-  return `<span class="fu-donewrap"><button type="button" class="fu-done" data-contact-id="${escAttr(worst.c.id)}">Done ✓</button><span class="fu-donenote"></span></span>`;
+  if (!next) return `<span class="fu-donewrap"><button type="button" class="fu-done" disabled>Done</button></span>`;
+  return `<span class="fu-donewrap"><button type="button" class="fu-done" data-contact-id="${escAttr(worst.c.id)}">Done</button><span class="fu-donenote"></span></span>`;
 }
 
 // Same safe-save pattern as saveStage(): write to Supabase first, only touch
