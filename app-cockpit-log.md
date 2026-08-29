@@ -126,3 +126,16 @@ Hoy la migración es snapshot manual. Debe preservar los `stage`/fechas que Alda
 - **Siguiente:** construir la bandeja de hoy — empezar por guardar la fecha de cada cambio de stage.
 - **Prompt de arranque próxima sesión:**
   _"Seguimos la app del cockpit (ya EN VIVO en prima-gtm-skills.vercel.app, código en docs/index.html, stage ya editable y guardable en Supabase). Toca construir la 'bandeja de hoy': ver app-cockpit-log.md sección 4 para el diseño cerrado. El primer paso es guardar la FECHA de cada cambio de stage (hoy no se guarda). Guíame paso a paso, un paso a la vez. Ojo: Vercel bloquea commits de Claude Code, hay que hacer mini-commit por GitHub web para destrabar (ver aprendizaje #5)."_
+
+### Sesión 2026-08-29 — Bandeja de followups completa + todo en inglés
+- **Sección "Followups"** (vencidos, arriba del pipeline) construida y funcionando, agrupada por categoría con los mismos encabezados que el pipeline.
+- **Botón "Done"**: avanza el FUP real (`nextStageText`, tope FUP 10) y reinicia el timer de 7 días (`last_touch_at` a ahora) — mismo patrón seguro que el resto (Supabase primero, memoria solo si no hay error).
+- **Botón "Start sequence"** en el pipeline: al hacer click ofrece elegir canal (Email/LinkedIn), arranca el contacto en "First Touch" correspondiente.
+- **Las cuentas en secuencia salen del pipeline**: una cuenta con al menos un contacto en stage > 0 ya no aparece en el pipeline "frío" ni en sus contadores (All/Cat 1-4/My leads).
+- **Tile "In sequence" clickeable**: alterna `state.view` entre "pipeline" (cuentas frías) e "insequence" (cuentas ya en flujo) — mismo diseño que los otros tiles, contador propio.
+- **Footer condicional por tarjeta**: si la cuenta NO está en secuencia -> "Start sequence"; si SÍ está -> FUP real + días desde el último toque + botón "Done" (reusa la misma lógica de Followups, sin duplicar).
+- **Toda la interfaz traducida a inglés** (textos de followups, avisos de guardado/error, etiquetas de delay).
+- Se detectó (no resuelto, documentado): `accountInSequence` decide membresía del pipeline solo por `stage > 0`, pero el footer/badge necesita además `last_touch_at`. Cuentas con stage>0 sin fecha registrada (datos viejos, previos a esta columna) podrían quedar con footer vacío. No se tocó porque no había caso real confirmado.
+- **Siguiente:** atacar el `deep-analysis-cockpit.md` (pendiente de crear/definir alcance).
+- **Prompt de arranque próxima sesión:**
+  _"Seguimos la app del cockpit (EN VIVO en prima-gtm-skills.vercel.app, código en docs/index.html). La bandeja de followups ya está completa: sección Followups arriba, botón Done, Start sequence con picker de canal, cuentas en secuencia fuera del pipeline, tile 'In sequence' con vista alternable, footer condicional, todo en inglés. Toca el deep-analysis de la app — revisa deep-analysis-cockpit.md (o ayúdame a definir su alcance si no existe todavía). Guíame paso a paso, un paso a la vez. Ojo: Vercel bloquea commits de Claude Code, mini-commit por GitHub web para destrabar (aprendizaje #5)."_
