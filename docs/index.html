@@ -589,11 +589,11 @@ async function startSequence(btn){
 }
 
 // Reuses cardHtml() -- same design, same signal, same contact block, same
-// E1/LI/E2/E3 bar -- for both followup sections. "Abrir secuencia" is
-// swapped for the "Done" button only inside cardHtml, only when a `worst`
-// object is passed; the pipeline's own cardHtml(l) call (no second arg)
-// is untouched. Also reuses groupByCategory()/categorySectionsHtml() so
-// these sections get the same category headers as the pipeline.
+// E1/LI/E2/E3 bar -- for both followup sections. The footer becomes the
+// "Done" button only inside cardHtml, only when a `worst` object is passed;
+// the pipeline's own cardHtml(l) call (no second arg) gets "Start sequence"
+// instead. Also reuses groupByCategory()/categorySectionsHtml() so these
+// sections get the same category headers as the pipeline.
 function renderFollowupSection(selector, rows, title, extraClass, emptyText){
   const groups = groupByCategory(rows, r => r.l.cat);
   const body = groups.length
@@ -663,9 +663,9 @@ function contactBlock(l, active, followupWorst){
   if(active.linkedin) links.push(`<a href="${active.linkedin}" target="_blank">LinkedIn</a>`);
   const teamStatus = active.team_status ? `<span class="team-status">${active.team_status}</span>` : "";
   const notes = active.notes ? `<div class="team-notes">${active.notes}</div>` : "";
-  const stageControl = !active.id ? ""
-    : followupWorst ? stageSelectHtml(active)
-    : (active.stage === 0 ? startSequenceHtml(active) : "");
+  // Pipeline cards no longer get a stage control here -- "Start sequence"
+  // lives in the card footer instead (see cardHtml).
+  const stageControl = (followupWorst && active.id) ? stageSelectHtml(active) : "";
   return `<div class="contact">
     <div class="contact-row"><b>${active.name}</b> · ${active.title||"—"}${teamStatus}${stageControl}${selector}</div>
     ${links.length?`<div class="contact-links">${links.join("")}</div>`:""}
@@ -737,9 +737,10 @@ el("#seqOverlay").addEventListener("click", e => { if(e.target.id==="seqOverlay"
 document.addEventListener("keydown", e => { if(e.key==="Escape" && !el("#seqOverlay").hidden) closeSequence(); });
 
 // `followupWorst` is undefined for the pipeline's own cardHtml(l) call --
-// badge and footer fall back to the original pipeline behavior exactly.
+// footer becomes "Start sequence" (stage-0 contacts only; nothing once a
+// contact has moved on, since the account itself then leaves the pipeline).
 // Passing the worst-in-flow-contact object (from followupAccounts) swaps in
-// the followup badge and the Done button instead of "Abrir secuencia".
+// the followup badge and the "Done" button instead.
 function cardHtml(l, followupWorst){
   const active = activeContactOf(l);
   const showWarm = SHOW_WARM_INTROS && l.warm;
@@ -753,7 +754,7 @@ function cardHtml(l, followupWorst){
   const badge = followupWorst ? followupTagHtml(followupWorst) : "";
   const footer = followupWorst
     ? doneButtonHtml(followupWorst)
-    : `<button type="button" class="seq-open" data-co="${escAttr(l.co)}">Abrir secuencia <span class="arrow">→</span></button>`;
+    : (active && active.id && active.stage === 0 ? startSequenceHtml(active) : "");
   return `<div class="card ${showWarm?'haswarm':''}" role="listitem">${warm}
     <div class="cbody">
       <div>
