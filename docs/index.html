@@ -60,8 +60,8 @@
   .sortctl{display:flex;align-items:center;gap:10px}
 
   .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
-  .tiles.cols-3{grid-template-columns:repeat(3,1fr)}
-  @media(max-width:640px){.tiles,.tiles.cols-3{grid-template-columns:repeat(2,1fr)}}
+  .tiles.cols-5{grid-template-columns:repeat(5,1fr)}
+  @media(max-width:640px){.tiles,.tiles.cols-5{grid-template-columns:repeat(2,1fr)}}
   .tile{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;
     text-align:left;cursor:pointer;appearance:none;-webkit-appearance:none;font-family:var(--sans);transition:.12s}
   .tile:hover{border-color:var(--border-2);transform:translateY(-1px)}
@@ -131,17 +131,23 @@
   .startpick-note.ok{color:var(--good)}
   .startpick-note.err{color:var(--red-text)}
   .fu-section{margin-bottom:28px;background:var(--red-soft);border-radius:14px;padding:16px 16px 4px}
-  .fu-badge{display:flex;align-items:center;gap:8px;margin-top:5px}
+  .fu-badge{display:flex;align-items:center;gap:8px;margin-top:5px;flex-wrap:wrap}
   .fu-stagereal{font-family:var(--mono);font-size:11px;color:var(--ink-2)}
   .fu-tag{font-size:11.5px;font-weight:600}
   .fu-tag.fu-over{color:var(--red-text)}
   .fu-tag.fu-ok{color:var(--ink-3);font-weight:400}
+  .fu-tag.fu-replied-tag{color:var(--good)}
+  .fu-tag.fu-stopped-tag{color:var(--ink-3);font-weight:400}
   .fu-empty{color:var(--ink-3);font-size:12.5px;padding:14px 0}
-  .fu-donewrap{display:inline-flex;align-items:center;gap:8px}
+  .fu-donewrap{display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap}
   .fu-done{font-family:var(--sans);font-size:12px;font-weight:600;color:#fff;
     background:var(--link);border:none;border-radius:8px;padding:6px 14px;cursor:pointer}
   .fu-done:hover:not(:disabled){background:color-mix(in srgb, var(--link) 85%, black)}
   .fu-done:disabled{background:var(--border);color:var(--ink-3);cursor:default}
+  .fu-done.fu-replied{background:var(--good)}
+  .fu-done.fu-replied:hover:not(:disabled){background:color-mix(in srgb, var(--good) 85%, black)}
+  .fu-done.fu-stopped{background:var(--ink-3)}
+  .fu-done.fu-stopped:hover:not(:disabled){background:color-mix(in srgb, var(--ink-3) 85%, black)}
   .fu-donenote{font-size:11px;font-weight:600}
   .fu-donenote.ok{color:var(--good)}
   .fu-donenote.err{color:var(--red-text)}
@@ -362,30 +368,51 @@ function compareLeads(a,b){
   return av-bv;
 }
 
-// An account is "in sequence" once ANY of its contacts has stage > 0 --
-// that account belongs to the "In sequence" view/tile now, not the cold
-// pipeline (Followups is a further, overdue-only subset of "in sequence").
+// A contact is "closed" once it replied or the sequence was stopped on it --
+// either way it's done moving through stages and should drop out of the
+// active flow (Followups, "in sequence" membership) entirely.
+function isClosed(c){
+  return c.stage_text === "Replied" || c.stage_text === "Stopped";
+}
+// An account is "in sequence" once ANY of its contacts has stage > 0 and
+// isn't closed -- that account belongs to the "In sequence" view/tile now,
+// not the cold pipeline (Followups is a further, overdue-only subset of
+// "in sequence"). A closed contact no longer counts, even though its stage
+// number (4) would otherwise still read as "advanced".
 function accountInSequence(l){
-  return l.contacts.some(c => c.stage > 0);
+  return l.contacts.some(c => c.stage > 0 && !isClosed(c));
+}
+// True once every contact on the account is closed -- such an account
+// belongs in neither the cold pipeline nor "in sequence" (only in Closed).
+function accountAllClosed(l){
+  return l.contacts.length > 0 && l.contacts.every(c => isClosed(c));
 }
 function myAllLeads(){
   return LEADS.filter(l => l.user===state.user);
 }
 // The "cold" pipeline set: this user's accounts, minus anything already in
-// sequence.
+// sequence or fully closed.
 function myOpenLeads(){
-  return myAllLeads().filter(l => !accountInSequence(l));
+  return myAllLeads().filter(l => !accountInSequence(l) && !accountAllClosed(l));
 }
 // The mirror set for the "In sequence" tile/view: accounts with at least
-// one contact past stage 0.
+// one contact past stage 0 that isn't closed.
 function myInSequenceLeads(){
   return myAllLeads().filter(l => accountInSequence(l));
 }
-// Which of the two above state.view currently browses. Shared by
+// Accounts with at least one closed (Replied/Stopped) contact -- the
+// "Closed" tile/view. Not mutually exclusive with "in sequence": an account
+// with one closed contact and one still-active contact shows in both.
+function myClosedLeads(){
+  return myAllLeads().filter(l => l.contacts.some(c => isClosed(c)));
+}
+// Which of the three above state.view currently browses. Shared by
 // filtered()/renderChips()/renderSections() so the pipeline listing and the
 // "All"/category counters always agree on what's on screen.
 function currentBaseLeads(){
-  return state.view === "insequence" ? myInSequenceLeads() : myOpenLeads();
+  if (state.view === "insequence") return myInSequenceLeads();
+  if (state.view === "closed") return myClosedLeads();
+  return myOpenLeads();
 }
 
 function filtered(){
@@ -423,13 +450,15 @@ function renderSort(){
 function renderTiles(){
   const mine = myOpenLeads();
   const mineSeq = myInSequenceLeads();
+  const mineClosed = myClosedLeads();
   const f = mine.filter(l=>fresh(l.signal)).length;
   const w = mine.filter(l=>l.warm).length;
   const allActive = state.view==="pipeline" && !state.warmOnly && !state.freshOnly;
   const seqActive = state.view==="insequence";
-  // 4 tiles with the warm tile shown, 3 without it (base .tiles is already
-  // a 4-column grid, so only the warm-hidden case needs the override).
-  el("#tiles").classList.toggle("cols-3", !SHOW_WARM_INTROS);
+  const closedActive = state.view==="closed";
+  // 5 tiles with the warm tile shown, 4 without it (base .tiles is already
+  // a 4-column grid, so only the warm-shown case needs the override).
+  el("#tiles").classList.toggle("cols-5", SHOW_WARM_INTROS);
   const warmTile = SHOW_WARM_INTROS
     ? `<button type="button" class="tile warm ${state.warmOnly?'on':''}" data-t="warm" aria-pressed="${state.warmOnly}"><div class="n">${w}</div><div class="l">Warm intros</div></button>`
     : "";
@@ -437,13 +466,15 @@ function renderTiles(){
     <button type="button" class="tile ${allActive?'on':''}" data-t="all" aria-pressed="${allActive}"><div class="n">${mine.length}</div><div class="l">My leads</div></button>
     <button type="button" class="tile fresh ${state.freshOnly?'on':''}" data-t="fresh" aria-pressed="${state.freshOnly}"><div class="n">${f}</div><div class="l">Fresh signals</div></button>
     ${warmTile}
-    <button type="button" class="tile ${seqActive?'on':''}" data-t="seq" aria-pressed="${seqActive}"><div class="n">${mineSeq.length}</div><div class="l">In sequence</div></button>`;
+    <button type="button" class="tile ${seqActive?'on':''}" data-t="seq" aria-pressed="${seqActive}"><div class="n">${mineSeq.length}</div><div class="l">In sequence</div></button>
+    <button type="button" class="tile ${closedActive?'on':''}" data-t="closed" aria-pressed="${closedActive}"><div class="n">${mineClosed.length}</div><div class="l">Closed</div></button>`;
   el("#tiles").querySelectorAll(".tile").forEach(t=>t.onclick=()=>{
     const k = t.dataset.t;
     if(k==="all"){ state.view="pipeline"; state.warmOnly=false; state.freshOnly=false; }
     else if(k==="fresh"){ const next=!state.freshOnly; state.freshOnly=next; state.warmOnly=false; }
     else if(k==="warm"){ const next=!state.warmOnly; state.warmOnly=next; state.freshOnly=false; }
     else if(k==="seq"){ state.view = state.view==="insequence" ? "pipeline" : "insequence"; state.warmOnly=false; state.freshOnly=false; }
+    else if(k==="closed"){ state.view = state.view==="closed" ? "pipeline" : "closed"; state.warmOnly=false; state.freshOnly=false; }
     renderAll();
   });
 }
@@ -459,17 +490,17 @@ function daysSinceTouch(iso){
 }
 
 // An account is "in flow" once at least one of its contacts has stage > 0
-// with a recorded touch date. Fixed 7-day cadence: delay = days since
-// touch - 7, so day 8 is delay 1 (the design's "day 8 = 1 day of delay").
-// When an account has multiple in-flow contacts, this reflects whichever is
-// most overdue (worst-case) -- shared by followupAccounts() (Followups
-// section) and cardHtml() (pipeline/"In sequence" cards) so both agree on
-// which contact drives an account's badge/footer. Returns null if the
-// account has no in-flow contact at all.
+// with a recorded touch date, and isn't closed (Replied/Stopped). Fixed
+// 7-day cadence: delay = days since touch - 7, so day 8 is delay 1 (the
+// design's "day 8 = 1 day of delay"). When an account has multiple in-flow
+// contacts, this reflects whichever is most overdue (worst-case) -- shared
+// by followupAccounts() (Followups section) and cardHtml() (pipeline/"In
+// sequence" cards) so both agree on which contact drives an account's
+// badge/footer. Returns null if the account has no in-flow contact at all.
 function worstInFlowContact(l){
   let worst = null;
   for (const c of l.contacts) {
-    if (c.stage > 0 && c.last_touch_at) {
+    if (c.stage > 0 && c.last_touch_at && !isClosed(c)) {
       const days = daysSinceTouch(c.last_touch_at);
       if (days === null) continue;
       const delay = days - 7;
@@ -515,12 +546,21 @@ function nextStageText(stageText){
   return null; // FUP 10, "Replied", or unrecognized -- no next step from here
 }
 
-// Done button for the followup card's worst-case contact. Disabled (not
-// hidden) once nextStageText() has nowhere left to go.
+// Done/Replied/Stopped button trio for the worst-case in-flow contact --
+// shared by Followups cards (plain footer) and "in sequence" pipeline
+// cards (inSequenceFooterHtml). Done is disabled (not hidden) once
+// nextStageText() has nowhere left to go; Replied/Stopped stay available
+// regardless, since a contact can close out of any stage.
 function doneButtonHtml(worst){
   const next = nextStageText(worst.c.stage_text);
-  if (!next) return `<span class="fu-donewrap"><button type="button" class="fu-done" disabled>Done</button></span>`;
-  return `<span class="fu-donewrap"><button type="button" class="fu-done" data-contact-id="${escAttr(worst.c.id)}">Done</button><span class="fu-donenote"></span></span>`;
+  const contactId = escAttr(worst.c.id);
+  const contactName = escAttr(worst.c.name);
+  const doneBtn = next
+    ? `<button type="button" class="fu-done" data-contact-id="${contactId}">Done</button><span class="fu-donenote"></span>`
+    : `<button type="button" class="fu-done" disabled>Done</button>`;
+  const repliedBtn = `<button type="button" class="fu-done fu-replied" data-contact-id="${contactId}" data-contact-name="${contactName}">Replied</button><span class="fu-donenote"></span>`;
+  const stoppedBtn = `<button type="button" class="fu-done fu-stopped" data-contact-id="${contactId}" data-contact-name="${contactName}">Stopped</button><span class="fu-donenote"></span>`;
+  return `<span class="fu-donewrap">${doneBtn}${repliedBtn}${stoppedBtn}</span>`;
 }
 
 // Pipeline/"In sequence" card footer for an account already in flow: the
@@ -530,6 +570,20 @@ function doneButtonHtml(worst){
 function inSequenceFooterHtml(worst){
   const stageReal = worst.c.stage_text || "—";
   return `<span class="fu-badge"><span class="fu-stagereal">${stageReal}</span><span class="fu-tag fu-ok">${worst.days} day${worst.days===1?"":"s"} since last touch</span></span>${doneButtonHtml(worst)}`;
+}
+
+// Badge listing every closed (Replied/Stopped) contact on the account --
+// shown regardless of view, since an account can carry a closed contact
+// alongside a still-active one (e.g. in "In sequence"). Empty string when
+// nothing's closed, so it costs nothing outside the Closed view.
+function closedContactsBadgeHtml(l){
+  const closed = l.contacts.filter(c => isClosed(c));
+  if (!closed.length) return "";
+  const tags = closed.map(c => {
+    const cls = c.stage_text === "Replied" ? "fu-replied-tag" : "fu-stopped-tag";
+    return `<span class="fu-tag ${cls}">${escAttr(c.name)}: ${escAttr(c.stage_text)}</span>`;
+  }).join("");
+  return `<div class="fu-badge">${tags}</div>`;
 }
 
 // Same safe-save pattern as saveStage(): write to Supabase first, only touch
@@ -556,6 +610,53 @@ async function markDone(btn){
   // Brief pause so "Saved ✓" is actually visible before the re-render
   // moves/removes this card (its delay just reset).
   setTimeout(() => { renderFollowups(); }, 800);
+}
+
+// Same safe-save pattern as markDone(), but for the two terminal actions:
+// closes the contact out of the active flow instead of advancing it.
+// last_touch_at is intentionally left untouched -- a closed contact has no
+// more 7-day timer to reset. Confirms first since both are one-way (no
+// "undo" button exists yet). Full renderAll()-style re-render afterward
+// (not just renderFollowups(), unlike markDone) because closing a contact
+// can move its account across Open/In sequence/Closed set membership.
+async function markReplied(btn){
+  const contactId = btn.dataset.contactId;
+  const contact = findContactById(contactId);
+  if (!contact) return;
+  const name = btn.dataset.contactName || contact.name || "this contact";
+  if (!window.confirm(`Mark ${name} as replied? This closes the sequence.`)) return;
+  const note = btn.nextElementSibling;
+  btn.disabled = true;
+  const { error } = await sb.from("contacts").update({ stage: "Replied" }).eq("id", contactId);
+  if (error) {
+    btn.disabled = false;
+    if (note) { note.textContent = "Save error"; note.className = "fu-donenote err"; }
+    return;
+  }
+  contact.stage = stageFromText("Replied");
+  contact.stage_text = "Replied";
+  if (note) { note.textContent = "Saved ✓"; note.className = "fu-donenote ok"; }
+  setTimeout(() => { renderFollowups(); renderSections(); renderTiles(); renderChips(); }, 800);
+}
+
+async function markStopped(btn){
+  const contactId = btn.dataset.contactId;
+  const contact = findContactById(contactId);
+  if (!contact) return;
+  const name = btn.dataset.contactName || contact.name || "this contact";
+  if (!window.confirm(`Stop ${name}? This closes the sequence without a reply.`)) return;
+  const note = btn.nextElementSibling;
+  btn.disabled = true;
+  const { error } = await sb.from("contacts").update({ stage: "Stopped" }).eq("id", contactId);
+  if (error) {
+    btn.disabled = false;
+    if (note) { note.textContent = "Save error"; note.className = "fu-donenote err"; }
+    return;
+  }
+  contact.stage = stageFromText("Stopped");
+  contact.stage_text = "Stopped";
+  if (note) { note.textContent = "Saved ✓"; note.className = "fu-donenote ok"; }
+  setTimeout(() => { renderFollowups(); renderSections(); renderTiles(); renderChips(); }, 800);
 }
 
 // Expands a pipeline card's "Start sequence" button into an inline
@@ -621,9 +722,20 @@ function renderFollowupSection(selector, rows, title, extraClass, emptyText){
     <div class="sechead"><h2>${title}</h2></div>
     ${body}
   </div>`;
+  bindCloseActions(container);
+}
+
+// Wires the Done/Replied/Stopped trio doneButtonHtml() renders -- shared by
+// the Followups section and the pipeline/"In sequence" list, since both
+// reuse cardHtml()'s footer. Kept as one function so both call sites can't
+// drift (e.g. one forgetting to wire Stopped).
+function bindCloseActions(container){
   container.querySelectorAll(".fu-done").forEach(b=>{
+    if (b.classList.contains("fu-replied") || b.classList.contains("fu-stopped")) return;
     if (!b.disabled) b.onclick = () => markDone(b);
   });
+  container.querySelectorAll(".fu-replied").forEach(b=>{ b.onclick = () => markReplied(b); });
+  container.querySelectorAll(".fu-stopped").forEach(b=>{ b.onclick = () => markStopped(b); });
 }
 
 function renderFollowups(){
@@ -774,6 +886,7 @@ function cardHtml(l, followupWorst){
        <a href="${l.signal.url}" target="_blank">source <span class="arrow">→</span></a></div>`;
   const worst = followupWorst || worstInFlowContact(l);
   const badge = followupWorst ? followupTagHtml(followupWorst) : "";
+  const closedBadge = closedContactsBadgeHtml(l);
   const footer = worst
     ? (followupWorst ? doneButtonHtml(worst) : inSequenceFooterHtml(worst))
     : (active && active.id && active.stage === 0 ? startSequenceHtml(active) : "");
@@ -782,6 +895,7 @@ function cardHtml(l, followupWorst){
       <div>
         <div class="co">${l.co}<span class="badge cat-${l.cat}" title="${CATS[l.cat].full}"><span class="cd" aria-hidden="true"></span>${l.cat}</span></div>
         ${badge}
+        ${closedBadge}
         ${contactBlock(l, active, followupWorst)}
         <div class="srow"><div class="rlabel">Signal</div>${sig}</div>
       </div>
@@ -832,6 +946,12 @@ function renderSections(){
   el("#list").querySelectorAll(".start-seq").forEach(b=>{
     b.onclick = () => showChannelPicker(b);
   });
+  // Pipeline/"In sequence" cards get a Done/Replied/Stopped footer whenever
+  // an account has an in-flow contact (see cardHtml -> inSequenceFooterHtml)
+  // -- this was never wired here before (only Followups bound it), so
+  // "Done" silently did nothing in the "In sequence" view. Fixed alongside
+  // adding Replied/Stopped.
+  bindCloseActions(el("#list"));
 }
 function renderAll(){ renderFollowups(); renderChips(); renderSort(); renderTiles(); renderSections(); }
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -846,7 +966,7 @@ function stageFromText(s){
   if (t === "FUP 1") return 2;
   if (t === "FUP 2") return 3;
   if (t.indexOf("FUP ") === 0) return 4; // FUP 3+
-  if (t === "Replied") return 4;
+  if (t === "Replied" || t === "Stopped") return 4; // closed -- terminal either way
   return 0; // "Not Contacted" or anything else
 }
 // Inverse of stageFromText, for saving an edited stage back to Supabase.
