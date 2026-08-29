@@ -459,25 +459,33 @@ function daysSinceTouch(iso){
   return Math.floor((Date.now() - d.getTime()) / 86400000);
 }
 
-// An account has a followup badge once at least one of its contacts is "in
-// flow" (stage > 0 with a recorded touch date). Fixed 7-day cadence: delay =
-// days since touch - 7, so day 8 is delay 1 (the design's "day 8 = 1 day of
-// delay"). When an account has multiple in-flow contacts, the badge reflects
-// whichever is most overdue (worst-case), and that same value drives the
-// account's sort position. `predicate(delay)` splits the same underlying
-// list into the two sections (overdue vs on-time) without two code paths.
+// An account is "in flow" once at least one of its contacts has stage > 0
+// with a recorded touch date. Fixed 7-day cadence: delay = days since
+// touch - 7, so day 8 is delay 1 (the design's "day 8 = 1 day of delay").
+// When an account has multiple in-flow contacts, this reflects whichever is
+// most overdue (worst-case) -- shared by followupAccounts() (Followups
+// section) and cardHtml() (pipeline/"In sequence" cards) so both agree on
+// which contact drives an account's badge/footer. Returns null if the
+// account has no in-flow contact at all.
+function worstInFlowContact(l){
+  let worst = null;
+  for (const c of l.contacts) {
+    if (c.stage > 0 && c.last_touch_at) {
+      const days = daysSinceTouch(c.last_touch_at);
+      if (days === null) continue;
+      const delay = days - 7;
+      if (!worst || delay > worst.delay) worst = { c, days, delay };
+    }
+  }
+  return worst;
+}
+
+// `predicate(delay)` narrows the worst-in-flow accounts to a section (today
+// just "overdue", d >= 1, for Followups -- FUP on Time was removed).
 function followupAccounts(predicate){
   const rows = [];
   for (const l of LEADS) {
-    let worst = null;
-    for (const c of l.contacts) {
-      if (c.stage > 0 && c.last_touch_at) {
-        const days = daysSinceTouch(c.last_touch_at);
-        if (days === null) continue;
-        const delay = days - 7;
-        if (!worst || delay > worst.delay) worst = { c, days, delay };
-      }
-    }
+    const worst = worstInFlowContact(l);
     if (worst && predicate(worst.delay)) rows.push({ l, worst });
   }
   return rows.sort((a, b) => b.worst.delay - a.worst.delay);
@@ -514,6 +522,15 @@ function doneButtonHtml(worst){
   const next = nextStageText(worst.c.stage_text);
   if (!next) return `<span class="fu-donewrap"><button type="button" class="fu-done" disabled>Done</button></span>`;
   return `<span class="fu-donewrap"><button type="button" class="fu-done" data-contact-id="${escAttr(worst.c.id)}">Done</button><span class="fu-donenote"></span></span>`;
+}
+
+// Pipeline/"In sequence" card footer for an account already in flow: the
+// real FUP text + days since last touch (not the Followups badge's
+// "delay/days left" framing -- this isn't the overdue-only Followups view),
+// plus the same Done button/logic as Followups.
+function inSequenceFooterHtml(worst){
+  const stageReal = worst.c.stage_text || "—";
+  return `<span class="fu-badge"><span class="fu-stagereal">${stageReal}</span><span class="fu-tag fu-ok">${worst.days} day${worst.days===1?"":"s"} since last touch</span></span>${doneButtonHtml(worst)}`;
 }
 
 // Same safe-save pattern as saveStage(): write to Supabase first, only touch
@@ -737,11 +754,15 @@ function closeSequence(){
 el("#seqOverlay").addEventListener("click", e => { if(e.target.id==="seqOverlay") closeSequence(); });
 document.addEventListener("keydown", e => { if(e.key==="Escape" && !el("#seqOverlay").hidden) closeSequence(); });
 
-// `followupWorst` is undefined for the pipeline's own cardHtml(l) call --
-// footer becomes "Start sequence" (stage-0 contacts only; nothing once a
-// contact has moved on, since the account itself then leaves the pipeline).
-// Passing the worst-in-flow-contact object (from followupAccounts) swaps in
-// the followup badge and the "Done" button instead.
+// `followupWorst` is only ever passed by the Followups section (its
+// overdue-filtered worst-in-flow-contact) -- it drives the badge near the
+// contact AND the plain Done-button footer there. Every other call
+// (pipeline, "In sequence" view) computes its own worst-in-flow-contact via
+// worstInFlowContact(), since accountInSequence() is what actually decides
+// pipeline vs "In sequence" membership, not whether a caller happened to
+// pass followupWorst in. Result: an in-sequence account never gets "Start
+// sequence" (that's stage-0-only), it gets FUP text + days + Done instead --
+// in the pipeline's own card, not just in Followups.
 function cardHtml(l, followupWorst){
   const active = activeContactOf(l);
   const showWarm = SHOW_WARM_INTROS && l.warm;
@@ -752,9 +773,10 @@ function cardHtml(l, followupWorst){
     : `<div class="signal"><span class="sdot" style="background:${sigColor(l.signal)}"></span>
        <span class="stext">${l.signal.text}</span><span class="age">${l.signal.age}d</span>
        <a href="${l.signal.url}" target="_blank">source <span class="arrow">→</span></a></div>`;
+  const worst = followupWorst || worstInFlowContact(l);
   const badge = followupWorst ? followupTagHtml(followupWorst) : "";
-  const footer = followupWorst
-    ? doneButtonHtml(followupWorst)
+  const footer = worst
+    ? (followupWorst ? doneButtonHtml(worst) : inSequenceFooterHtml(worst))
     : (active && active.id && active.stage === 0 ? startSequenceHtml(active) : "");
   return `<div class="card ${showWarm?'haswarm':''}" role="listitem">${warm}
     <div class="cbody">
