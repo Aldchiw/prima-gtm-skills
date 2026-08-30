@@ -558,9 +558,11 @@ function doneButtonHtml(worst){
   const doneBtn = next
     ? `<button type="button" class="fu-done" data-contact-id="${contactId}">Done</button><span class="fu-donenote"></span>`
     : `<button type="button" class="fu-done" disabled>Done</button>`;
-  const repliedBtn = `<button type="button" class="fu-done fu-replied" data-contact-id="${contactId}" data-contact-name="${contactName}">Replied</button><span class="fu-donenote"></span>`;
+  // Replied button hidden for now -- markReplied()/bindCloseActions stay
+  // wired, this is getting reworked into a per-FUP comment instead of a
+  // close action, not deleted.
   const stoppedBtn = `<button type="button" class="fu-done fu-stopped" data-contact-id="${contactId}" data-contact-name="${contactName}">Stopped</button><span class="fu-donenote"></span>`;
-  return `<span class="fu-donewrap">${doneBtn}${repliedBtn}${stoppedBtn}</span>`;
+  return `<span class="fu-donewrap">${doneBtn}${stoppedBtn}</span>`;
 }
 
 // Pipeline/"In sequence" card footer for an account already in flow: the
