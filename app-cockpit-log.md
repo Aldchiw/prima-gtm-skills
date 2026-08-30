@@ -159,18 +159,27 @@ PENDIENTES PRÓXIMA SESIÓN (pedidos por Aldahir al cierre):
 - **Prompt de arranque próxima sesión:**
   _"Seguimos la app del cockpit (EN VIVO, docs/index.html). Comentarios por FUP ya funcionan en modal (click en tarjeta en flujo, historial + escritura del FUP actual, tabla 'touches'). Toca: (1) hacer EDITABLES los comentarios de FUP anteriores del historial; (2) limpiar la barrita E1·LI·E2·E3 que se contradice con FUP reales (paso #2 del deep-analysis). Guíame paso a paso, un paso a la vez. Ojo: Vercel bloquea commits de Claude Code, mini-commit por GitHub web para destrabar (aprendizaje #5)."_
 
-### Sesión 2026-08-30 (parte 2) — Editar comentarios de FUP anteriores
+### Sesión 2026-08-30 (parte 2) — Editar comentarios de FUP anteriores + diseño del sync
 LOGRADO (en vivo y comiteado):
-- El historial del modal de comentarios ahora es EDITABLE por item: botón "Edit" en los FUP que ya tienen comentario, "Add comment" en los vacíos ("No comment yet").
-- Al picar Edit/Add, el item se vuelve zona de edición en su lugar (textarea + Replied + Save + Cancel), reusando `saveComment()` sin reescribir su lógica (`touchEditItemHtml` + `saveHistoryItemComment`).
-- Listener delegado en `#touchModal` (elemento estable) maneja Edit/Add/Cancel/Save-de-item; guard por `.touch-item-editing` evita chocar con el Save de la zona grande de abajo.
-- `openTouchModal` ahora setea `#touchModal.dataset.contactId` para que el listener sepa el contacto.
-- Verificado en vivo: Edit, Add comment, Cancel y guardado funcionan; aguanta el recargado (persiste en Supabase).
+- Historial del modal ahora EDITABLE por item: "Edit" en FUP con comentario, "Add comment" en vacíos. Edición en su lugar (textarea + Replied + Save + Cancel), reusando `saveComment()`. Listener delegado en `#touchModal`; `openTouchModal` setea `dataset.contactId`. Verificado en vivo, persiste al recargar.
 
-PENDIENTES PRÓXIMA SESIÓN (siguen vivos de antes):
+DISEÑO DEL SYNC engine→Supabase — CERRADO (listo para construir, NO empezado):
+- REGLA DE ORO: el equipo siempre gana. El sync NUNCA toca: `stage`, `last_touch_at`, `team_status`, `notes`, todo `touches`, ni los id UUID.
+- QUÉ HACE: por cada lead del CSV (`output/leads_master.csv`) — si es nuevo, INSERT; si existe, UPDATE solo de campos engine-owned.
+- ENGINE SOBRESCRIBE los campos engine-owned (no solo llena vacíos), para mantener señal/email/título frescos.
+- Campos ENGINE-OWNED (el sync actualiza): `domain`, `company_category`, `sub_segment`, `priority`, `vertical_owner`, `excluded`, `exclusion_reason`, `scope_tier`, `signal_source`, `signal_detail`, `signal_url`, `signal_date`, `contact_title`, `priority_tier`, `linkedin_url`, `contact_email`, `email_status`.
+- Campos PROTEGIDOS (nunca se tocan): `stage`, `last_touch_at`, `team_status`, `notes`, `touches` (todo), id UUID.
+- NO es overwrite (a diferencia de `sync-sheet.js`) — es quirúrgico fila por fila, para preservar UUID y datos del equipo. Un DELETE+rewrite mataría stage/comentarios/FKs.
+- MATCH KEY: `account_name|contact_name` (mismo que `sync-sheet.js`).
+- GUARD: filas con key "`<account>`|" (sin contact_name) se SALTAN con aviso, nunca se matchean a ciegas (evita colisión silenciosa que borra datos). Hay ~38 filas así.
+- DISPARO: manual (`node scripts/sync-supabase.js`) por ahora; diseñado para volverse automático cuando se defina cadencia.
+- CREDENCIAL: necesita `SUPABASE_SERVICE_ROLE` key (bypassa RLS, escribe en cuentas de todos). HOY NO EXISTE — hay que crearla en Supabase. Va en archivo gitignored o env var, la pone Aldahir directo (nunca en chat). `.gitignore` ya reserva `.env`/`*.key`. El script solo corre local.
+- PRIMERA CORRIDA es la de mayor riesgo (toca prod con datos reales) — se prueba sobre respaldo ANTES de correr contra prod.
+
+PENDIENTES QUE SIGUEN VIVOS:
 1. Limpiar la barrita vieja E1·LI·E2·E3 de la tarjeta (topada en 4, se contradice con FUP reales altos) — paso #2 del deep-analysis.
 2. Seguridad menor (no urge): escapar el texto del comentario en el HTML del modal/historial si algún día hay datos de terceros (hoy datos propios).
-3. De antes: edición ampliada (notas/team_status), Resend (correo para el equipo), sync engine→Supabase (prioridad máxima post-MVP).
+3. Resend (correo para el equipo), edición ampliada (notas/team_status).
 
 - **Prompt de arranque próxima sesión:**
-  _"Seguimos la app del cockpit (EN VIVO, docs/index.html). Los comentarios por FUP están completos: modal con historial editable (Edit/Add comment por FUP), tabla 'touches' en Supabase. Toca limpiar la barrita vieja E1·LI·E2·E3 de la tarjeta que se contradice con los FUP reales (paso #2 del deep-analysis: quitar la representación vieja del stage 0-4 y dejar el FUP real como única verdad). Paso a paso, uno a la vez. Vercel bloquea commits de Claude Code, mini-commit por GitHub web para destrabar."_
+  _"Arrancamos el SYNC engine→Supabase (diseño ya cerrado en app-cockpit-log.md, sesión 2026-08-30 parte 2). Orden: (1) PRIMERO crear la SUPABASE_SERVICE_ROLE key en Supabase y ponerla segura (gitignored/env, confirmar que .gitignore la bloquea ANTES de que exista); (2) Claude Code escribe scripts/sync-supabase.js según el diseño (regla de oro: equipo gana, engine sobrescribe engine-owned, quirúrgico no overwrite, match account_name|contact_name, guard para filas sin contact_name); (3) auditar el script; (4) probar sobre respaldo, NO correr contra prod hasta verificar. Paso a paso, uno a la vez. Vercel bloquea commits de Claude Code, mini-commit por GitHub web para destrabar."_
