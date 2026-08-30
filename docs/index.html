@@ -87,6 +87,8 @@
   .list{display:flex;flex-direction:column;gap:14px}
   .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:.14s}
   .card:hover{border-color:var(--border-2);box-shadow:var(--shadow)}
+  .card.clickable{cursor:pointer}
+  .card.clickable:hover{border-color:var(--link);box-shadow:var(--shadow)}
   .card.haswarm{border-color:rgba(218,85,81,.22)}
   .warmbar{background:var(--red-soft);border-bottom:1px solid rgba(218,85,81,.14);
     padding:10px 20px;display:flex;align-items:center;gap:9px;font-size:12.5px}
@@ -152,11 +154,6 @@
   .fu-donenote{font-size:11px;font-weight:600}
   .fu-donenote.ok{color:var(--good)}
   .fu-donenote.err{color:var(--red-text)}
-  .commentwrap{display:inline-flex;flex-direction:column;align-items:flex-start;gap:6px;max-width:320px}
-  .fu-comment{font-family:var(--sans);font-size:12px;font-weight:600;color:var(--ink-2);background:var(--surface);
-    border:1px solid var(--border);border-radius:8px;padding:6px 14px;cursor:pointer}
-  .fu-comment:hover{border-color:var(--border-2);color:var(--ink)}
-  .comment-preview{font-size:11px;color:var(--ink-3);font-style:italic}
   .comment-replied{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-2);cursor:pointer}
   .comment-saverow{display:flex;align-items:center;gap:8px}
   .comment-save{font-family:var(--sans);font-size:12px;font-weight:600;color:#fff;background:var(--link);
@@ -233,6 +230,30 @@
   .seq-li-marker{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink-2);font-weight:500;
     background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:9px 12px;width:fit-content}
   .seq-li-marker .ico{stroke:var(--ink-3)}
+  .touch-overlay{position:fixed;inset:0;background:rgba(26,26,26,.45);backdrop-filter:blur(6px);
+    display:flex;align-items:center;justify-content:center;padding:24px;z-index:60}
+  .touch-overlay[hidden]{display:none}
+  .touch-modal{background:var(--surface);border-radius:12px;box-shadow:0 8px 24px rgba(26,26,26,.18),0 2px 6px rgba(26,26,26,.1);
+    max-width:520px;width:100%;max-height:80vh;overflow-y:auto;padding:22px 24px 26px}
+  .touch-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:18px;
+    padding-bottom:16px;border-bottom:1px solid var(--border)}
+  .touch-who b{font-size:16px;font-weight:600;letter-spacing:-.01em;color:var(--ink);display:block}
+  .touch-who .role{font-size:12.5px;color:var(--ink-2);margin-top:2px}
+  .touch-who .fup{font-size:11px;color:var(--ink-3);font-weight:500;margin-top:6px;font-family:var(--mono)}
+  .touch-close{font-family:var(--sans);font-size:16px;line-height:1;color:var(--ink-3);background:none;border:none;
+    cursor:pointer;padding:6px;border-radius:6px;flex:none}
+  .touch-close:hover{color:var(--ink);background:var(--bg)}
+  .touch-history{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+  .touch-item{border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+  .touch-item.empty{opacity:.55}
+  .touch-item-head{display:flex;align-items:center;gap:8px}
+  .touch-item-fup{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--ink)}
+  .touch-item-date{font-size:10.5px;color:var(--ink-3);margin-left:auto}
+  .touch-item-replied{font-size:10.5px;font-weight:600;color:var(--good);border:1px solid rgba(61,122,82,.3);
+    border-radius:999px;padding:1px 8px}
+  .touch-item-comment{font-size:12.5px;color:var(--ink-2);margin-top:6px;white-space:pre-wrap}
+  .touch-item-empty-text{font-size:12px;color:var(--ink-3);font-style:italic;margin-top:4px}
+  .touch-writezone{border-top:1px solid var(--border);padding-top:16px}
   .foot{margin-top:34px;padding-top:22px;border-top:1px solid var(--border);font-size:11px;color:var(--ink-3);line-height:1.8}
   .foot b{color:var(--ink-2);font-weight:500}
   .foot .fl{font-size:11px;font-weight:600;color:var(--ink);display:block;margin-bottom:7px}
@@ -319,6 +340,10 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 
 <div class="seq-overlay" id="seqOverlay" hidden>
   <div class="seq-panel" id="seqPanel" role="dialog" aria-modal="true" aria-label="Contact sequence"></div>
+</div>
+
+<div class="touch-overlay" id="touchOverlay" hidden>
+  <div class="touch-modal" id="touchModal" role="dialog" aria-modal="true" aria-label="Contact comments"></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -599,15 +624,7 @@ function doneButtonHtml(worst){
   // wired, this is getting reworked into a per-FUP comment instead of a
   // close action, not deleted.
   const stoppedBtn = `<button type="button" class="fu-done fu-stopped" data-contact-id="${contactId}" data-contact-name="${contactName}">Stopped</button><span class="fu-donenote"></span>`;
-  return `<span class="fu-donewrap">${doneBtn}${stoppedBtn}</span>${commentButtonHtml(worst)}`;
-}
-
-// "Comment" button for the worst-case in-flow contact's CURRENT FUP --
-// sits alongside doneButtonHtml()'s Done/Stopped in the same footer, but in
-// its own wrap so expanding it (see showCommentBox) never touches those
-// buttons' markup.
-function commentButtonHtml(worst){
-  return `<span class="commentwrap" data-contact-id="${escAttr(worst.c.id)}"><button type="button" class="fu-comment">Comment</button></span>`;
+  return `<span class="fu-donewrap">${doneBtn}${stoppedBtn}</span>`;
 }
 
 // Pipeline/"In sequence" card footer for an account already in flow: the
@@ -717,33 +734,6 @@ function showChannelPicker(btn){
   wrap.querySelectorAll(".start-channel").forEach(b => { b.onclick = () => startSequence(b); });
 }
 
-// Expands a card's "Comment" button into an inline textarea + Replied
-// checkbox for the contact's CURRENT FUP (contact.stage_text), with a
-// read-only preview of the PREVIOUS FUP's comment above it (empty if none
-// exists -- see previousStageText()). Precharges the textarea/checkbox from
-// any existing touches row for the current FUP so it can be edited in
-// place. Same inline-expansion pattern as showChannelPicker().
-function showCommentBox(btn){
-  const wrap = btn.parentElement;
-  const contactId = wrap.dataset.contactId;
-  const contact = findContactById(contactId);
-  if (!contact) return;
-  const currentFup = contact.stage_text;
-  const prevTouch = touchFor(contact, previousStageText(currentFup));
-  const curTouch = touchFor(contact, currentFup);
-  const preview = (prevTouch && prevTouch.comment)
-    ? `<div class="comment-preview">Last FUP: ${prevTouch.comment}</div>`
-    : "";
-  wrap.innerHTML = `${preview}
-    <textarea class="comment-textarea seq-textarea" placeholder="Comment for ${escAttr(currentFup)}...">${curTouch ? (curTouch.comment || "") : ""}</textarea>
-    <label class="comment-replied"><input type="checkbox" class="comment-replied-cb" ${curTouch && curTouch.replied ? "checked" : ""}> Replied</label>
-    <span class="comment-saverow">
-      <button type="button" class="comment-save">Save</button>
-      <span class="comment-note"></span>
-    </span>`;
-  wrap.querySelector(".comment-save").onclick = () => saveComment(wrap, contact, currentFup);
-}
-
 // Same safe-save pattern as the rest: write to Supabase first, only touch
 // memory (and only report success) if that write didn't error. Buttons
 // disabled during the request, re-enabled on error so the user can retry.
@@ -842,12 +832,13 @@ function renderFollowupSection(selector, rows, title, extraClass, emptyText){
   bindCloseActions(container);
 }
 
-// Wires the Done/Replied/Stopped/Comment controls doneButtonHtml() renders
-// -- shared by the Followups section and the pipeline/"In sequence" list,
+// Wires the Done/Replied/Stopped controls doneButtonHtml() renders --
+// shared by the Followups section and the pipeline/"In sequence" list,
 // since both reuse cardHtml()'s footer. Kept as one function so both call
-// sites can't drift (e.g. one forgetting to wire a new action). Name's a
-// bit stale now that Comment isn't a close action -- kept as-is rather
-// than touching every call site for a rename.
+// sites can't drift (e.g. one forgetting to wire a new action). The
+// per-FUP comment reworked from an inline box into the touch modal (see
+// openTouchModal()) -- opened by clicking the card itself, not a button
+// here, so it's wired separately in the card-click delegation below.
 function bindCloseActions(container){
   container.querySelectorAll(".fu-done").forEach(b=>{
     if (b.classList.contains("fu-replied") || b.classList.contains("fu-stopped")) return;
@@ -855,7 +846,6 @@ function bindCloseActions(container){
   });
   container.querySelectorAll(".fu-replied").forEach(b=>{ b.onclick = () => markReplied(b); });
   container.querySelectorAll(".fu-stopped").forEach(b=>{ b.onclick = () => markStopped(b); });
-  container.querySelectorAll(".fu-comment").forEach(b=>{ b.onclick = () => showCommentBox(b); });
 }
 
 function renderFollowups(){
@@ -985,6 +975,133 @@ function closeSequence(){
 el("#seqOverlay").addEventListener("click", e => { if(e.target.id==="seqOverlay") closeSequence(); });
 document.addEventListener("keydown", e => { if(e.key==="Escape" && !el("#seqOverlay").hidden) closeSequence(); });
 
+// Walks previousStageText() backward from the contact's current FUP to
+// build the full FUP history in chronological order (First Touch first,
+// current FUP last) for the touch modal. Same known simplification
+// previousStageText() itself carries (FUP 1's previous always reads as
+// "First Touch (Email)").
+function touchHistorySteps(contact){
+  const current = contact.stage_text;
+  const steps = [];
+  let label = previousStageText(current);
+  while (label) {
+    steps.unshift(label);
+    label = previousStageText(label);
+  }
+  if (current && current !== "Not Contacted") steps.push(current);
+  return steps;
+}
+
+// Short, locale-formatted date for a touch's updated_at -- "" if missing/
+// unparseable (never fabricated).
+function formatTouchDate(iso){
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
+
+// One FUP's row in the modal's history -- its saved touch (comment +
+// Replied tag + date) if any, else a dimmed "No comment yet" placeholder so
+// the full FUP walk stays visible even where nothing was written.
+function touchHistoryItemHtml(contact, fupLabel){
+  const t = touchFor(contact, fupLabel);
+  if (!t || !t.comment) {
+    return `<div class="touch-item empty">
+      <div class="touch-item-head"><span class="touch-item-fup">${escAttr(fupLabel)}</span></div>
+      <div class="touch-item-empty-text">No comment yet</div>
+    </div>`;
+  }
+  const repliedTag = t.replied ? `<span class="touch-item-replied">Replied</span>` : "";
+  return `<div class="touch-item">
+    <div class="touch-item-head">
+      <span class="touch-item-fup">${escAttr(fupLabel)}</span>
+      ${repliedTag}
+      <span class="touch-item-date">${formatTouchDate(t.updated_at)}</span>
+    </div>
+    <div class="touch-item-comment">${t.comment}</div>
+  </div>`;
+}
+
+function touchHistoryHtml(contact){
+  const steps = touchHistorySteps(contact);
+  if (!steps.length) return `<div class="touch-item-empty-text">No FUP history yet.</div>`;
+  return steps.map(fupLabel => touchHistoryItemHtml(contact, fupLabel)).join("");
+}
+
+// Full modal body: header (contact/title/account/current FUP) + read-only
+// history + a write zone for the CURRENT FUP, precharged from any existing
+// touches row for it. The write zone reuses the exact .comment-textarea/
+// .comment-replied-cb/.comment-save/.comment-note classes saveComment()
+// already knows how to read -- see saveModalComment().
+function touchModalHtml(contact, accountName){
+  const currentFup = contact.stage_text || "—";
+  const curTouch = touchFor(contact, currentFup);
+  return `<div class="touch-head">
+      <div class="touch-who">
+        <b>${contact.name}</b>
+        <div class="role">${contact.title || "—"}${accountName ? " · " + accountName : ""}</div>
+        <div class="fup">Current FUP: ${escAttr(currentFup)}</div>
+      </div>
+      <button type="button" class="touch-close" aria-label="Close">✕</button>
+    </div>
+    <div class="touch-history">${touchHistoryHtml(contact)}</div>
+    <div class="touch-writezone">
+      <div class="rlabel">Comment for ${escAttr(currentFup)}</div>
+      <textarea class="comment-textarea seq-textarea" placeholder="Comment for ${escAttr(currentFup)}...">${curTouch ? (curTouch.comment || "") : ""}</textarea>
+      <label class="comment-replied"><input type="checkbox" class="comment-replied-cb" ${curTouch && curTouch.replied ? "checked" : ""}> Replied</label>
+      <span class="comment-saverow">
+        <button type="button" class="comment-save">Save</button>
+        <span class="comment-note"></span>
+      </span>
+    </div>`;
+}
+
+// Saves via the exact same saveComment() UPSERT logic used before (now
+// pointed at the modal's write zone instead of an inline per-card box),
+// then refreshes just the read-only history in place so the just-saved
+// entry shows immediately without closing the modal or re-rendering
+// pipeline/Followups -- a comment/Replied-on-the-comment never changes the
+// contact's stage or set membership (that's markReplied(), still hidden).
+async function saveModalComment(contact){
+  await saveComment(el("#touchModal"), contact, contact.stage_text);
+  const historyEl = el("#touchModal").querySelector(".touch-history");
+  if (historyEl) historyEl.innerHTML = touchHistoryHtml(contact);
+}
+
+function openTouchModal(contact, accountName){
+  el("#touchModal").innerHTML = touchModalHtml(contact, accountName);
+  el("#touchModal").querySelector(".touch-close").onclick = closeTouchModal;
+  el("#touchModal").querySelector(".comment-save").onclick = () => saveModalComment(contact);
+  const overlay = el("#touchOverlay");
+  overlay.hidden = false;
+  document.body.style.overflow = "hidden";
+  el("#touchModal").querySelector(".touch-close").focus();
+}
+function closeTouchModal(){
+  el("#touchOverlay").hidden = true;
+  document.body.style.overflow = "";
+}
+el("#touchOverlay").addEventListener("click", e => { if(e.target.id==="touchOverlay") closeTouchModal(); });
+document.addEventListener("keydown", e => { if(e.key==="Escape" && !el("#touchOverlay").hidden) closeTouchModal(); });
+
+// Clicking anywhere on an in-flow card's "dead" area (not a button/select/
+// link/input/textarea/label -- Done, Stopped, Start sequence, the stage
+// select, LinkedIn/source links) opens the touch modal for that card's
+// worst-in-flow contact. Cold-pipeline and fully-closed cards never get the
+// "clickable" class/data-* (see cardHtml), so they're inert here regardless
+// of what's clicked. Delegated on .wrap (never itself re-rendered) so it
+// keeps working across every renderFollowups()/renderSections() re-render
+// of #followups/#list underneath it.
+document.querySelector(".wrap").addEventListener("click", e => {
+  const card = e.target.closest(".card.clickable");
+  if (!card) return;
+  if (e.target.closest("button, select, a, input, textarea, label")) return;
+  const contact = findContactById(card.dataset.contactId);
+  if (!contact) return;
+  openTouchModal(contact, card.dataset.account);
+});
+
 // `followupWorst` is only ever passed by the Followups section (its
 // overdue-filtered worst-in-flow-contact) -- it drives the badge near the
 // contact AND the plain Done-button footer there. Every other call
@@ -1010,7 +1127,14 @@ function cardHtml(l, followupWorst){
   const footer = worst
     ? (followupWorst ? doneButtonHtml(worst) : inSequenceFooterHtml(worst))
     : (active && active.id && active.stage === 0 ? startSequenceHtml(active) : "");
-  return `<div class="card ${showWarm?'haswarm':''}" role="listitem">${warm}
+  // Only an in-flow card (has a worst-in-flow contact) opens the touch
+  // modal on click -- cold-pipeline and fully-closed cards get no
+  // "clickable" class/data-* and are inert to the delegated click handler.
+  const cardClass = `card ${showWarm?'haswarm':''}${worst ? ' clickable' : ''}`.trim();
+  const cardAttrs = worst
+    ? ` data-contact-id="${escAttr(worst.c.id)}" data-account="${escAttr(l.co)}"`
+    : "";
+  return `<div class="${cardClass}" role="listitem"${cardAttrs}>${warm}
     <div class="cbody">
       <div>
         <div class="co">${l.co}<span class="badge cat-${l.cat}" title="${CATS[l.cat].full}"><span class="cd" aria-hidden="true"></span>${l.cat}</span></div>
