@@ -151,6 +151,19 @@
   .fu-donenote{font-size:11px;font-weight:600}
   .fu-donenote.ok{color:var(--good)}
   .fu-donenote.err{color:var(--red-text)}
+  .commentwrap{display:inline-flex;flex-direction:column;align-items:flex-start;gap:6px;max-width:320px}
+  .fu-comment{font-family:var(--sans);font-size:12px;font-weight:600;color:var(--ink-2);background:var(--surface);
+    border:1px solid var(--border);border-radius:8px;padding:6px 14px;cursor:pointer}
+  .fu-comment:hover{border-color:var(--border-2);color:var(--ink)}
+  .comment-preview{font-size:11px;color:var(--ink-3);font-style:italic}
+  .comment-replied{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-2);cursor:pointer}
+  .comment-saverow{display:flex;align-items:center;gap:8px}
+  .comment-save{font-family:var(--sans);font-size:12px;font-weight:600;color:#fff;background:var(--link);
+    border:none;border-radius:8px;padding:6px 14px;cursor:pointer}
+  .comment-save:hover:not(:disabled){background:color-mix(in srgb, var(--link) 85%, black)}
+  .comment-note{font-size:11px;font-weight:600}
+  .comment-note.ok{color:var(--good)}
+  .comment-note.err{color:var(--red-text)}
   .srow{margin-top:12px}
   .rlabel{font-size:11px;color:var(--ink-3);font-weight:500;margin-bottom:5px}
   .signal{display:flex;align-items:center;gap:8px;font-size:12.5px;flex-wrap:wrap}
@@ -179,7 +192,7 @@
   .empty .clearbtn{margin-top:16px;display:inline-block;font-family:var(--sans);font-size:12px;font-weight:500;
     color:var(--ink);background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:7px 15px;cursor:pointer}
   .empty .clearbtn:hover{border-color:var(--border-2)}
-  .cfoot{padding:10px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:14px}
+  .cfoot{padding:10px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:14px;flex-wrap:wrap}
   .seq-open{font-family:var(--sans);font-size:12px;font-weight:500;color:var(--link);background:none;border:none;
     cursor:pointer;display:inline-flex;align-items:center;gap:1px;padding:2px}
   .seq-open:hover{text-decoration:underline;text-underline-offset:2px}
@@ -546,6 +559,29 @@ function nextStageText(stageText){
   return null; // FUP 10, "Replied", or unrecognized -- no next step from here
 }
 
+// Inverse of nextStageText() -- the FUP immediately before the contact's
+// current stage_text, per the fixed STAGE_SEQUENCE. Used only for the
+// comment box's read-only "Last FUP" preview. "Not Contacted" and either
+// First Touch variant have no previous FUP (nothing to preview yet) --
+// returns null. Known simplification, same spirit as stageToText()'s: FUP
+// 1's previous is always read back as "First Touch (Email)" (can't tell
+// from stage_text alone whether the contact's actual first touch was Email
+// or LinkedIn) -- fine for a best-effort preview, not load-bearing data.
+function previousStageText(stageText){
+  const t = (stageText || "Not Contacted").trim();
+  if (t === "Not Contacted" || t.indexOf("First Touch") === 0) return null;
+  const idx = STAGE_SEQUENCE.indexOf(t);
+  if (idx <= 0) return null;
+  return STAGE_SEQUENCE[idx - 1];
+}
+
+// Looks up an existing touches row for a contact by FUP label -- null if
+// none exists yet. Never fabricated.
+function touchFor(contact, fupLabel){
+  if (!fupLabel) return null;
+  return (contact.touches || []).find(t => t.fup_label === fupLabel) || null;
+}
+
 // Done/Replied/Stopped button trio for the worst-case in-flow contact --
 // shared by Followups cards (plain footer) and "in sequence" pipeline
 // cards (inSequenceFooterHtml). Done is disabled (not hidden) once
@@ -562,7 +598,15 @@ function doneButtonHtml(worst){
   // wired, this is getting reworked into a per-FUP comment instead of a
   // close action, not deleted.
   const stoppedBtn = `<button type="button" class="fu-done fu-stopped" data-contact-id="${contactId}" data-contact-name="${contactName}">Stopped</button><span class="fu-donenote"></span>`;
-  return `<span class="fu-donewrap">${doneBtn}${stoppedBtn}</span>`;
+  return `<span class="fu-donewrap">${doneBtn}${stoppedBtn}</span>${commentButtonHtml(worst)}`;
+}
+
+// "Comment" button for the worst-case in-flow contact's CURRENT FUP --
+// sits alongside doneButtonHtml()'s Done/Stopped in the same footer, but in
+// its own wrap so expanding it (see showCommentBox) never touches those
+// buttons' markup.
+function commentButtonHtml(worst){
+  return `<span class="commentwrap" data-contact-id="${escAttr(worst.c.id)}"><button type="button" class="fu-comment">Comment</button></span>`;
 }
 
 // Pipeline/"In sequence" card footer for an account already in flow: the
@@ -672,6 +716,76 @@ function showChannelPicker(btn){
   wrap.querySelectorAll(".start-channel").forEach(b => { b.onclick = () => startSequence(b); });
 }
 
+// Expands a card's "Comment" button into an inline textarea + Replied
+// checkbox for the contact's CURRENT FUP (contact.stage_text), with a
+// read-only preview of the PREVIOUS FUP's comment above it (empty if none
+// exists -- see previousStageText()). Precharges the textarea/checkbox from
+// any existing touches row for the current FUP so it can be edited in
+// place. Same inline-expansion pattern as showChannelPicker().
+function showCommentBox(btn){
+  const wrap = btn.parentElement;
+  const contactId = wrap.dataset.contactId;
+  const contact = findContactById(contactId);
+  if (!contact) return;
+  const currentFup = contact.stage_text;
+  const prevTouch = touchFor(contact, previousStageText(currentFup));
+  const curTouch = touchFor(contact, currentFup);
+  const preview = (prevTouch && prevTouch.comment)
+    ? `<div class="comment-preview">Last FUP: ${prevTouch.comment}</div>`
+    : "";
+  wrap.innerHTML = `${preview}
+    <textarea class="comment-textarea seq-textarea" placeholder="Comment for ${escAttr(currentFup)}...">${curTouch ? (curTouch.comment || "") : ""}</textarea>
+    <label class="comment-replied"><input type="checkbox" class="comment-replied-cb" ${curTouch && curTouch.replied ? "checked" : ""}> Replied</label>
+    <span class="comment-saverow">
+      <button type="button" class="comment-save">Save</button>
+      <span class="comment-note"></span>
+    </span>`;
+  wrap.querySelector(".comment-save").onclick = () => saveComment(wrap, contact, currentFup);
+}
+
+// Same safe-save pattern as the rest: write to Supabase first, only touch
+// memory (and only report success) if that write didn't error. Buttons
+// disabled during the request, re-enabled on error so the user can retry.
+// UPSERT on (contact_id, fup_label) -- one comment per contact per FUP,
+// edited in place on repeat saves rather than inserting a new row. Marking
+// Replied here is just a data point on the comment -- it does NOT touch
+// contact.stage/stage_text, so it never closes the contact (that's
+// markReplied(), currently hidden -- see doneButtonHtml()).
+async function saveComment(wrap, contact, fupLabel){
+  const textarea = wrap.querySelector(".comment-textarea");
+  const repliedCb = wrap.querySelector(".comment-replied-cb");
+  const saveBtn = wrap.querySelector(".comment-save");
+  const note = wrap.querySelector(".comment-note");
+  const commentText = textarea.value;
+  const replied = repliedCb.checked;
+  saveBtn.disabled = true;
+  textarea.disabled = true;
+  repliedCb.disabled = true;
+  const { data, error } = await sb.from("touches")
+    .upsert(
+      { contact_id: contact.id, fup_label: fupLabel, comment: commentText, replied, updated_at: new Date().toISOString() },
+      { onConflict: "contact_id,fup_label" }
+    )
+    .select()
+    .single();
+  saveBtn.disabled = false;
+  textarea.disabled = false;
+  repliedCb.disabled = false;
+  if (error) {
+    if (note) { note.textContent = "Save error"; note.className = "comment-note err"; }
+    return;
+  }
+  contact.touches = contact.touches || [];
+  const savedTouch = {
+    id: data.id, fup_label: data.fup_label, comment: data.comment,
+    replied: data.replied, created_at: data.created_at, updated_at: data.updated_at,
+  };
+  const existingIdx = contact.touches.findIndex(t => t.fup_label === fupLabel);
+  if (existingIdx !== -1) contact.touches[existingIdx] = savedTouch;
+  else contact.touches.push(savedTouch);
+  if (note) { note.textContent = "Saved ✓"; note.className = "comment-note ok"; }
+}
+
 // Same safe-save pattern as saveStage()/markDone(): write to Supabase
 // first, only touch memory (and only report success) if that write
 // didn't error. Buttons stay disabled during the request and re-enable on
@@ -727,10 +841,12 @@ function renderFollowupSection(selector, rows, title, extraClass, emptyText){
   bindCloseActions(container);
 }
 
-// Wires the Done/Replied/Stopped trio doneButtonHtml() renders -- shared by
-// the Followups section and the pipeline/"In sequence" list, since both
-// reuse cardHtml()'s footer. Kept as one function so both call sites can't
-// drift (e.g. one forgetting to wire Stopped).
+// Wires the Done/Replied/Stopped/Comment controls doneButtonHtml() renders
+// -- shared by the Followups section and the pipeline/"In sequence" list,
+// since both reuse cardHtml()'s footer. Kept as one function so both call
+// sites can't drift (e.g. one forgetting to wire a new action). Name's a
+// bit stale now that Comment isn't a close action -- kept as-is rather
+// than touching every call site for a rename.
 function bindCloseActions(container){
   container.querySelectorAll(".fu-done").forEach(b=>{
     if (b.classList.contains("fu-replied") || b.classList.contains("fu-stopped")) return;
@@ -738,6 +854,7 @@ function bindCloseActions(container){
   });
   container.querySelectorAll(".fu-replied").forEach(b=>{ b.onclick = () => markReplied(b); });
   container.querySelectorAll(".fu-stopped").forEach(b=>{ b.onclick = () => markStopped(b); });
+  container.querySelectorAll(".fu-comment").forEach(b=>{ b.onclick = () => showCommentBox(b); });
 }
 
 function renderFollowups(){
@@ -985,7 +1102,7 @@ function daysSince(dateStr){
 }
 
 async function loadLeads(){
-  const { data, error } = await sb.from("accounts").select("*, contacts(*)");
+  const { data, error } = await sb.from("accounts").select("*, contacts(*, touches(*))");
   if (error) { console.error("loadLeads error:", error.message); return; }
   LEADS = (data || []).map(a => ({
     co: a.account_name,
@@ -1013,6 +1130,14 @@ async function loadLeads(){
         notes: c.notes,
         stage: stageFromText(c.stage),
         stage_text: c.stage,
+        touches: (c.touches || []).map(t => ({
+          id: t.id,
+          fup_label: t.fup_label,
+          comment: t.comment,
+          replied: t.replied,
+          created_at: t.created_at,
+          updated_at: t.updated_at,
+        })),
       })),
     warm: null,
     user: "me",
