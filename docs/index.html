@@ -1089,10 +1089,10 @@ document.addEventListener("keydown", e => { if(e.key==="Escape" && !el("#touchOv
 // select, LinkedIn/source links) opens the touch modal for that card's
 // worst-in-flow contact. Cold-pipeline and fully-closed cards never get the
 // "clickable" class/data-* (see cardHtml), so they're inert here regardless
-// of what's clicked. Delegated on .wrap (never itself re-rendered) so it
+// of what's clicked. Delegated on #list's parent container (never itself re-rendered) so it
 // keeps working across every renderFollowups()/renderSections() re-render
 // of #followups/#list underneath it.
-document.querySelector(".wrap").addEventListener("click", e => {
+el("#list").parentElement.addEventListener("click", e => {
   const card = e.target.closest(".card.clickable");
   if (!card) return;
   if (e.target.closest("button, select, a, input, textarea, label")) return;
