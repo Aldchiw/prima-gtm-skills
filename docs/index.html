@@ -246,13 +246,23 @@
   .touch-history{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
   .touch-item{border:1px solid var(--border);border-radius:10px;padding:12px 14px}
   .touch-item.empty{opacity:.55}
-  .touch-item-head{display:flex;align-items:center;gap:8px}
+  .touch-item.touch-item-editing{opacity:1;border-color:var(--link)}
+  .touch-item-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .touch-item-head-left{display:flex;align-items:center;gap:8px}
+  .touch-item-head-right{display:flex;align-items:center;gap:8px}
   .touch-item-fup{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--ink)}
-  .touch-item-date{font-size:10.5px;color:var(--ink-3);margin-left:auto}
+  .touch-item-date{font-size:10.5px;color:var(--ink-3)}
   .touch-item-replied{font-size:10.5px;font-weight:600;color:var(--good);border:1px solid rgba(61,122,82,.3);
     border-radius:999px;padding:1px 8px}
   .touch-item-comment{font-size:12.5px;color:var(--ink-2);margin-top:6px;white-space:pre-wrap}
   .touch-item-empty-text{font-size:12px;color:var(--ink-3);font-style:italic;margin-top:4px}
+  .touch-edit-btn{font-family:var(--sans);font-size:11px;font-weight:600;color:var(--link);background:none;
+    border:none;cursor:pointer;padding:2px 4px}
+  .touch-edit-btn:hover{text-decoration:underline}
+  .touch-edit-fup{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--ink);margin-bottom:8px}
+  .touch-edit-cancel{font-family:var(--sans);font-size:12px;font-weight:500;color:var(--ink-3);background:none;
+    border:none;cursor:pointer;padding:6px 10px}
+  .touch-edit-cancel:hover{color:var(--ink)}
   .touch-writezone{border-top:1px solid var(--border);padding-top:16px}
   .foot{margin-top:34px;padding-top:22px;border-top:1px solid var(--border);font-size:11px;color:var(--ink-3);line-height:1.8}
   .foot b{color:var(--ink-2);font-weight:500}
@@ -1003,21 +1013,30 @@ function formatTouchDate(iso){
 
 // One FUP's row in the modal's history -- its saved touch (comment +
 // Replied tag + date) if any, else a dimmed "No comment yet" placeholder so
-// the full FUP walk stays visible even where nothing was written.
+// the full FUP walk stays visible even where nothing was written. Either
+// way it gets an Edit/Add comment button (data-fup-label so the delegated
+// click handler on #touchModal knows which FUP to open -- see
+// touchEditItemHtml() and the click listener near openTouchModal()).
 function touchHistoryItemHtml(contact, fupLabel){
   const t = touchFor(contact, fupLabel);
+  const fupAttr = escAttr(fupLabel);
   if (!t || !t.comment) {
-    return `<div class="touch-item empty">
-      <div class="touch-item-head"><span class="touch-item-fup">${escAttr(fupLabel)}</span></div>
+    return `<div class="touch-item empty" data-fup-label="${fupAttr}">
+      <div class="touch-item-head">
+        <span class="touch-item-head-left"><span class="touch-item-fup">${escAttr(fupLabel)}</span></span>
+        <span class="touch-item-head-right"><button type="button" class="touch-edit-btn" data-fup-label="${fupAttr}">Add comment</button></span>
+      </div>
       <div class="touch-item-empty-text">No comment yet</div>
     </div>`;
   }
   const repliedTag = t.replied ? `<span class="touch-item-replied">Replied</span>` : "";
-  return `<div class="touch-item">
+  return `<div class="touch-item" data-fup-label="${fupAttr}">
     <div class="touch-item-head">
-      <span class="touch-item-fup">${escAttr(fupLabel)}</span>
-      ${repliedTag}
-      <span class="touch-item-date">${formatTouchDate(t.updated_at)}</span>
+      <span class="touch-item-head-left"><span class="touch-item-fup">${escAttr(fupLabel)}</span>${repliedTag}</span>
+      <span class="touch-item-head-right">
+        <span class="touch-item-date">${formatTouchDate(t.updated_at)}</span>
+        <button type="button" class="touch-edit-btn" data-fup-label="${fupAttr}">Edit</button>
+      </span>
     </div>
     <div class="touch-item-comment">${t.comment}</div>
   </div>`;
@@ -1027,6 +1046,27 @@ function touchHistoryHtml(contact){
   const steps = touchHistorySteps(contact);
   if (!steps.length) return `<div class="touch-item-empty-text">No FUP history yet.</div>`;
   return steps.map(fupLabel => touchHistoryItemHtml(contact, fupLabel)).join("");
+}
+
+// In-place edit zone for one history item -- swapped in over that item's
+// outerHTML when its Edit/Add comment button is clicked (see the delegated
+// click listener near openTouchModal()). Carries the EXACT classes
+// saveComment() already knows how to read (.comment-textarea/
+// .comment-replied-cb/.comment-save/.comment-note) so saveHistoryItemComment()
+// can call saveComment() unchanged, scoped to just this item instead of the
+// whole modal.
+function touchEditItemHtml(contact, fupLabel){
+  const t = touchFor(contact, fupLabel);
+  return `<div class="touch-item touch-item-editing" data-fup-label="${escAttr(fupLabel)}">
+    <div class="touch-edit-fup">${escAttr(fupLabel)}</div>
+    <textarea class="comment-textarea seq-textarea" placeholder="Comment for ${escAttr(fupLabel)}...">${t ? (t.comment || "") : ""}</textarea>
+    <label class="comment-replied"><input type="checkbox" class="comment-replied-cb" ${t && t.replied ? "checked" : ""}> Replied</label>
+    <span class="comment-saverow">
+      <button type="button" class="comment-save">Save</button>
+      <button type="button" class="touch-edit-cancel">Cancel</button>
+      <span class="comment-note"></span>
+    </span>
+  </div>`;
 }
 
 // Full modal body: header (contact/title/account/current FUP) + read-only
@@ -1069,7 +1109,21 @@ async function saveModalComment(contact){
   if (historyEl) historyEl.innerHTML = touchHistoryHtml(contact);
 }
 
+// Save for a history item's in-place edit zone (touchEditItemHtml()) --
+// same saveComment() UPSERT, scoped to just that item's own container
+// (not the whole modal, unlike saveModalComment() above -- the modal can
+// have this edit zone AND the bottom write zone's .comment-textarea/etc.
+// present at once, so saveComment() needs the narrower wrap to find the
+// right one). Refreshes the WHOLE history afterward so the edited item
+// falls back to its read-only view already updated.
+async function saveHistoryItemComment(itemEl, contact, fupLabel){
+  await saveComment(itemEl, contact, fupLabel);
+  const historyEl = el("#touchModal").querySelector(".touch-history");
+  if (historyEl) historyEl.innerHTML = touchHistoryHtml(contact);
+}
+
 function openTouchModal(contact, accountName){
+  el("#touchModal").dataset.contactId = contact.id;
   el("#touchModal").innerHTML = touchModalHtml(contact, accountName);
   el("#touchModal").querySelector(".touch-close").onclick = closeTouchModal;
   el("#touchModal").querySelector(".comment-save").onclick = () => saveModalComment(contact);
@@ -1084,6 +1138,43 @@ function closeTouchModal(){
 }
 el("#touchOverlay").addEventListener("click", e => { if(e.target.id==="touchOverlay") closeTouchModal(); });
 document.addEventListener("keydown", e => { if(e.key==="Escape" && !el("#touchOverlay").hidden) closeTouchModal(); });
+
+// Wires the per-FUP Edit/Add comment, Cancel, and item-level Save buttons
+// the history renders -- delegated on #touchModal (a stable element
+// openTouchModal only ever refills, never replaces) so it survives every
+// history-only refresh (saveModalComment, an item's own Edit/Cancel/Save)
+// without needing to be re-bound after each one -- same stability
+// reasoning as the card-click delegation on #list's parent. Reads the
+// contact from #touchModal's own data-contact-id (set by openTouchModal)
+// rather than closing over it, so it's always the currently-open contact
+// even across repeated modal opens. Scoped so it can never fire for the
+// bottom write zone's own .comment-save (that one lives in
+// .touch-writezone, not inside a .touch-item-editing, and is wired
+// directly by openTouchModal already).
+el("#touchModal").addEventListener("click", e => {
+  const contact = findContactById(el("#touchModal").dataset.contactId);
+  if (!contact) return;
+
+  const editBtn = e.target.closest(".touch-edit-btn");
+  if (editBtn) {
+    const item = editBtn.closest(".touch-item");
+    if (!item) return;
+    item.outerHTML = touchEditItemHtml(contact, editBtn.dataset.fupLabel);
+    return;
+  }
+
+  const cancelBtn = e.target.closest(".touch-edit-cancel");
+  if (cancelBtn) {
+    const historyEl = el("#touchModal").querySelector(".touch-history");
+    if (historyEl) historyEl.innerHTML = touchHistoryHtml(contact);
+    return;
+  }
+
+  const editingItem = e.target.closest(".touch-item-editing");
+  if (editingItem && e.target.closest(".comment-save")) {
+    saveHistoryItemComment(editingItem, contact, editingItem.dataset.fupLabel);
+  }
+});
 
 // Clicking anywhere on an in-flow card's "dead" area (not a button/select/
 // link/input/textarea/label -- Done, Stopped, Start sequence, the stage
