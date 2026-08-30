@@ -139,3 +139,22 @@ Hoy la migración es snapshot manual. Debe preservar los `stage`/fechas que Alda
 - **Siguiente:** atacar el `deep-analysis-cockpit.md` (pendiente de crear/definir alcance).
 - **Prompt de arranque próxima sesión:**
   _"Seguimos la app del cockpit (EN VIVO en prima-gtm-skills.vercel.app, código en docs/index.html). La bandeja de followups ya está completa: sección Followups arriba, botón Done, Start sequence con picker de canal, cuentas en secuencia fuera del pipeline, tile 'In sequence' con vista alternable, footer condicional, todo en inglés. Toca el deep-analysis de la app — revisa deep-analysis-cockpit.md (o ayúdame a definir su alcance si no existe todavía). Guíame paso a paso, un paso a la vez. Ojo: Vercel bloquea commits de Claude Code, mini-commit por GitHub web para destrabar (aprendizaje #5)."_
+
+### Sesión 2026-08-30 — Acciones de cierre + comentarios por FUP (modal)
+LOGRADO (en vivo y comiteado):
+- Enum `stage_enum`: agregado "Stopped". Acción "Stopped" con confirmación cierra contacto, sale del flujo. NO toca `last_touch_at`.
+- `isClosed()`/`accountAllClosed()`: Replied/Stopped salen de Followups y de "in sequence"; cuenta 100% cerrada solo en Closed.
+- Vista "Closed" (tile + apartado, badge por contacto).
+- Bug arreglado: "Done" no se cableaba en `renderSections` (In sequence) — factorizado en `bindCloseActions()`.
+- "Replied" ESCONDIDO (no borrado): responder NO cierra. `markReplied()` sigue wired.
+- Tabla "touches" en Supabase (`contact_id` uuid FK, `fup_label`, `comment`, `replied`, `created_at`, `updated_at`; UNIQUE contact_id+fup_label; RLS por correo; un comentario por FUP vía upsert).
+- Comentarios por FUP en MODAL: click en área muerta de tarjeta en flujo, fondo difuminado, Escape/click-fuera cierra. Historial First Touch→FUP actual ("No comment yet" en gris) + zona de escritura del FUP actual con Replied (no cambia stage).
+- Bug del modal arreglado: listener pasó de `document.querySelector(".wrap")` (agarraba el del header) a `el("#list").parentElement`.
+
+PENDIENTES PRÓXIMA SESIÓN (pedidos por Aldahir al cierre):
+1. EDITAR comentarios de FUP ANTERIORES (hoy el historial es solo-lectura; solo el FUP actual se edita).
+2. Limpiar la barrita vieja E1·LI·E2·E3 de la tarjeta (topada en 4, se contradice con FUP reales altos) — paso #2 del deep-analysis.
+3. Seguridad menor: escapar el texto del comentario en el HTML del modal si algún día hay datos de terceros (hoy no urge).
+
+- **Prompt de arranque próxima sesión:**
+  _"Seguimos la app del cockpit (EN VIVO, docs/index.html). Comentarios por FUP ya funcionan en modal (click en tarjeta en flujo, historial + escritura del FUP actual, tabla 'touches'). Toca: (1) hacer EDITABLES los comentarios de FUP anteriores del historial; (2) limpiar la barrita E1·LI·E2·E3 que se contradice con FUP reales (paso #2 del deep-analysis). Guíame paso a paso, un paso a la vez. Ojo: Vercel bloquea commits de Claude Code, mini-commit por GitHub web para destrabar (aprendizaje #5)."_
