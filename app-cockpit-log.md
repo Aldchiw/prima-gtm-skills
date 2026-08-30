@@ -158,3 +158,19 @@ PENDIENTES PRÓXIMA SESIÓN (pedidos por Aldahir al cierre):
 
 - **Prompt de arranque próxima sesión:**
   _"Seguimos la app del cockpit (EN VIVO, docs/index.html). Comentarios por FUP ya funcionan en modal (click en tarjeta en flujo, historial + escritura del FUP actual, tabla 'touches'). Toca: (1) hacer EDITABLES los comentarios de FUP anteriores del historial; (2) limpiar la barrita E1·LI·E2·E3 que se contradice con FUP reales (paso #2 del deep-analysis). Guíame paso a paso, un paso a la vez. Ojo: Vercel bloquea commits de Claude Code, mini-commit por GitHub web para destrabar (aprendizaje #5)."_
+
+### Sesión 2026-08-30 (parte 2) — Editar comentarios de FUP anteriores
+LOGRADO (en vivo y comiteado):
+- El historial del modal de comentarios ahora es EDITABLE por item: botón "Edit" en los FUP que ya tienen comentario, "Add comment" en los vacíos ("No comment yet").
+- Al picar Edit/Add, el item se vuelve zona de edición en su lugar (textarea + Replied + Save + Cancel), reusando `saveComment()` sin reescribir su lógica (`touchEditItemHtml` + `saveHistoryItemComment`).
+- Listener delegado en `#touchModal` (elemento estable) maneja Edit/Add/Cancel/Save-de-item; guard por `.touch-item-editing` evita chocar con el Save de la zona grande de abajo.
+- `openTouchModal` ahora setea `#touchModal.dataset.contactId` para que el listener sepa el contacto.
+- Verificado en vivo: Edit, Add comment, Cancel y guardado funcionan; aguanta el recargado (persiste en Supabase).
+
+PENDIENTES PRÓXIMA SESIÓN (siguen vivos de antes):
+1. Limpiar la barrita vieja E1·LI·E2·E3 de la tarjeta (topada en 4, se contradice con FUP reales altos) — paso #2 del deep-analysis.
+2. Seguridad menor (no urge): escapar el texto del comentario en el HTML del modal/historial si algún día hay datos de terceros (hoy datos propios).
+3. De antes: edición ampliada (notas/team_status), Resend (correo para el equipo), sync engine→Supabase (prioridad máxima post-MVP).
+
+- **Prompt de arranque próxima sesión:**
+  _"Seguimos la app del cockpit (EN VIVO, docs/index.html). Los comentarios por FUP están completos: modal con historial editable (Edit/Add comment por FUP), tabla 'touches' en Supabase. Toca limpiar la barrita vieja E1·LI·E2·E3 de la tarjeta que se contradice con los FUP reales (paso #2 del deep-analysis: quitar la representación vieja del stage 0-4 y dejar el FUP real como única verdad). Paso a paso, uno a la vez. Vercel bloquea commits de Claude Code, mini-commit por GitHub web para destrabar."_
