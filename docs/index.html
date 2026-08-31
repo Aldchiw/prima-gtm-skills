@@ -394,7 +394,12 @@ const state = {user:"me", cat:"all", warmOnly:false, freshOnly:false, view:"pipe
 const el = s => document.querySelector(s);
 const initials = n => n.split(" ").map(w=>w[0]).slice(0,2).join("");
 function sigColor(s){ if(s.type==="none") return "var(--stale)"; return s.age<=7 ? "var(--good)" : "var(--stale)"; }
-function fresh(s){ return s.type!=="none" && s.age!=null && s.age<=14; }
+// Only a real dated news signal counts as "fresh" -- firmographic/ICP notes
+// carry no meaningful date, so they must never light up "Fresh signals".
+function fresh(s){ return s.type==="news" && s.age!=null && s.age<=14; }
+// Sort key for "freshest signal" ordering: real age for news, otherwise a
+// fixed 999 so firmographic/icp/none all sink to the bottom like "none" did.
+function signalSortAge(s){ return s.type==="news" ? (s.age==null?999:s.age) : 999; }
 
 function activeContactOf(l){
   if(!l.contacts.length) return null;
@@ -405,15 +410,13 @@ function activeStage(l){ const c = activeContactOf(l); return c ? c.stage : 0; }
 
 function compareLeads(a,b){
   if(state.sort==="fresh"){
-    const av=a.signal.age==null?999:a.signal.age, bv=b.signal.age==null?999:b.signal.age;
-    return av-bv;
+    return signalSortAge(a)-signalSortAge(b);
   }
   if(state.sort==="stage"){
     return activeStage(b)-activeStage(a);
   }
   if((!!b.warm) - (!!a.warm)) return (!!b.warm) - (!!a.warm);
-  const av=a.signal.age==null?999:a.signal.age, bv=b.signal.age==null?999:b.signal.age;
-  return av-bv;
+  return signalSortAge(a)-signalSortAge(b);
 }
 
 // A contact is "closed" once it replied or the sequence was stopped on it --
@@ -898,6 +901,22 @@ function normalizeUrl(u){
   return "";
 }
 
+// signal_detail in Supabase holds 3 shapes, not just "news vs. none":
+// a real dated news blurb (display as-is, the common case), or one of two
+// fixed, account-independent qualification notes pasted identically across
+// many rows during sourcing ("Firmographic fit: ..." / "ICP_VALID via
+// WebSearch: ..."). Those aren't news -- there's no real "age" for a static
+// criteria paragraph, so classify them separately and render as a plain
+// label instead of the raw technical text + a misleading "999d".
+const SIGNAL_LABELS = { firmographic: "Firmographic fit", icp: "ICP validated" };
+function classifySignal(signalText){
+  const s = String(signalText==null?"":signalText).trim();
+  if (!s) return { kind: "none" };
+  if (s.indexOf("Firmographic fit")===0) return { kind: "firmographic", label: SIGNAL_LABELS.firmographic };
+  if (s.indexOf("ICP_VALID")===0) return { kind: "icp", label: SIGNAL_LABELS.icp };
+  return { kind: "news" };
+}
+
 // The old numeric 0-4 stage select -- kept only for followup/FUP-on-time
 // cards (followupWorst truthy). Pipeline cards use startSequenceHtml()
 // instead (see contactBlock below).
@@ -1230,11 +1249,15 @@ function cardHtml(l, followupWorst){
   const su = normalizeUrl(l.signal.url);
   const sourceLink = su
     ? `<a href="${su}" target="_blank">source <span class="arrow">→</span></a>` : "";
-  const sig = l.signal.type==="none"
-    ? `<div class="signal"><span class="sdot" style="background:var(--stale)"></span><span class="stext" style="color:var(--ink-3);font-weight:400">${l.signal.text}</span></div>`
-    : `<div class="signal"><span class="sdot" style="background:${sigColor(l.signal)}"></span>
+  // l.signal.type is already classified once in loadLeads (news/firmographic/
+  // icp/none) -- read it directly here rather than re-running classifySignal.
+  const sig = l.signal.type === "news"
+    ? `<div class="signal"><span class="sdot" style="background:${sigColor(l.signal)}"></span>
        <span class="stext">${l.signal.text}</span><span class="age">${l.signal.age}d</span>
-       ${sourceLink}</div>`;
+       ${sourceLink}</div>`
+    : l.signal.type === "none"
+    ? `<div class="signal"><span class="sdot" style="background:var(--stale)"></span><span class="stext" style="color:var(--ink-3);font-weight:400">No signal</span></div>`
+    : `<div class="signal"><span class="sdot" style="background:var(--stale)"></span><span class="stext" style="color:var(--ink-3);font-weight:400">${SIGNAL_LABELS[l.signal.type] || ""}</span></div>`;
   const worst = followupWorst || worstInFlowContact(l);
   const badge = followupWorst ? followupTagHtml(followupWorst) : "";
   const closedBadge = closedContactsBadgeHtml(l);
@@ -1348,7 +1371,10 @@ async function loadLeads(){
     cat: a.company_category,
     priority: a.priority,
     signal: {
-      type: a.signal_detail ? "news" : "none",
+      // Classified once here (not re-classified in cardHtml) so every
+      // consumer -- render, fresh(), compareLeads() -- agrees on whether a
+      // row is a real dated news signal vs. a fixed qualification note.
+      type: classifySignal(a.signal_detail).kind,
       text: a.signal_detail,
       age: daysSince(a.signal_date),
       url: a.signal_url,
