@@ -878,6 +878,16 @@ const peopleIco = `<svg class="ico" viewBox="0 0 24 24"><circle cx="9" cy="8" r=
 
 function escAttr(s){ return String(s==null?"":s).replace(/"/g,"&quot;"); }
 
+// True only for a non-empty string starting with http:// or https:// (after
+// trim). Used to decide whether a link is safe to render as an <a href> --
+// an empty or schemeless value (e.g. "" or a bare domain with no protocol)
+// either reopens the current page (href="") or resolves as a broken relative
+// path, instead of failing loudly.
+function isValidUrl(u){
+  const s = String(u==null?"":u).trim();
+  return s.indexOf("http://")===0 || s.indexOf("https://")===0;
+}
+
 // The old numeric 0-4 stage select -- kept only for followup/FUP-on-time
 // cards (followupWorst truthy). Pipeline cards use startSequenceHtml()
 // instead (see contactBlock below).
@@ -907,8 +917,8 @@ function contactBlock(l, active, followupWorst){
        </select>`
     : "";
   const links = [];
-  if(active.email) links.push(`<a href="mailto:${active.email}">${active.email}</a>`);
-  if(active.linkedin) links.push(`<a href="${active.linkedin}" target="_blank">LinkedIn</a>`);
+  if(active.email && active.email.indexOf("@")!==-1) links.push(`<a href="mailto:${active.email}">${active.email}</a>`);
+  if(isValidUrl(active.linkedin)) links.push(`<a href="${active.linkedin}" target="_blank">LinkedIn</a>`);
   const teamStatus = active.team_status ? `<span class="team-status">${active.team_status}</span>` : "";
   const notes = active.notes ? `<div class="team-notes">${active.notes}</div>` : "";
   // Pipeline cards no longer get a stage control here -- "Start sequence"
@@ -1206,11 +1216,13 @@ function cardHtml(l, followupWorst){
   const showWarm = SHOW_WARM_INTROS && l.warm;
   const warm = showWarm ? `<div class="warmbar">${peopleIco}<span class="wl">Warm intro</span>${warmText(l.warm)}
     <span class="lvl">${l.warm.level==="contact"?"Direct":"Company"}</span></div>` : "";
+  const sourceLink = isValidUrl(l.signal.url)
+    ? `<a href="${l.signal.url}" target="_blank">source <span class="arrow">→</span></a>` : "";
   const sig = l.signal.type==="none"
     ? `<div class="signal"><span class="sdot" style="background:var(--stale)"></span><span class="stext" style="color:var(--ink-3);font-weight:400">${l.signal.text}</span></div>`
     : `<div class="signal"><span class="sdot" style="background:${sigColor(l.signal)}"></span>
        <span class="stext">${l.signal.text}</span><span class="age">${l.signal.age}d</span>
-       <a href="${l.signal.url}" target="_blank">source <span class="arrow">→</span></a></div>`;
+       ${sourceLink}</div>`;
   const worst = followupWorst || worstInFlowContact(l);
   const badge = followupWorst ? followupTagHtml(followupWorst) : "";
   const closedBadge = closedContactsBadgeHtml(l);
