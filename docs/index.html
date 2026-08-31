@@ -402,10 +402,22 @@ function fresh(s){ return s.type==="news" && s.age!=null && s.age<=14; }
 // fixed 999 so firmographic/icp/none all sink to the bottom like "none" did.
 function signalSortAge(s){ return s.type==="news" ? (s.age==null?999:s.age) : 999; }
 
+// A contact row with no real name is a TAM placeholder (account sourced,
+// no verified contact yet), not a workable lead -- some accounts (~38) have
+// only this kind of row. Never treat one as active/in-flow/selectable.
+function isRealContact(c){
+  const n = String((c && c.name) || "").trim();
+  return n !== "" && n.toLowerCase() !== "null";
+}
+function realContactsOf(l){
+  return l.contacts.filter(isRealContact);
+}
+
 function activeContactOf(l){
-  if(!l.contacts.length) return null;
-  const idx = Math.min(state.activeContact[l.co] || 0, l.contacts.length-1);
-  return l.contacts[idx];
+  const real = realContactsOf(l);
+  if(!real.length) return null;
+  const idx = Math.min(state.activeContact[l.co] || 0, real.length-1);
+  return real[idx];
 }
 function activeStage(l){ const c = activeContactOf(l); return c ? c.stage : 0; }
 
@@ -432,7 +444,7 @@ function isClosed(c){
 // "in sequence"). A closed contact no longer counts, even though its stage
 // number (4) would otherwise still read as "advanced".
 function accountInSequence(l){
-  return l.contacts.some(c => c.stage > 0 && !isClosed(c));
+  return realContactsOf(l).some(c => c.stage > 0 && !isClosed(c));
 }
 // True once every contact on the account is closed -- such an account
 // belongs in neither the cold pipeline nor "in sequence" (only in Closed).
@@ -551,7 +563,7 @@ function daysSinceTouch(iso){
 // badge/footer. Returns null if the account has no in-flow contact at all.
 function worstInFlowContact(l){
   let worst = null;
-  for (const c of l.contacts) {
+  for (const c of realContactsOf(l)) {
     if (c.stage > 0 && c.last_touch_at && !isClosed(c)) {
       const days = daysSinceTouch(c.last_touch_at);
       if (days === null) continue;
@@ -937,7 +949,7 @@ function startSequenceHtml(active){
 // on contacts already in flow (their progress lives in cadence()/the
 // followup sections instead).
 function contactBlock(l, active, followupWorst){
-  const contacts = l.contacts;
+  const contacts = realContactsOf(l);
   if(!contacts.length){
     return `<div class="contact contact-empty">No contact identified yet</div>`;
   }
