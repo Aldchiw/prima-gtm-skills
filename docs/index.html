@@ -517,7 +517,7 @@ function renderTiles(){
   const mine = myOpenLeads();
   const mineSeq = myInSequenceLeads();
   const mineClosed = myClosedLeads();
-  const f = mine.filter(l=>fresh(l.signal)).length;
+  const f = myAllLeads().filter(l=>l.signal.type==="news").length;
   const w = mine.filter(l=>l.warm).length;
   const allActive = state.view==="pipeline" && !state.warmOnly;
   const newsfeedActive = state.view==="newsfeed";
