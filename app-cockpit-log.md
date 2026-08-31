@@ -224,6 +224,15 @@ PENDIENTES / SIGUIENTE:
 1. ENGINE (próxima, canal engine): refrescar noticias viejas (muchas señales tienen fechas de 100-500+ días) y buscar source para cuentas sin noticia. Cuando el engine actualice el CSV, correr el sync y el muro mostrará lo fresco. Esto NO es del cockpit.
 2. Cosmético menor: en la vista newsfeed, los chips de categoría y el selector de Sort siguen visibles pero no afectan al muro — esconderlos cuando state.view==="newsfeed" (cambio chico) si molesta.
 3. De antes: sync automático (cadencia), barrita vieja E1·LI·E2·E3 (paso #2 deep-analysis), Resend (correo equipo), escapar texto de comentarios en HTML.
+4. IDEA — historial de noticias por cuenta (ver nota completa abajo): fase engine+cockpit, no arrancada.
+
+### IDEA PARA SESIÓN DE ENGINE — Historial de noticias por cuenta (acumular)
+Aldahir quiere que las noticias se ACUMULEN por cuenta (historial), no que se sobrescriban, y verlas en un modal como el de FUPs (todas las recaudadas + su fecha/antigüedad). Es una fase de engine + cockpit, se arranca en el canal del engine:
+- TABLA NUEVA "signals" en Supabase: 1 fila por noticia (account_id FK, signal_detail, signal_url, signal_date, detected_at, created_at). RLS por cuenta como touches. UNIQUE (account_id, signal_url) para no duplicar.
+- ENGINE cambia de sobrescribir a ACUMULAR: hoy produce 1 señal/cuenta y el sync la pisa. Decisión a cerrar en engine: accounts.signal_detail sigue siendo "la más reciente" (para pipeline/muro) y signals guarda el historial completo (probable).
+- sync-supabase.js aprende a insertar en signals además de actualizar accounts; regla de oro se mantiene.
+- MODAL de historial en cockpit: reusa el patrón del modal de comentarios (touches). Abre una cuenta → ve todas sus noticias acumuladas, freshest first, con fecha + antigüedad.
+- Conecta con "refrescar noticias viejas" (ya anotado): cuando el engine corra a refrescar, en vez de pisar, acumula.
 
 - **Prompt de arranque próxima sesión:**
-  _"Cockpit EN VIVO (docs/index.html) con sync engine→Supabase funcionando (node scripts/sync-supabase.js [--apply], respaldar antes) y news feed en el tile Fresh signals. Lo siguiente es de ENGINE, no cockpit: refrescar las noticias viejas del CSV (fechas de 100-500+ días) y buscar señal/source para cuentas sin noticia, luego correr el sync para que el muro las muestre frescas. Alternativas de cockpit si se prefiere: sync automático, o limpiar la barrita E1·LI·E2·E3. Paso a paso."_
+  _"Cockpit EN VIVO (docs/index.html) con sync engine→Supabase funcionando (node scripts/sync-supabase.js [--apply], respaldar antes) y news feed en el tile Fresh signals. Lo siguiente es de ENGINE, no cockpit: refrescar las noticias viejas del CSV (fechas de 100-500+ días) y buscar señal/source para cuentas sin noticia, luego correr el sync para que el muro las muestre frescas. Alternativas de cockpit si se prefiere: sync automático, o limpiar la barrita E1·LI·E2·E3. Idea grande pendiente (no arrancada): historial acumulado de noticias por cuenta (tabla signals nueva + modal tipo FUPs) — ver nota completa en la sesión 2026-08-31. Paso a paso."_
