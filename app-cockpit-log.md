@@ -183,3 +183,28 @@ PENDIENTES QUE SIGUEN VIVOS:
 
 - **Prompt de arranque próxima sesión:**
   _"Arrancamos el SYNC engine→Supabase (diseño ya cerrado en app-cockpit-log.md, sesión 2026-08-30 parte 2). Orden: (1) PRIMERO crear la SUPABASE_SERVICE_ROLE key en Supabase y ponerla segura (gitignored/env, confirmar que .gitignore la bloquea ANTES de que exista); (2) Claude Code escribe scripts/sync-supabase.js según el diseño (regla de oro: equipo gana, engine sobrescribe engine-owned, quirúrgico no overwrite, match account_name|contact_name, guard para filas sin contact_name); (3) auditar el script; (4) probar sobre respaldo, NO correr contra prod hasta verificar. Paso a paso, uno a la vez. Vercel bloquea commits de Claude Code, mini-commit por GitHub web para destrabar."_
+
+### Sesión 2026-08-31 — Sync engine→Supabase CONSTRUIDO Y APLICADO
+LOGRADO (en producción, funcionando):
+- Credencial SUPABASE_SERVICE_ROLE creada y puesta en .env (raíz, gitignored, confirmado que git no la ve). Se maneja solo local, nunca en chat.
+- scripts/sync-supabase.js escrito, auditado y comiteado (commit 344ccb8). package.json + package-lock.json agregados (@supabase/supabase-js).
+- REGLA DE ORO implementada en 3 capas: payloads solo leen de listas engine-owned; assertNoProtectedColumns() lanza error si una protegida se cuela; stage solo se pone en INSERT de contacto nuevo, nunca en UPDATE. Protegidas: contacts.stage/last_touch_at/team_status/notes, accounts.assigned_user_id, ids, tabla touches entera.
+- DRY-RUN por defecto; --apply para escribir. Guard de contact_name vacío (38 filas saltadas del lado contacts, la cuenta sí entra). Guard simétrico de account_name.
+- Fix aplicado: columnas boolean (excluded, needs_manual_scope_confirmation) recibían "" del CSV → Postgres las rechazaba. toBoolean() convierte "" y "no" → false.
+- APLICADO a prod: 160 accounts + 237 contacts actualizados, 0 insertados, 38 saltados. Respaldo (export CSV de accounts/contacts/touches) hecho ANTES del --apply.
+- VALIDADO en vivo: stages y comentarios del equipo INTACTOS tras el sync. La regla de oro funcionó en producción.
+
+CÓMO CORRERLO EN EL FUTURO:
+- node scripts/sync-supabase.js  → dry-run (reporte, no escribe)
+- node scripts/sync-supabase.js --apply  → escribe de verdad
+- Requiere: .env con SUPABASE_URL + SUPABASE_SERVICE_ROLE, y npm.cmd install (npm bloqueado por ExecutionPolicy, usar npm.cmd o Set-ExecutionPolicy -Scope Process -Bypass).
+- SIEMPRE respaldar (export CSV de las 3 tablas) antes de --apply.
+
+PENDIENTES QUE SIGUEN VIVOS:
+1. Sync AUTOMÁTICO (hoy es manual) — cuando se defina cadencia. Era la meta post-MVP; el manual ya está.
+2. Barrita vieja E1·LI·E2·E3 (paso #2 deep-analysis).
+3. Escapar texto de comentarios en HTML (seguridad menor).
+4. Resend (correo para el equipo). Edición ampliada notas/team_status.
+
+- **Prompt de arranque próxima sesión:**
+  _"El sync engine→Supabase ya está construido y aplicado (scripts/sync-supabase.js, regla de oro validada en prod). Corre manual con node scripts/sync-supabase.js [--apply], respaldar siempre antes de --apply. Opciones para lo siguiente: (a) sync automático (cadencia), (b) limpiar barrita vieja E1·LI·E2·E3 del cockpit (paso #2 deep-analysis), (c) Resend para meter al equipo. Paso a paso, uno a la vez."_
