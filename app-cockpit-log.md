@@ -208,3 +208,22 @@ PENDIENTES QUE SIGUEN VIVOS:
 
 - **Prompt de arranque próxima sesión:**
   _"El sync engine→Supabase ya está construido y aplicado (scripts/sync-supabase.js, regla de oro validada en prod). Corre manual con node scripts/sync-supabase.js [--apply], respaldar siempre antes de --apply. Opciones para lo siguiente: (a) sync automático (cadencia), (b) limpiar barrita vieja E1·LI·E2·E3 del cockpit (paso #2 deep-analysis), (c) Resend para meter al equipo. Paso a paso, uno a la vez."_
+
+### Sesión 2026-08-31 — Sync engine→Supabase + ronda de fixes de la app
+SYNC (lo grande, en producción):
+- Ver detalle completo en la entrada del sync de hoy (script scripts/sync-supabase.js, regla de oro validada en prod, 160 accounts + 237 contacts actualizados, respaldo hecho, dry-run + apply). Correr con: node scripts/sync-supabase.js [--apply]. Respaldar (export CSV de accounts/contacts/touches) SIEMPRE antes de --apply. .env con SUPABASE_URL + SUPABASE_SERVICE_ROLE (gitignored). npm bloqueado por ExecutionPolicy → usar npm.cmd.
+
+FIXES DE LA APP (todos en vivo, comiteados):
+1. Links rotos: normalizeUrl() antepone https:// a URLs sin esquema (recuperó ~136 linkedin_url sin protocolo); no pinta <a href=""> vacíos (bug de "source" que reabría el cockpit).
+2. Señales limpias: classifySignal() distingue news/firmographic/icp/none. Firmographic/ICP se muestran como badge gris limpio ("Firmographic fit"/"ICP validated"), sin el texto técnico crudo ni el "999d" falso. Solo noticias reales cuentan como fresh() y se ordenan por frescura (signalSortAge).
+3. Contactos huérfanos: isRealContact()/realContactsOf() — los ~38 contactos sin nombre (placeholders de TAM sin contacto verificado) ya no se pintan como "null · —"; la cuenta muestra "No contact identified yet" y no entra a secuencia/Followups. Aplicado en activeContactOf, accountInSequence, worstInFlowContact, contactBlock.
+4. Dragonfly Energy: era un huérfano con stage "First Touch" por datos viejos — reseteado a "Not Contacted" en Supabase (write manual puntual). OJO: el cockpit abierto en el navegador puede re-pisar un write directo a Supabase; cerrar el cockpit antes de writes manuales.
+5. NEWS FEED (nuevo): el tile "Fresh signals" ahora abre un muro de noticias (state.view="newsfeed", renderNewsFeed/newsCardHtml). Muestra las noticias reales de las cuentas del usuario, más fresca arriba, con "Xd ago" + "Read →" (link a la fuente) + "View in pipeline →". Solo type==="news". El tile cuenta las mismas señales que el muro (sobre myAllLeads).
+
+PENDIENTES / SIGUIENTE:
+1. ENGINE (próxima, canal engine): refrescar noticias viejas (muchas señales tienen fechas de 100-500+ días) y buscar source para cuentas sin noticia. Cuando el engine actualice el CSV, correr el sync y el muro mostrará lo fresco. Esto NO es del cockpit.
+2. Cosmético menor: en la vista newsfeed, los chips de categoría y el selector de Sort siguen visibles pero no afectan al muro — esconderlos cuando state.view==="newsfeed" (cambio chico) si molesta.
+3. De antes: sync automático (cadencia), barrita vieja E1·LI·E2·E3 (paso #2 deep-analysis), Resend (correo equipo), escapar texto de comentarios en HTML.
+
+- **Prompt de arranque próxima sesión:**
+  _"Cockpit EN VIVO (docs/index.html) con sync engine→Supabase funcionando (node scripts/sync-supabase.js [--apply], respaldar antes) y news feed en el tile Fresh signals. Lo siguiente es de ENGINE, no cockpit: refrescar las noticias viejas del CSV (fechas de 100-500+ días) y buscar señal/source para cuentas sin noticia, luego correr el sync para que el muro las muestre frescas. Alternativas de cockpit si se prefiere: sync automático, o limpiar la barrita E1·LI·E2·E3. Paso a paso."_
