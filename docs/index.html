@@ -192,6 +192,9 @@
   .cfoot{padding:10px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:14px;flex-wrap:wrap}
   .seq-open{font-family:var(--sans);font-size:12px;font-weight:500;color:var(--link);background:none;border:none;
     cursor:pointer;display:inline-flex;align-items:center;gap:1px;padding:2px}
+  /* News feed ("Fresh signals" tile): reuses .card/.cbody/.co/.badge/.srow/
+     .signal/.cfoot/.seq-open -- only the news blurb itself needs its own rule. */
+  .news-card-text{font-size:13px;line-height:1.5;color:var(--ink-2);margin:8px 0 10px}
   .seq-open:hover{text-decoration:underline;text-underline-offset:2px}
   .seq-open .arrow{transition:transform .15s}
   .seq-open:hover .arrow{transform:translateX(2px)}
@@ -390,7 +393,7 @@ const SORTS = [
   {k:"stage", label:"Most advanced"}
 ];
 
-const state = {user:"me", cat:"all", warmOnly:false, freshOnly:false, view:"pipeline", sort: SHOW_WARM_INTROS ? "warm" : "fresh", activeContact:{}};
+const state = {user:"me", cat:"all", warmOnly:false, view:"pipeline", sort: SHOW_WARM_INTROS ? "warm" : "fresh", activeContact:{}};
 const el = s => document.querySelector(s);
 const initials = n => n.split(" ").map(w=>w[0]).slice(0,2).join("");
 function sigColor(s){ if(s.type==="none") return "var(--stale)"; return s.age<=7 ? "var(--good)" : "var(--stale)"; }
@@ -482,7 +485,6 @@ function filtered(){
   return currentBaseLeads()
     .filter(l => state.cat==="all" || l.cat===state.cat)
     .filter(l => !state.warmOnly || l.warm)
-    .filter(l => !state.freshOnly || fresh(l.signal))
     .sort(compareLeads);
 }
 
@@ -516,7 +518,8 @@ function renderTiles(){
   const mineClosed = myClosedLeads();
   const f = mine.filter(l=>fresh(l.signal)).length;
   const w = mine.filter(l=>l.warm).length;
-  const allActive = state.view==="pipeline" && !state.warmOnly && !state.freshOnly;
+  const allActive = state.view==="pipeline" && !state.warmOnly;
+  const newsfeedActive = state.view==="newsfeed";
   const seqActive = state.view==="insequence";
   const closedActive = state.view==="closed";
   // 5 tiles with the warm tile shown, 4 without it (base .tiles is already
@@ -527,17 +530,17 @@ function renderTiles(){
     : "";
   el("#tiles").innerHTML = `
     <button type="button" class="tile ${allActive?'on':''}" data-t="all" aria-pressed="${allActive}"><div class="n">${mine.length}</div><div class="l">My leads</div></button>
-    <button type="button" class="tile fresh ${state.freshOnly?'on':''}" data-t="fresh" aria-pressed="${state.freshOnly}"><div class="n">${f}</div><div class="l">Fresh signals</div></button>
+    <button type="button" class="tile fresh ${newsfeedActive?'on':''}" data-t="fresh" aria-pressed="${newsfeedActive}"><div class="n">${f}</div><div class="l">Fresh signals</div></button>
     ${warmTile}
     <button type="button" class="tile ${seqActive?'on':''}" data-t="seq" aria-pressed="${seqActive}"><div class="n">${mineSeq.length}</div><div class="l">In sequence</div></button>
     <button type="button" class="tile ${closedActive?'on':''}" data-t="closed" aria-pressed="${closedActive}"><div class="n">${mineClosed.length}</div><div class="l">Closed</div></button>`;
   el("#tiles").querySelectorAll(".tile").forEach(t=>t.onclick=()=>{
     const k = t.dataset.t;
-    if(k==="all"){ state.view="pipeline"; state.warmOnly=false; state.freshOnly=false; }
-    else if(k==="fresh"){ const next=!state.freshOnly; state.freshOnly=next; state.warmOnly=false; }
-    else if(k==="warm"){ const next=!state.warmOnly; state.warmOnly=next; state.freshOnly=false; }
-    else if(k==="seq"){ state.view = state.view==="insequence" ? "pipeline" : "insequence"; state.warmOnly=false; state.freshOnly=false; }
-    else if(k==="closed"){ state.view = state.view==="closed" ? "pipeline" : "closed"; state.warmOnly=false; state.freshOnly=false; }
+    if(k==="all"){ state.view="pipeline"; state.warmOnly=false; }
+    else if(k==="fresh"){ state.view = state.view==="newsfeed" ? "pipeline" : "newsfeed"; state.warmOnly=false; }
+    else if(k==="warm"){ const next=!state.warmOnly; state.warmOnly=next; }
+    else if(k==="seq"){ state.view = state.view==="insequence" ? "pipeline" : "insequence"; state.warmOnly=false; }
+    else if(k==="closed"){ state.view = state.view==="closed" ? "pipeline" : "closed"; state.warmOnly=false; }
     renderAll();
   });
 }
@@ -1316,13 +1319,53 @@ function categorySectionsHtml(groups, cardFn){
     </div>`).join("");
 }
 
+// "Fresh signals" tile view: a flat wall of every real news signal across
+// the user's accounts, freshest first -- independent of the cat chips/sort
+// controls above (those drive the pipeline/in-sequence/closed views; a plain
+// news wall has one fixed ordering, not a user-picked sort).
+function newsCardHtml(l){
+  const su = normalizeUrl(l.signal.url);
+  const sourceLink = su ? `<a href="${su}" target="_blank">Read <span class="arrow">→</span></a>` : "";
+  return `<div class="card news-card" role="listitem">
+    <div class="cbody">
+      <div>
+        <div class="co">${l.co}<span class="badge cat-${l.cat}" title="${CATS[l.cat].full}"><span class="cd" aria-hidden="true"></span>${l.cat}</span></div>
+        <div class="news-card-text">${l.signal.text}</div>
+        <div class="srow"><div class="signal">
+          <span class="sdot" style="background:${fresh(l.signal)?'var(--good)':'var(--stale)'}"></span>
+          <span class="age">${l.signal.age}d ago</span>
+          ${sourceLink}
+        </div></div>
+      </div>
+    </div>
+    <div class="cfoot"><button type="button" class="seq-open news-view-pipeline" data-cat="${escAttr(l.cat)}">View in pipeline <span class="arrow">→</span></button></div>
+  </div>`;
+}
+function renderNewsFeed(){
+  const rows = myAllLeads()
+    .filter(l => l.signal.type === "news")
+    .sort((a,b) => signalSortAge(a) - signalSortAge(b));
+  el("#summary").textContent = "";
+  if(!rows.length){
+    el("#list").innerHTML = `<div class="empty">No news signals yet</div>`;
+    return;
+  }
+  el("#list").innerHTML = `
+    <div class="sechead2"><h3>News feed — ${rows.length} signal${rows.length===1?"":"s"}</h3></div>
+    <div class="list" role="list">${rows.map(newsCardHtml).join("")}</div>`;
+  el("#list").querySelectorAll(".news-view-pipeline").forEach(b=>{
+    b.onclick = () => { state.view="pipeline"; state.cat=b.dataset.cat||"all"; renderAll(); };
+  });
+}
+
 function renderSections(){
+  if(state.view==="newsfeed"){ renderNewsFeed(); return; }
   const rows = filtered();
   const mine = currentBaseLeads();
   el("#summary").textContent = rows.length===mine.length ? "" : `Showing ${rows.length} of ${mine.length}`;
   if(!rows.length){
     el("#list").innerHTML = `<div class="empty">No leads match this filter<br><button type="button" class="clearbtn">Clear filters</button></div>`;
-    el(".clearbtn").onclick = () => { state.cat="all"; state.warmOnly=false; state.freshOnly=false; renderAll(); };
+    el(".clearbtn").onclick = () => { state.cat="all"; state.warmOnly=false; renderAll(); };
     return;
   }
   const groups = groupByCategory(rows, l => l.cat);
