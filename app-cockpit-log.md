@@ -301,3 +301,13 @@ Enriquecidos viven en output/needs_contact*.csv — NADA en leads_master ni Supa
 - GASTO SESION: 2.10cr (22.35->20.25).
 - PENDIENTES: merge a master + SYNC Supabase con respaldo; fixes dominio FuelCell/Panasonic/XL/MGM + revisar TMC; excluir 11 OUT; dedupe Forgent=MGM; committee 4A; 2 Cat1; refrescar noticias $0. Enriquecidos en output/needs_contact*.csv, nada en master/Supabase.
 - SIGUE EN ESTA SESION: ingesta value_chain_map como source nuevo.
+
+## 2026-09-01 (cont) — value_chain_map ENRIQUECIDO (sample + batch)
+- Sample 8 (1.80cr): 7/8 nombre; 5 VERIFIED (Eaton, Hyperscale Power, Fluence, Flexgen, Solar Turbines); 1 catch-all (Kiewit); 1 miss (Vertiv); 1 no-name (Enchanted Rock).
+- Batch 67 (11.40cr): 58/67 nombre (86.6%); email 20 VERIFIED, 18 FOUND_UNVERIFIED (catch-all), 20 NOT_FOUND; 9 name_not_found_free (Centrax, Clarke Energy, Delta, FTAI, Innovo, Jenbacher, Skeleton, SolidEra, Zauner).
+- TOTAL source: ~75 IN net-new -> 25 VERIFIED sendable + 19 catch-all + name-only. En output/value_chain_batch.csv + value_chain_sample.csv.
+- APRENDIZAJE: source skew a corporativos grandes -> mas catch-all; VERIFIED ~34% (vs ~60% Needs-contact); costo/VERIFIED ~$0.057. Nombres ~87% gratis.
+- FLAG dedup: Eos (=Eos Energy) y Mainspring (=Mainspring Energy) procesadas pese a estar en pipeline (nombre corto vs completo). Dedupe antes de usar. Mainspring: transicion de CEO -> contacto founder posiblemente viejo, revisar.
+- FLAG: Battery Storage 0/9 VERIFIED (gigantes catch-all). ABB-tipo dominios raros (global.abb) -> falsos NOT_FOUND (correcto, no invento).
+- GASTO batch 11.40cr; saldo 18.15 -> 6.75. Discrepancia arqueo ~0.30cr (~$0.03) a revisar. SALDO BAJO -> recargar antes de mas pago.
+- SESION TOTAL ~15.6cr (22.35->6.75). VERIFIED nuevos: 32 (7 Needs-contact + 25 value_chain).

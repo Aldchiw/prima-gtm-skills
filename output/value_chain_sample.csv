@@ -1,0 +1,9 @@
+account_name,domain,company_category,sub_segment,contact_name,contact_title,linkedin_url,contact_email,email_status,committee_source,email_provider,credits_spent_email,market_segment,tier
+Eaton,eaton.com,Cat4,4A/4B (confirmar),Samantha Sheffey,Regional Procurement Manager,linkedin.com/in/samantha-sheffey,samanthasheffey@eaton.com,VERIFIED,wiza_search_prospects,hunter,0.3,Electrical Infrastructure,Tier 1
+Hyperscale Power,hyperscale-power.com,Cat4,4C,Daniel Rothmund,CEO & Co-Founder,linkedin.com/in/rothmund-daniel,daniel.rothmund@hyperscale-power.com,VERIFIED,wiza_search_prospects,hunter,0.3,Electrical Infrastructure,Tier 2
+Fluence,fluenceenergy.com,Cat4,4A/4B (confirmar),Luis M Galindez,Senior Procurement Manager,linkedin.com/in/luis-m-galindez-b7414874,luis.galindez@fluenceenergy.com,VERIFIED,wiza_search_prospects,hunter,0.3,Battery Storage,Tier 1
+Flexgen,flexgen.com,Cat4,4C,Kelcy Pegler,CEO,linkedin.com/in/kelcy-pegler-6873991b,kpegler@flexgen.com,VERIFIED,wiza_search_prospects,hunter,0.3,Battery Storage,Tier 2
+Solar Turbines,solarturbines.com,Cat4,4A/4B (confirmar),Jack Patterson,"Supply Chain Manager, Forging & Compressor Blades",linkedin.com/in/jack-e-patterson-jr,jack.patterson@solarturbines.com,VERIFIED,wiza_search_prospects,hunter,0.3,Gas Turbines,Tier 1
+Enchanted Rock,enchantedrock.com,Cat4,4C,,,,,name_not_found_free,wiza_search_prospects,none,0,Gas Engines,Tier 2
+Vertiv,vertiv.com,Cat4,4A/4B (confirmar),Joline Vargas,Purchasing Manager,linkedin.com/in/jolinevargas,,NOT_FOUND,wiza_search_prospects,none,0,Cooling,Tier 1
+Kiewit,kiewit.com,Cat3,,Kelli Fraas,Vice President of Procurement (Kiewit Supply Network),linkedin.com/in/kellifraas,kelli.fraas@kiewit.com,FOUND_UNVERIFIED,wiza_search_prospects,hunter,0.3,EPC,

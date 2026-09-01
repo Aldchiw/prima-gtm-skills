@@ -1,0 +1,68 @@
+account_name,domain,company_category,sub_segment,contact_name,contact_title,linkedin_url,contact_email,email_status,committee_source,email_provider,credits_spent_email,market_segment,tier
+ABB,global.abb,Cat4,4A/4B (confirmar),Maria Hohler,Project Procurement Manager,linkedin.com/in/mhohler,,NOT_FOUND,wiza_search_prospects,none,0,Electrical Infrastructure (Tier 1),Tier 1
+Accelsius,accelsius.com,Cat4,4C,John Hewitt,Chief Executive Officer,linkedin.com/in/jdhewitt,jhewitt@accelsius.com,FOUND_UNVERIFIED,wiza_search_prospects,hunter,0.3,Cooling (Tier 2),Tier 2
+Alloy Enterprises,alloyenterprises.co,Cat4,4C,Nicholas Mykulowycz,Co Founder & Chief Technology Officer,linkedin.com/in/nicholas-mykulowycz-782a3b6b,,NOT_FOUND,wiza_search_prospects,none,0,Cooling (Tier 2),Tier 2
+Ansaldo Energia,ansaldoenergia.com,Cat4,4A/4B (confirmar),Antonio Bestoso,General Services Procurement Manager,linkedin.com/in/antonio-bestoso,antonio.bestoso@ansaldoenergia.com,VERIFIED,wiza_search_prospects,hunter,0.3,Gas Turbines (Tier 1),Tier 1
+Asperitas,asperitas.com,Cat4,4C,Rutger De Haij,Chief Executive Officer,linkedin.com/in/rutger-de-haij-2a813953,rutger.dehaij@asperitas.com,FOUND_UNVERIFIED,wiza_search_prospects,hunter,0.3,Cooling (Tier 2),Tier 2
+Baker Hughes,bakerhughes.com,Cat4,4A/4B (confirmar),Tomilola Kayode Adedeji Msc,Global Procurement Leader Well Systems,linkedin.com/in/tomilola-kayode-adedeji-msc-pmp-pmi-rmp-pmi-sp-cpim-a83bb735,,NOT_FOUND,wiza_search_prospects,none,0,Gas Turbines (Tier 1),Tier 1
+Ballard,ballarddesigns.com,Cat4,4C,Min Kuck,Chief Executive Officer,linkedin.com/in/min-kuck-3623726b,mkuck@ballarddesigns.com,FOUND_UNVERIFIED,wiza_search_prospects,hunter,0.3,Fuel Cells (Tier 2),Tier 2
+Bechtel,bechtel.com,Cat3,,Mohamed Osman,Procurement Manager,linkedin.com/in/mohamed-osman-02042b23,,NOT_FOUND,wiza_search_prospects,none,0,EPC,
+Boom,boom.co,Cat4,4C,Rachana Saha,Chief Executive Officer,linkedin.com/in/rachana-saha-5b6896260,,NOT_FOUND,wiza_search_prospects,none,0,Gas Turbines (Tier 2),Tier 2
+Burns & McDonnell,burnsmcd.com,Cat3,,Kyle Kuhn,"Manager Of Engineering, Procurement, And Construction Project Delivery T&D Upper Midwest Region",linkedin.com/in/kyle-kuhn-pe-4b852053,kkuhn@burnsmcd.com,FOUND_UNVERIFIED,wiza_search_prospects,hunter,0.3,EPC,
+BYD,byd.com,Cat4,4A/4B (confirmar),Kleber Costa,Supervisor De Procurement,linkedin.com/in/kleber-costa-,kleber.costa@byd.com,FOUND_UNVERIFIED,wiza_search_prospects,hunter,0.3,Battery Storage (Tier 1),Tier 1
+Caterpillar,caterpillar.com,Cat4,4A/4B (confirmar),Bhargava Paduchuru,Procurement Solutions Manager,linkedin.com/in/bhargavsp,,NOT_FOUND,wiza_search_prospects,none,0,Gas Engines (Tier 1),Tier 1
+CATL,catl.com,Cat4,4A/4B (confirmar),Jiachangjonathan Yang,Global Purchasing Manager,linkedin.com/in/jiachang（jonathan）-yang-a6a20016,jiachangjonathanyang@catl.com,FOUND_UNVERIFIED,wiza_search_prospects,hunter,0.3,Battery Storage (Tier 1),Tier 1
+Centrax,,Cat4,4C,,,,,name_not_found_free,wiza_search_prospects,none,0,Gas Turbines (Tier 2),Tier 2
+Ceres,cerespower.com,Cat4,4C,Phil Caldwell,Chief Executive Officer,linkedin.com/in/phil-caldwell-58121226,phil.caldwell@cerespower.com,VERIFIED,wiza_search_prospects,hunter,0.3,Fuel Cells (Tier 2),Tier 2
+Clarke Energy,,Cat4,4C,,,,,name_not_found_free,wiza_search_prospects,none,0,Gas Engines (Tier 2),Tier 2
+Collen,collen.com,Cat3,,Derek Gormley,Executive Director Preconstruction,linkedin.com/in/derek-gormley-17960829,dgormley@collen.com,VERIFIED,wiza_search_prospects,hunter,0.3,EPC,
+Convion,convion.fi,Cat4,4C,Kim åström,"Co Founder, System Technologies",linkedin.com/in/kim-åström-133bb9,kim.astrom@convion.fi,VERIFIED,wiza_search_prospects,hunter,0.3,Fuel Cells (Tier 2),Tier 2
+Corintis,corintis.com,Cat4,4C,Remco Van Erp,"Co Founder, Chief Executive Officer",linkedin.com/in/remcovanerp,remco.vanerp@corintis.com,VERIFIED,wiza_search_prospects,hunter,0.3,Cooling (Tier 2),Tier 2
+Cummins,cummins.com,Cat4,4A/4B (confirmar),Jailton S Junior,Procurement And Supply Continuity Executive Team Manager,linkedin.com/in/jailton-s-junior,jailton.junior@cummins.com,FOUND_UNVERIFIED,wiza_search_prospects,hunter,0.3,Gas Engines (Tier 1),Tier 1
+Daikin,daikincomfort.com,Cat4,4A/4B (confirmar),Brijesh Kumar,Director Of Procurement,linkedin.com/in/brijesh-kumar-4aa95241,brijesh.kumar@daikincomfort.com,FOUND_UNVERIFIED,wiza_search_prospects,hunter,0.3,Cooling (Tier 1),Tier 1
+Delta,,Cat4,4C,,,,,name_not_found_free,wiza_search_prospects,none,0,Fuel Cells (Tier 2),Tier 2
+Doosan,doosan.com,Cat4,4A/4B (confirmar),Balasundaram Sun,Coal Burner Design & Procurement Manager,linkedin.com/in/balasundaram-s-38bba437,balasundaram.sun@doosan.com,FOUND_UNVERIFIED,wiza_search_prospects,hunter,0.3,Fuel Cells (Tier 1),Tier 1
+DPR,dpr.com,Cat3,,Mika Reckers Dbia Leed Ap,National Prefabrication Preconstruction Manager,linkedin.com/in/mika-reckers,mikar@dpr.com,FOUND_UNVERIFIED,wiza_search_prospects,hunter,0.3,EPC,
+Ecolab,ecolab.com,Cat4,4A/4B (confirmar),Christine Pratt,"Director Of Indirect Procurement It, Human Resources, Marketing, Professional Services",linkedin.com/in/christine-pratt-oreilly,christine.pratt@ecolab.com,FOUND_UNVERIFIED,wiza_search_prospects,hunter,0.3,Cooling (Tier 1),Tier 1
+EnerSys,enersys.com,Cat4,4A/4B (confirmar),Arnaud Créon,Planning & Procurement Manager,linkedin.com/in/arnaud-créon-973a847,arnaud.creon@enersys.com,FOUND_UNVERIFIED,wiza_search_prospects,hunter,0.3,Battery Storage (Tier 1),Tier 1
+Eos,eos.info,Cat4,4C,Marie Niehaus Langer,Chief Executive Officer,linkedin.com/in/marie-niehaus-langer-169a3928,,NOT_FOUND,wiza_search_prospects,none,0,Battery Storage (Tier 2),Tier 2
+Everllence,everllence.com,Cat4,4A/4B (confirmar),Angel T Revilla,Senior Procurement Specialist,linkedin.com/in/angel-t-revilla-m-eng-mba-cipp-3928b3b4,angel.revilla@everllence.com,FOUND_UNVERIFIED,wiza_search_prospects,hunter,0.3,Gas Engines (Tier 1),Tier 1
+Fluor,fluor.com,Cat3,,Humberto De La Garza,Director Of Procurement,linkedin.com/in/humberto-de-la-garza-3448a010,,NOT_FOUND,wiza_search_prospects,none,0,"CCUS (Tier 1);EPC","Tier 1;"
+FTAI Aviation,,Cat4,4C,,,,,name_not_found_free,wiza_search_prospects,none,0,Gas Turbines (Tier 2),Tier 2
+GaltTec,galttec.com,Cat4,4C,Glen Kelp,Chief Executive Officer,linkedin.com/in/glen-kelp-6373222a,glen@galttec.com,VERIFIED,wiza_search_prospects,hunter,0.3,Fuel Cells (Tier 2),Tier 2
+GE,ge.com,Cat4,4A/4B (confirmar),Kassandra Munoz,Purchasing Commodity Manager Contracts,linkedin.com/in/kassandra-cardenas-munoz,,NOT_FOUND,wiza_search_prospects,none,0,"Gas Turbines (Tier 1);Electrical Infrastructure (Tier 1)",Tier 1
+Generac,generac.com,Cat4,4A/4B (confirmar),David Maloof,Director Of Supply Chain Commercial & Industrial,linkedin.com/in/davidgmaloof,david.maloof@generac.com,VERIFIED,wiza_search_prospects,hunter,0.3,Gas Engines (Tier 1),Tier 1
+Hyliion,hyliion.com,Cat4,4C,Thomas Healy,Founder And Chief Executive Officer,linkedin.com/in/thomas-healy-35445522,thomas@hyliion.com,VERIFIED,wiza_search_prospects,hunter,0.3,Gas Engines (Tier 2),Tier 2
+Iceotope,iceotope.com,Cat4,4C,Simon Jesenko,Chief Executive Officer,linkedin.com/in/simon-jesenko-5015645,simon.jesenko@iceotope.com,VERIFIED,wiza_search_prospects,hunter,0.3,Cooling (Tier 2),Tier 2
+Innovo Solutions,,Cat4,4C,,,,,name_not_found_free,wiza_search_prospects,none,0,Gas Turbines (Tier 2),Tier 2
+Jenbacher,,Cat4,4A/4B (confirmar),,,,,name_not_found_free,wiza_search_prospects,none,0,Gas Engines (Tier 1),Tier 1
+Johnson Controls,johnsoncontrols.com,Cat4,4A/4B (confirmar),Sreeraj Kodakkadath,Procurement Manager,linkedin.com/in/sreeraj-kodakkadath-08193a92,,NOT_FOUND,wiza_search_prospects,none,0,Cooling (Tier 1),Tier 1
+Kawasaki,kawasakirobotics.com,Cat4,4A/4B (confirmar),Justin Lam,Assistant Manager Customer Service Procurement Operations,linkedin.com/in/justin-lam-3b3b869,,NOT_FOUND,wiza_search_prospects,none,0,Gas Turbines (Tier 1),Tier 1
+Legrand,legrandgroup.com,Cat4,4A/4B (confirmar),Miguel Angel Garza Cardenas,Sourcing Procurement Engineer Leader,linkedin.com/in/miguel-angel-garza-cardenas-4b7532179,,NOT_FOUND,wiza_search_prospects,none,0,Electrical Infrastructure (Tier 1),Tier 1
+LG Energy Solution,lgensol.com,Cat4,4A/4B (confirmar),Jay Choi,Strategic Planning & Purchasing Manager,linkedin.com/in/jay-choi-267a05a9,choi@lgensol.com,FOUND_UNVERIFIED,wiza_search_prospects,hunter,0.3,Battery Storage (Tier 1),Tier 1
+Mainspring,mainspringenergy.com,Cat4,4C,Shannon Miller,Co Founder And President,linkedin.com/in/shannon-miller-5a7bba5,shannon.miller@mainspringenergy.com,VERIFIED,wiza_search_prospects,hunter,0.3,Gas Engines (Tier 2),Tier 2
+Mercury,mercuryeng.com,Cat3,,Ticky Thomas,Project Procurement Manager Hyperscale Data Centres,linkedin.com/in/ticky-thomas-68a634a4,ticky.thomas@mercuryeng.com,VERIFIED,wiza_search_prospects,hunter,0.3,EPC,
+Mitsubishi Power,linkedin.com/company/mitsubishi-power,Cat4,4A/4B (confirmar),Jonathan Arifin,"Assistant Manager, Project Procurement & Supply Chain Management",linkedin.com/in/jonathan-arifin-98aa68103,,NOT_FOUND,wiza_search_prospects,none,0,Gas Turbines (Tier 1),Tier 1
+Mortenson,mortenson.com,Cat3,,Heather Johnston,Senior Preconstruction Phase Manager,linkedin.com/in/heather-l-johnston,heather.johnston@mortenson.com,FOUND_UNVERIFIED,wiza_search_prospects,hunter,0.3,EPC,
+Plug,plugpower.com,Cat4,4C,Jose Luis Crespo,Chief Executive Officer,linkedin.com/in/jose-luis-crespo-b7535116,,NOT_FOUND,wiza_search_prospects,none,0,Fuel Cells (Tier 2),Tier 2
+PowerCell,powercellgroup.com,Cat4,4C,Richard Berkling,Chief Executive Officer,linkedin.com/in/richard-berkling-656388,richard.berkling@powercellgroup.com,VERIFIED,wiza_search_prospects,hunter,0.3,Fuel Cells (Tier 2),Tier 2
+ProEnergy,proenergyservices.com,Cat4,4C,Jeff Canon,Chief Executive Officer,linkedin.com/in/jeffcanon,jcanon@proenergyservices.com,VERIFIED,wiza_search_prospects,hunter,0.3,Gas Turbines (Tier 2),Tier 2
+Rolls-Royce,rolls-royce.com,Cat4,4A/4B (confirmar),Mohamed Mara,Regional Procurement Finance Manager,linkedin.com/in/mohamedbmara,mohamed.mara@rolls-royce.com,FOUND_UNVERIFIED,wiza_search_prospects,hunter,0.3,Gas Engines (Tier 1),Tier 1
+Samsung SDI,samsungsdi.com,Cat4,4A/4B (confirmar),Dávid Grunda,Procurement Manager,linkedin.com/in/davidgrunda,,NOT_FOUND,wiza_search_prospects,none,0,Battery Storage (Tier 1),Tier 1
+Schneider Electric,schneider-electric.com,Cat4,4A/4B (confirmar),Srinivasan Ramakrishnan,Vice President & Global Head Global Procurement Services,linkedin.com/in/srinivasan-ram-a1188823,,NOT_FOUND,wiza_search_prospects,none,0,"Electrical Infrastructure (Tier 1);Cooling (Tier 1)",Tier 1
+Siemens,siemens.com,Cat4,4A/4B (confirmar),Tamika Yeadon,Sustainability Procurement Project Manager Us,linkedin.com/in/tamika-yeadon-mba,tamika.yeadon@siemens.com,VERIFIED,wiza_search_prospects,hunter,0.3,Electrical Infrastructure (Tier 1),Tier 1
+Siemens Energy,siemens-energy.com,Cat4,4A/4B (confirmar),Sean Grant,Head Of Procurement For Controls & Digitalization Americas,linkedin.com/in/seandavidgrant,sean.grant@siemens-energy.com,VERIFIED,wiza_search_prospects,hunter,0.3,Gas Turbines (Tier 1),Tier 1
+Skeleton Technologies,,Cat4,4C,,,,,name_not_found_free,wiza_search_prospects,none,0,Battery Storage (Tier 2),Tier 2
+SolidEra,,Cat4,4C,,,,,name_not_found_free,wiza_search_prospects,none,0,Fuel Cells (Tier 2),Tier 2
+SRC,srcinc.com,Cat4,4C,Kevin Hair,Chief Executive Officer,linkedin.com/in/kevin-hair-7a075123,khair@srcinc.com,VERIFIED,wiza_search_prospects,hunter,0.3,Cooling (Tier 2),Tier 2
+Stulz,lamipak.biz,Cat4,4A/4B (confirmar),Nico Kwiaton,Team Lead Procurement,linkedin.com/in/nico-kwiaton,,NOT_FOUND,wiza_search_prospects,none,0,Cooling (Tier 1),Tier 1
+Submer,submer.com,Cat4,4C,Pol Valls Soler,Founder,linkedin.com/in/polvallssoler,,NOT_FOUND,wiza_search_prospects,none,0,Cooling (Tier 2),Tier 2
+Sungrow,sungrowpower.com,Cat4,4A/4B (confirmar),Zy Xiao,Procurement Engineer,linkedin.com/in/lora-x-a789b9197,zy@sungrowpower.com,FOUND_UNVERIFIED,wiza_search_prospects,hunter,0.3,Battery Storage (Tier 1),Tier 1
+Tesla Energy,teslaenergy.cl,Cat4,4A/4B (confirmar),Matt Duran,Supply Chain Asset Administrator,linkedin.com/in/matt-duran-8336b667,,NOT_FOUND,wiza_search_prospects,none,0,Battery Storage (Tier 1),Tier 1
+Trane Technologies,tranetechnologies.com,Cat4,4A/4B (confirmar),Tameeka Barnes,Indirect Procurement Program Manager,linkedin.com/in/tameeka-boyce,tameeka.barnes@tranetechnologies.com,FOUND_UNVERIFIED,wiza_search_prospects,hunter,0.3,Cooling (Tier 1),Tier 1
+Turner,turnerandtownsend.com,Cat3,,Ray Clark,"Director, Supply Chain & Procurement",linkedin.com/in/normanrayclarkiii,ray.clark@turntown.com,VERIFIED,wiza_search_prospects,hunter,0.3,EPC,
+UP,upandupcollective.com,Cat4,4C,Steven Ljubicic,Co Founder,linkedin.com/in/stevenljubicic,,NOT_FOUND,wiza_search_prospects,none,0,Fuel Cells (Tier 2),Tier 2
+VoltaGrid,voltagrid.com,Cat4,4C,Nathan Ough,Chief Executive Officer,linkedin.com/in/nathanough,nathan.ough@voltagrid.com,VERIFIED,wiza_search_prospects,hunter,0.3,Gas Engines (Tier 2),Tier 2
+Wärtsilä,wartsila.com,Cat4,4A/4B (confirmar),Karina Donoso,"Subcontracting Manager, Engineering, Procurement, And Construction Projects",linkedin.com/in/karinadonoso,karina.donoso@wartsila.com,VERIFIED,wiza_search_prospects,hunter,0.3,Gas Engines (Tier 1),Tier 1
+Zauner Group,,Cat3,,,,,,name_not_found_free,wiza_search_prospects,none,0,EPC,
+ZutaCore,zutacore.com,Cat4,4C,Erez Freibach,"Co Founder, Chairman & Chief Executive Officer",linkedin.com/in/erez-freibach-29a7278,erez@zutacore.com,VERIFIED,wiza_search_prospects,hunter,0.3,Cooling (Tier 2),Tier 2
