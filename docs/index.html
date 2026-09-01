@@ -196,6 +196,8 @@
   /* News feed ("Fresh signals" tile): reuses .card/.cbody/.co/.badge/.srow/
      .signal/.cfoot/.seq-open -- only the news blurb itself needs its own rule. */
   .news-card-text{font-size:13px;line-height:1.5;color:var(--ink-2);margin:8px 0 10px}
+  .news-section-head{margin-top:28px}
+  .news-caughtup{padding:24px 20px}
   .seq-open:hover{text-decoration:underline;text-underline-offset:2px}
   .seq-open .arrow{transition:transform .15s}
   .seq-open:hover .arrow{transform:translateX(2px)}
@@ -401,6 +403,10 @@ function sigColor(s){ if(s.type==="none") return "var(--stale)"; return s.age<=7
 // Only a real dated news signal counts as "fresh" -- firmographic/ICP notes
 // carry no meaningful date, so they must never light up "Fresh signals".
 function fresh(s){ return s.type==="news" && s.age!=null && s.age<=14; }
+// Wider than fresh() (30d, not 14d) -- drives the "Fresh signals" tile count
+// and the news feed's "New" section specifically, kept separate from fresh()
+// so existing fresh()-based behavior (sigColor et al.) doesn't shift.
+function isNewSignal(s){ return s.type==="news" && s.age!=null && s.age<30; }
 // Sort key for "freshest signal" ordering: real age for news, otherwise a
 // fixed 999 so firmographic/icp/none all sink to the bottom like "none" did.
 function signalSortAge(s){ return s.type==="news" ? (s.age==null?999:s.age) : 999; }
@@ -425,6 +431,13 @@ function activeContactOf(l){
 function activeStage(l){ const c = activeContactOf(l); return c ? c.stage : 0; }
 
 function compareLeads(a,b){
+  // "In sequence" always orders by most-recently-touched account first,
+  // regardless of the sort control (which drives pipeline/closed instead) --
+  // that control stays visible but is a no-op in this view, same trade-off
+  // already accepted for the news feed's fixed ordering.
+  if(state.view==="insequence"){
+    return latestInFlowTouchMs(b) - latestInFlowTouchMs(a);
+  }
   if(state.sort==="fresh"){
     return signalSortAge(a)-signalSortAge(b);
   }
@@ -517,7 +530,7 @@ function renderTiles(){
   const mine = myOpenLeads();
   const mineSeq = myInSequenceLeads();
   const mineClosed = myClosedLeads();
-  const f = myAllLeads().filter(l=>l.signal.type==="news").length;
+  const f = myAllLeads().filter(l=>isNewSignal(l.signal)).length;
   const w = mine.filter(l=>l.warm).length;
   const allActive = state.view==="pipeline" && !state.warmOnly;
   const newsfeedActive = state.view==="newsfeed";
@@ -575,6 +588,22 @@ function worstInFlowContact(l){
     }
   }
   return worst;
+}
+
+// Most recent last_touch_at (ms) among an account's real in-flow contacts --
+// the opposite pick from worstInFlowContact (which picks by most OVERDUE).
+// Used only to order the "In sequence" view by most-recently-started/touched
+// account first. -Infinity for an account with no in-flow touch, so it sinks
+// to the bottom of that view.
+function latestInFlowTouchMs(l){
+  let latest = -Infinity;
+  for (const c of realContactsOf(l)) {
+    if (c.stage > 0 && !isClosed(c) && c.last_touch_at) {
+      const t = new Date(c.last_touch_at).getTime();
+      if (!isNaN(t) && t > latest) latest = t;
+    }
+  }
+  return latest;
 }
 
 // `predicate(delay)` narrows the worst-in-flow accounts to a section (today
@@ -1343,17 +1372,27 @@ function newsCardHtml(l){
   </div>`;
 }
 function renderNewsFeed(){
-  const rows = myAllLeads()
+  const allNews = myAllLeads()
     .filter(l => l.signal.type === "news")
     .sort((a,b) => signalSortAge(a) - signalSortAge(b));
   el("#summary").textContent = "";
-  if(!rows.length){
+  if(!allNews.length){
     el("#list").innerHTML = `<div class="empty">No news signals yet</div>`;
     return;
   }
+  const newRows = allNews.filter(l => isNewSignal(l.signal));
+  const newSection = newRows.length
+    ? `<div class="list" role="list">${newRows.map(newsCardHtml).join("")}</div>`
+    : `<div class="empty news-caughtup">You're all caught up — no new signals in the last 30 days.</div>`;
+  // "All signals" deliberately repeats everything (including what's already
+  // in "New" above) rather than only the >=30d leftovers -- it's meant to
+  // read as the full archive of every real news signal, not a second,
+  // disjoint list a user would have to check separately from "New".
   el("#list").innerHTML = `
-    <div class="sechead2"><h3>News feed — ${rows.length} signal${rows.length===1?"":"s"}</h3></div>
-    <div class="list" role="list">${rows.map(newsCardHtml).join("")}</div>`;
+    <div class="sechead2"><h3>New — ${newRows.length}</h3></div>
+    ${newSection}
+    <div class="sechead2 news-section-head"><h3>All signals — ${allNews.length}</h3></div>
+    <div class="list" role="list">${allNews.map(newsCardHtml).join("")}</div>`;
   el("#list").querySelectorAll(".news-view-pipeline").forEach(b=>{
     b.onclick = () => { state.view="pipeline"; state.cat=b.dataset.cat||"all"; renderAll(); };
   });
