@@ -236,3 +236,20 @@ Aldahir quiere que las noticias se ACUMULEN por cuenta (historial), no que se so
 
 - **Prompt de arranque próxima sesión:**
   _"Cockpit EN VIVO (docs/index.html) con sync engine→Supabase funcionando (node scripts/sync-supabase.js [--apply], respaldar antes) y news feed en el tile Fresh signals. Lo siguiente es de ENGINE, no cockpit: refrescar las noticias viejas del CSV (fechas de 100-500+ días) y buscar señal/source para cuentas sin noticia, luego correr el sync para que el muro las muestre frescas. Alternativas de cockpit si se prefiere: sync automático, o limpiar la barrita E1·LI·E2·E3. Idea grande pendiente (no arrancada): historial acumulado de noticias por cuenta (tabla signals nueva + modal tipo FUPs) — ver nota completa en la sesión 2026-08-31. Paso a paso."_
+
+### Sesión 2026-08-31 (cont.) — Ronda de fixes + features de la app
+LOGRADO (todo en vivo, comiteado):
+- News feed: split "New" (<30d) / "All signals". Tile "Fresh signals" cuenta las nuevas (<30d). "You're all caught up" si no hay nuevas.
+- "In sequence" ordenado por toque más reciente arriba (latestInFlowTouchMs).
+- "View in pipeline" del news feed: scrollea + resalta (card-flash) la cuenta destino. data-account en todas las cards.
+- Vista "Needs contact": cuentas sin contacto real (realContactsOf===0, ~38 cuentas de TAM sin contacto). Acceso como ENLACE discreto bajo los tiles (no 5º tile, para no amontonar). Es la "sala de espera" para pasarles el engine.
+- Fixes previos de la sesión: links (normalizeUrl), señales limpias (classifySignal firmographic/ICP/news), contactos huérfanos (isRealContact), Dragonfly reseteado.
+
+DATO PARA EL ENGINE: las cuentas "Needs contact" son consultables directo de Supabase (cuentas con todos sus contactos null). El engine las usa para saber a quién enriquecer. NO se necesita columna needs_contact nueva (es derivable) — decisión a confirmar en canal engine.
+
+SIGUIENTE (canal NUEVO de engine): (1) correr engine/skills para enriquecer "Needs contact" (contacto+email) y refrescar noticias viejas; (2) sync a Supabase (respaldar antes); (3) automatizar el sync eventualmente. FEATURE a diseñar: agregar leads de OTRO source, categorizados por origen, con una vista/entrada nueva en el cockpit que solo les pase los skills de enriquecimiento.
+
+IDEA PENDIENTE (canal engine): historial de noticias por cuenta que se ACUMULE (tabla signals nueva + engine acumula en vez de sobrescribir + modal como el de FUPs). Ver nota de sesión anterior.
+
+- **Prompt de arranque próxima sesión:**
+  _"Cockpit EN VIVO (docs/index.html). Esta sesión cerró: news feed New/All split (<30d), In sequence ordenado por toque más reciente, View in pipeline con scroll+resalte, y la vista Needs contact (enlace discreto bajo los tiles, ~38 cuentas de TAM sin contacto). Lo que sigue es un canal NUEVO de ENGINE: enriquecer Needs contact (contacto+email) y refrescar noticias viejas, luego sync a Supabase (respaldar antes). También hay una feature a diseñar: agregar leads de otro source, categorizados por origen, con su propia entrada en el cockpit para pasarles solo los skills de enriquecimiento. Pendiente aparte (no arrancada): historial acumulado de noticias por cuenta (ver sesión 2026-08-30 parte 2). Paso a paso."_
