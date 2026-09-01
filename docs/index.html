@@ -63,6 +63,8 @@
   .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
   .tiles.cols-5{grid-template-columns:repeat(5,1fr)}
   @media(max-width:640px){.tiles,.tiles.cols-5{grid-template-columns:repeat(2,1fr)}}
+  .needscontact-linkwrap{display:flex;justify-content:flex-end;margin:2px 0 16px}
+  .needscontact-link.on{font-weight:700;color:var(--ink)}
   .tile{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;
     text-align:left;cursor:pointer;appearance:none;-webkit-appearance:none;font-family:var(--sans);transition:.12s}
   .tile:hover{border-color:var(--border-2);transform:translateY(-1px)}
@@ -187,6 +189,9 @@
   .next b{color:var(--ink);font-weight:600}
   .empty{text-align:center;color:var(--ink-3);padding:56px 20px;font-size:13px;animation:fadeIn .25s ease-out}
   @keyframes fadeIn{from{opacity:0;transform:translateY(2px)}to{opacity:1;transform:translateY(0)}}
+  /* Brief highlight on a card scrolled to from "View in pipeline" (news feed). */
+  @keyframes cardFlash{0%{box-shadow:0 0 0 3px color-mix(in srgb, var(--link) 45%, transparent)}100%{box-shadow:0 0 0 3px transparent}}
+  .card-flash{animation:cardFlash 1.5s ease-out}
   .empty .clearbtn{margin-top:16px;display:inline-block;font-family:var(--sans);font-size:12px;font-weight:500;
     color:var(--ink);background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:7px 15px;cursor:pointer}
   .empty .clearbtn:hover{border-color:var(--border-2)}
@@ -343,6 +348,7 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
   </div>
 
   <div class="tiles" id="tiles"></div>
+  <div class="needscontact-linkwrap" id="needscontact-link"></div>
   <div class="summary" id="summary"></div>
   <div id="list"></div>
 
@@ -486,12 +492,20 @@ function myInSequenceLeads(){
 function myClosedLeads(){
   return myAllLeads().filter(l => l.contacts.some(c => isClosed(c)));
 }
-// Which of the three above state.view currently browses. Shared by
+// "Needs contact" tile/view: accounts with zero real (named) contacts --
+// TAM entries the engine hasn't found a verified contact for yet (the ~38
+// nameless placeholders from the orphan-contact fix). Overlaps with none of
+// the other three sets, since a real contact is required for all of them.
+function myNeedsContactLeads(){
+  return myAllLeads().filter(l => realContactsOf(l).length === 0);
+}
+// Which of the four above state.view currently browses. Shared by
 // filtered()/renderChips()/renderSections() so the pipeline listing and the
 // "All"/category counters always agree on what's on screen.
 function currentBaseLeads(){
   if (state.view === "insequence") return myInSequenceLeads();
   if (state.view === "closed") return myClosedLeads();
+  if (state.view === "needscontact") return myNeedsContactLeads();
   return myOpenLeads();
 }
 
@@ -530,10 +544,12 @@ function renderTiles(){
   const mine = myOpenLeads();
   const mineSeq = myInSequenceLeads();
   const mineClosed = myClosedLeads();
+  const mineNeedsContact = myNeedsContactLeads();
   const f = myAllLeads().filter(l=>isNewSignal(l.signal)).length;
   const w = mine.filter(l=>l.warm).length;
   const allActive = state.view==="pipeline" && !state.warmOnly;
   const newsfeedActive = state.view==="newsfeed";
+  const needsContactActive = state.view==="needscontact";
   const seqActive = state.view==="insequence";
   const closedActive = state.view==="closed";
   // 5 tiles with the warm tile shown, 4 without it (base .tiles is already
@@ -557,6 +573,18 @@ function renderTiles(){
     else if(k==="closed"){ state.view = state.view==="closed" ? "pipeline" : "closed"; state.warmOnly=false; }
     renderAll();
   });
+  // Discreet secondary access to the "Needs contact" view -- demoted from a
+  // 5th tile (crowded the row) to a plain link under it. Hidden entirely at
+  // N===0, since there's nothing to review.
+  el("#needscontact-link").innerHTML = mineNeedsContact.length
+    ? `<button type="button" class="seq-open needscontact-link ${needsContactActive?'on':''}">${mineNeedsContact.length} account${mineNeedsContact.length===1?"":"s"} need a contact <span class="arrow">→</span></button>`
+    : "";
+  const ncBtn = el("#needscontact-link").querySelector(".needscontact-link");
+  if (ncBtn) ncBtn.onclick = () => {
+    state.view = state.view==="needscontact" ? "pipeline" : "needscontact";
+    state.warmOnly=false;
+    renderAll();
+  };
 }
 function stageLabel(stage){ return stage===0 ? "Not started" : `Follow-up ${stage}/4`; }
 
@@ -1309,13 +1337,14 @@ function cardHtml(l, followupWorst){
   const footer = worst
     ? (followupWorst ? doneButtonHtml(worst) : inSequenceFooterHtml(worst))
     : (active && active.id && active.stage === 0 ? startSequenceHtml(active) : "");
-  // Only an in-flow card (has a worst-in-flow contact) opens the touch
-  // modal on click -- cold-pipeline and fully-closed cards get no
-  // "clickable" class/data-* and are inert to the delegated click handler.
+  // Only an in-flow card (has a worst-in-flow contact) opens the touch modal
+  // on click -- cold-pipeline/closed cards skip the "clickable" class and
+  // data-contact-id, so the delegated click handler below ignores them.
+  // data-account, though, goes on every card regardless -- it's how "View in
+  // pipeline" from the news feed finds a specific card to scroll to/flash,
+  // cold ones included.
   const cardClass = `card ${showWarm?'haswarm':''}${worst ? ' clickable' : ''}`.trim();
-  const cardAttrs = worst
-    ? ` data-contact-id="${escAttr(worst.c.id)}" data-account="${escAttr(l.co)}"`
-    : "";
+  const cardAttrs = ` data-account="${escAttr(l.co)}"${worst ? ` data-contact-id="${escAttr(worst.c.id)}"` : ""}`;
   return `<div class="${cardClass}" role="listitem"${cardAttrs}>${warm}
     <div class="cbody">
       <div>
@@ -1368,7 +1397,7 @@ function newsCardHtml(l){
         </div></div>
       </div>
     </div>
-    <div class="cfoot"><button type="button" class="seq-open news-view-pipeline" data-cat="${escAttr(l.cat)}">View in pipeline <span class="arrow">→</span></button></div>
+    <div class="cfoot"><button type="button" class="seq-open news-view-pipeline" data-cat="${escAttr(l.cat)}" data-account="${escAttr(l.co)}">View in pipeline <span class="arrow">→</span></button></div>
   </div>`;
 }
 function renderNewsFeed(){
@@ -1394,7 +1423,21 @@ function renderNewsFeed(){
     <div class="sechead2 news-section-head"><h3>All signals — ${allNews.length}</h3></div>
     <div class="list" role="list">${allNews.map(newsCardHtml).join("")}</div>`;
   el("#list").querySelectorAll(".news-view-pipeline").forEach(b=>{
-    b.onclick = () => { state.view="pipeline"; state.cat=b.dataset.cat||"all"; renderAll(); };
+    b.onclick = () => {
+      const targetAccount = b.dataset.account;
+      state.view="pipeline"; state.cat=b.dataset.cat||"all"; renderAll();
+      // renderAll() re-renders #list synchronously, so the target card (if
+      // it's on screen under this category filter) already exists here.
+      // An account already "in sequence"/closed won't be in the cold
+      // pipeline this filter shows -- silently do nothing further then,
+      // per spec (the category filter alone is still a reasonable result).
+      if (!targetAccount) return;
+      const card = [...el("#list").querySelectorAll(".card")].find(c => c.dataset.account === targetAccount);
+      if (!card) return;
+      card.scrollIntoView({behavior:"smooth", block:"center"});
+      card.classList.add("card-flash");
+      setTimeout(() => card.classList.remove("card-flash"), 1500);
+    };
   });
 }
 
@@ -1404,8 +1447,14 @@ function renderSections(){
   const mine = currentBaseLeads();
   el("#summary").textContent = rows.length===mine.length ? "" : `Showing ${rows.length} of ${mine.length}`;
   if(!rows.length){
-    el("#list").innerHTML = `<div class="empty">No leads match this filter<br><button type="button" class="clearbtn">Clear filters</button></div>`;
-    el(".clearbtn").onclick = () => { state.cat="all"; state.warmOnly=false; renderAll(); };
+    // The base set itself (not just this cat/warm filter) is empty --
+    // "Needs contact" gets its own honest message instead of implying a
+    // filter is hiding something that doesn't exist.
+    el("#list").innerHTML = (state.view==="needscontact" && mine.length===0)
+      ? `<div class="empty">No accounts need a contact</div>`
+      : `<div class="empty">No leads match this filter<br><button type="button" class="clearbtn">Clear filters</button></div>`;
+    const clearBtn = el(".clearbtn");
+    if (clearBtn) clearBtn.onclick = () => { state.cat="all"; state.warmOnly=false; renderAll(); };
     return;
   }
   const groups = groupByCategory(rows, l => l.cat);
