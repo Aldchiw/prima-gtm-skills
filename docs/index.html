@@ -512,14 +512,33 @@ function myClosedLeads(){
 function myNeedsContactLeads(){
   return myAllLeads().filter(l => realContactsOf(l).length === 0);
 }
-// Which of the four above state.view currently browses. Shared by
-// filtered()/renderChips()/renderSections() so the pipeline listing and the
-// "All"/category counters always agree on what's on screen.
-function currentBaseLeads(){
+// SHOW_SOURCE_FILTER only: every value_chain_map account for this user,
+// regardless of pipeline/in-sequence/closed/needs-contact status. That
+// account-lifecycle split is an engine-pipeline concept; a value_chain_map
+// account can land in any of those states too, but browsing "Value chain"
+// is about seeing the whole source at once, not one lifecycle slice of it.
+function myValueChainLeads(){
+  return myAllLeads().filter(l => l.source === "value_chain_map");
+}
+// Which of the four view-only sets state.view currently browses. This is
+// what currentBaseLeads() falls back to once the value_chain_map override
+// below doesn't apply -- kept as its own function (not inlined into
+// currentBaseLeads()) so renderSourceChips() can count "Engine"/"All
+// sources" against the current VIEW even while "Value chain" is the active
+// source chip, instead of those counts collapsing once currentBaseLeads()
+// itself gets overridden.
+function viewBaseLeads(){
   if (state.view === "insequence") return myInSequenceLeads();
   if (state.view === "closed") return myClosedLeads();
   if (state.view === "needscontact") return myNeedsContactLeads();
   return myOpenLeads();
+}
+// Which of the four above state.view currently browses. Shared by
+// filtered()/renderChips()/renderSections() so the pipeline listing and the
+// "All"/category counters always agree on what's on screen.
+function currentBaseLeads(){
+  if (SHOW_SOURCE_FILTER && state.source === "value_chain_map") return myValueChainLeads();
+  return viewBaseLeads();
 }
 
 function filtered(){
@@ -548,21 +567,28 @@ function renderChips(){
   }).join("");
   el("#catchips").querySelectorAll(".chip").forEach(ch=>ch.onclick=()=>{state.cat=ch.dataset.c;renderAll();});
 }
-// SHOW_SOURCE_FILTER only. Same base (currentBaseLeads()) and same reused
-// .chip look as renderChips() above, so it reads as one consistent filter
-// row family, not a bolted-on control.
+// SHOW_SOURCE_FILTER only. Same reused .chip look as renderChips() above, so
+// it reads as one consistent filter row family, not a bolted-on control.
+// "All sources"/"Engine" count against viewBaseLeads() (the current
+// pipeline/in-sequence/closed/needs-contact view) deliberately, NOT
+// currentBaseLeads() -- once "Value chain" is the active chip,
+// currentBaseLeads() itself is overridden to the all-86 set, and counting
+// this row's OWN chips against that would make "Engine" collapse to 0 and
+// "All sources" read as just the value_chain total the moment you click
+// "Value chain". "Value chain"'s count is the one deliberate exception: it
+// always shows the true full total (myValueChainLeads().length), since
+// that's exactly what clicking it reveals, regardless of view.
 function renderSourceChips(){
   if(!SHOW_SOURCE_FILTER){ el("#sourcechips").innerHTML = ""; return; }
-  const mine = currentBaseLeads();
+  const mine = viewBaseLeads();
   const chips = [
-    {k:"all", name:"All sources"},
-    {k:"engine", name:"Engine"},
-    {k:"value_chain_map", name:"Value chain"},
+    {k:"all", name:"All sources", count: mine.length},
+    {k:"engine", name:"Engine", count: mine.filter(l=>l.source==="engine").length},
+    {k:"value_chain_map", name:"Value chain", count: myValueChainLeads().length},
   ];
   el("#sourcechips").innerHTML = chips.map(c=>{
-    const count = c.k==="all" ? mine.length : mine.filter(l=>l.source===c.k).length;
     return `<button type="button" class="chip ${state.source===c.k?'on':''}" data-src="${c.k}" aria-pressed="${state.source===c.k}">
-      ${c.name}<span class="ct">${count}</span></button>`;
+      ${c.name}<span class="ct">${c.count}</span></button>`;
   }).join("");
   el("#sourcechips").querySelectorAll(".chip").forEach(ch=>ch.onclick=()=>{state.source=ch.dataset.src;renderAll();});
 }
