@@ -1,0 +1,6 @@
+account_name,domain,company_category,sub_segment,contact_name,contact_title,linkedin_url,contact_email,email_status,committee_source,email_provider,credits_spent_email
+Stryten Energy,stryten.com,Cat4,4B,Michael Pankhurst,Procurement Category Manager,linkedin.com/in/michael-pankhurst-b-comm,michael.pankhurst@stryten.com,VERIFIED,wiza_search_prospects,hunter,0.3
+Enercon Engineering,enerconpower.com,Cat4,4B,Nick Ripley,Purchasing Manager,linkedin.com/in/nick-ripley-b3131122,,NOT_FOUND,wiza_search_prospects,none,0
+MGM Transformers / VanTran,mgmtransformers.com,Cat4,4B,Pia Villanueva,Purchasing Manager,linkedin.com/in/pia-villanueva-9700a487,pia.villanueva@mgmtransformer.com,VERIFIED,wiza_search_prospects,hunter,0.3
+DG Matrix,dgmatrix.com,Cat4,4C,Haroon Inam,CEO,linkedin.com/in/harooninam,haroon.inam@dgmatrix.com,VERIFIED,wiza_search_prospects,hunter,0.3
+Exowatt,exowatt.com,Cat4,4C,Hannan Happi,Co-Founder & CEO,linkedin.com/in/hannanhappi,,NOT_FOUND,wiza_search_prospects,none,0

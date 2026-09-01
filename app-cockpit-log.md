@@ -253,3 +253,42 @@ IDEA PENDIENTE (canal engine): historial de noticias por cuenta que se ACUMULE (
 
 - **Prompt de arranque próxima sesión:**
   _"Cockpit EN VIVO (docs/index.html). Esta sesión cerró: news feed New/All split (<30d), In sequence ordenado por toque más reciente, View in pipeline con scroll+resalte, y la vista Needs contact (enlace discreto bajo los tiles, ~38 cuentas de TAM sin contacto). Lo que sigue es un canal NUEVO de ENGINE: enriquecer Needs contact (contacto+email) y refrescar noticias viejas, luego sync a Supabase (respaldar antes). También hay una feature a diseñar: agregar leads de otro source, categorizados por origen, con su propia entrada en el cockpit para pasarles solo los skills de enriquecimiento. Pendiente aparte (no arrancada): historial acumulado de noticias por cuenta (ver sesión 2026-08-30 parte 2). Paso a paso."_
+
+## 2026-09-01 — Enriquecimiento Needs-contact — MUESTRA (5 Cat4)
+- Recon: 34 Needs-contact (32 Cat4, 2 Cat1), todas sin nombre y sin email.
+- Deepline 22.35 -> 21.45 cr (0.90 gastado; committee=0, email=0.90).
+- 5/5 nombres gratis (wiza free); 3/5 emails VERIFIED Hunter @0.3cr; 2/5 miss $0.
+- Calidad 5/5 persona correcta por sub_segment (4B->purchasing, 4C->founder).
+- Costo/lead enviable = 0.3cr = $0.03. Presupuesto NO es cuello de botella.
+- FLAG: prima-committee no soporta 4A/4D. FLAG: MGM domain mgmtransformer.com (sin s).
+- Outputs: needs_contact_sample.csv. master + Supabase intactos, sin push.
+
+## 2026-09-01 — Enriquecimiento Needs-contact — BATCH (27 Cat4 restantes)
+- Distribucion sub_segment de las 32 Cat4: 4A=3, 4B=7, 4C=4, sin clasificar=18. (+2 Cat1.)
+- Procesables 4B/4C fuera de muestra = 6. Committee: 5/6 nombre; 1 name_not_found_free (Pioneer Custom Electrical, sin persona de compras en wiza).
+- Email: 3/5 VERIFIED Hunter @0.3cr (TMC, Heron Power, XL Batteries); 2/5 miss $0 (FuelCell, Panasonic).
+- 4A saltadas sin gasto: Mitsubishi Electric Power Products, Hitachi Energy, Voltaris.
+- 18 sin sub_segment: NO procesadas (sin arquetipo no hay persona). Marcadas sub_segment_missing. Unlock = prima-icp-check.
+- Gasto batch 0.90 cr; saldo 21.45 -> 20.55. Sesion total 1.80 cr (22.35 -> 20.55).
+- Fixes dominio (sync): FuelCell->fuelcellenergy.com; Panasonic->panasonicnv.com; XL->xlbatteries.com; MGM->mgmtransformer.com. REVISAR (no auto): TMC .us vs contacto en .com (SPA Italia).
+- Outputs: needs_contact_batch.csv. master + Supabase intactos, sin push.
+
+## 2026-09-01 — Clasificación 18 + enriquecimiento final + CIERRE (canal engine)
+CLASIFICACIÓN 18 sin sub_segment (prima-icp-check, Notion+WebSearch, $0):
+- IN (4): Dragonfly Energy 4B/P1, Trojan Battery 4B/P1, GTI Energy 4A/P2, Forgent Power Solutions 4A/P2.
+- OUT de ICP (11, no fabricantes): Continental Battery Systems, Avangrid Renewables, Atlas Renewable Energy, LS Power, Recurrent Energy, Pattern Energy, REC Solar, Ecobat, EcoFlow, iTECH, Stone Martin Builders.
+- Undeterminadas (3): Cleveland-Cliffs (planta transf. pausada), National Power Corp, Ocean Power Technologies.
+- DEDUP: Forgent Power Solutions = matriz de MGM/VanTran (ya enriquecida 4B) → no tratar como cuenta aparte.
+ENRIQUECIMIENTO batch2 (tope 2cr):
+- Dragonfly Energy: Brice Bergen, Production Mgr (⚠ SECUNDARIA, no purchasing). Email VERIFIED brice@dragonflyenergy.com (Hunter 0.3cr).
+- Trojan Battery: Alison Fregeau, Director of Procurement (persona ideal). Email MISS $0.
+DISPOSICIÓN FINAL 34 Needs-contact:
+- Enviables (nombre+email): 7 → Stryten, MGM, DG Matrix, Heron Power, XL Batteries, TMC(⚠entidad), Dragonfly(⚠persona).
+- Solo-nombre: 5 → Enercon, Exowatt, FuelCell, Panasonic, Trojan.
+- Sin persona: 1 → Pioneer Custom Electrical.
+- 4A atoradas (committee no soporta): 4 → Mitsubishi EPP, Hitachi Energy, Voltaris, GTI Energy.
+- OUT de ICP (a excluir): 11. Undeterminadas: 3. Cat1 (committee aparte): 2.
+HALLAZGO: "Needs contact" era 61% de las sin-clasificar FUERA de ICP (no-fabricantes que entraron como Cat4). Cuello de botella real = límite de committee en 4A + contaminación de sourcing, NO presupuesto. Engine 4B/4C barato y con persona correcta (committee gratis wiza, email 0.3cr, 7/12 nombrados con email ~58%).
+GASTO SESIÓN: 2.10 cr (22.35 → 20.25). Clasificación $0.
+PENDIENTES próxima sesión: (1) merge a leads_master + SYNC a Supabase con RESPALDO antes de --apply; (2) fixes dominio FuelCell/Panasonic/XL/MGM + REVISAR TMC (.us vs .com SPA Italia); (3) excluir 11 OUT + ver cómo entraron; (4) dedupe Forgent=MGM; (5) arreglar committee 4A; (6) committee 2 Cat1; (7) refrescar noticias viejas ($0 WebSearch, quedó pendiente).
+Enriquecidos viven en output/needs_contact*.csv — NADA en leads_master ni Supabase todavía.
