@@ -292,3 +292,12 @@ HALLAZGO: "Needs contact" era 61% de las sin-clasificar FUERA de ICP (no-fabrica
 GASTO SESIÓN: 2.10 cr (22.35 → 20.25). Clasificación $0.
 PENDIENTES próxima sesión: (1) merge a leads_master + SYNC a Supabase con RESPALDO antes de --apply; (2) fixes dominio FuelCell/Panasonic/XL/MGM + REVISAR TMC (.us vs .com SPA Italia); (3) excluir 11 OUT + ver cómo entraron; (4) dedupe Forgent=MGM; (5) arreglar committee 4A; (6) committee 2 Cat1; (7) refrescar noticias viejas ($0 WebSearch, quedó pendiente).
 Enriquecidos viven en output/needs_contact*.csv — NADA en leads_master ni Supabase todavía.
+
+## 2026-09-01 — Needs-contact: clasificacion 18 + batch2
+- CLASIF 18 (icp-check, $0): IN 4 (Dragonfly 4B, Trojan 4B, GTI Energy 4A, Forgent 4A); OUT 11 (Continental Battery, Avangrid, Atlas Renewable, LS Power, Recurrent, Pattern Energy, REC Solar, Ecobat, EcoFlow, iTECH, Stone Martin); undeterminadas 3 (Cleveland-Cliffs, National Power, Ocean Power). DEDUP: Forgent = matriz de MGM/VanTran (ya hecha) -> no tratar aparte.
+- BATCH2 (tope 2cr): Dragonfly -> Brice Bergen (Production Mgr, SECUNDARIA no purchasing), email VERIFIED brice@dragonflyenergy.com (Hunter 0.3cr). Trojan -> Alison Fregeau (Dir. Procurement, ideal), email MISS $0.
+- DISPOSICION 34: enviables 7 (Stryten, MGM, DG Matrix, Heron, XL Batteries, TMC*, Dragonfly*); solo-nombre 5 (Enercon, Exowatt, FuelCell, Panasonic, Trojan); sin persona 1 (Pioneer); 4A atoradas 4 (Mitsubishi EPP, Hitachi Energy, Voltaris, GTI Energy); OUT 11; undeter 3; Cat1 aparte 2.
+- HALLAZGO: 61% de las sin-clasificar estaban FUERA de ICP. Cuello real = limite committee 4A + contaminacion sourcing, no presupuesto.
+- GASTO SESION: 2.10cr (22.35->20.25).
+- PENDIENTES: merge a master + SYNC Supabase con respaldo; fixes dominio FuelCell/Panasonic/XL/MGM + revisar TMC; excluir 11 OUT; dedupe Forgent=MGM; committee 4A; 2 Cat1; refrescar noticias $0. Enriquecidos en output/needs_contact*.csv, nada en master/Supabase.
+- SIGUE EN ESTA SESION: ingesta value_chain_map como source nuevo.
