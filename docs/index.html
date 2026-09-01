@@ -48,6 +48,10 @@
 
   .controls{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px}
   .chips{display:flex;gap:7px;flex-wrap:wrap}
+  /* Zero footprint when empty (SHOW_SOURCE_FILTER off, or nothing rendered
+     into it yet) -- only takes vertical space once actually populated. */
+  #sourcechips:not(:empty){margin-bottom:14px}
+  .badge.segment{color:var(--ink-2);background:var(--bg);border-color:var(--border)}
   .chip{font-family:var(--sans);font-size:12.5px;font-weight:500;
     padding:7px 13px;border-radius:999px;cursor:pointer;border:1px solid var(--border);background:var(--surface);
     color:var(--ink-2);transition:.12s;display:flex;align-items:center;gap:7px;appearance:none;-webkit-appearance:none}
@@ -338,6 +342,8 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
     <h2>Your pipeline — by category</h2>
   </div>
 
+  <div class="chips" id="sourcechips" role="group" aria-label="Filter by source"></div>
+
   <div class="controls">
     <div class="chips" id="catchips" role="group" aria-label="Filter by category"></div>
     <div class="sortctl">
@@ -377,6 +383,13 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
 // every warm-intro banner, stat tile, and sort option reappears exactly as built, nothing
 // to rebuild.
 const SHOW_WARM_INTROS = false;
+// Feature flag: source filter (engine vs value_chain_map) + market_segment/
+// tier badge + email-verification indicator. Everything new for this feature
+// is gated behind this flag -- flip to false and the cockpit renders exactly
+// as it did before this feature (loadLeads still reads the 4 new columns
+// either way, since that alone is inert/harmless, but nothing else new does
+// anything when this is off).
+const SHOW_SOURCE_FILTER = true;
 
 /* DATA:START — generado por scripts/generate-cockpit.js, no editar a mano */
 const CATS = {
@@ -401,7 +414,7 @@ const SORTS = [
   {k:"stage", label:"Most advanced"}
 ];
 
-const state = {user:"me", cat:"all", warmOnly:false, view:"pipeline", sort: SHOW_WARM_INTROS ? "warm" : "fresh", activeContact:{}};
+const state = {user:"me", cat:"all", source:"all", warmOnly:false, view:"pipeline", sort: SHOW_WARM_INTROS ? "warm" : "fresh", activeContact:{}};
 const el = s => document.querySelector(s);
 const initials = n => n.split(" ").map(w=>w[0]).slice(0,2).join("");
 function sigColor(s){ if(s.type==="none") return "var(--stale)"; return s.age<=7 ? "var(--good)" : "var(--stale)"; }
@@ -511,6 +524,7 @@ function currentBaseLeads(){
 function filtered(){
   return currentBaseLeads()
     .filter(l => state.cat==="all" || l.cat===state.cat)
+    .filter(l => !SHOW_SOURCE_FILTER || state.source==="all" || l.source===state.source)
     .filter(l => !state.warmOnly || l.warm)
     .sort(compareLeads);
 }
@@ -532,6 +546,24 @@ function renderChips(){
       ${c.k!=="all"?`<span class="cd" aria-hidden="true"></span>`:""}${c.name}<span class="ct">${count}</span></button>`;
   }).join("");
   el("#catchips").querySelectorAll(".chip").forEach(ch=>ch.onclick=()=>{state.cat=ch.dataset.c;renderAll();});
+}
+// SHOW_SOURCE_FILTER only. Same base (currentBaseLeads()) and same reused
+// .chip look as renderChips() above, so it reads as one consistent filter
+// row family, not a bolted-on control.
+function renderSourceChips(){
+  if(!SHOW_SOURCE_FILTER){ el("#sourcechips").innerHTML = ""; return; }
+  const mine = currentBaseLeads();
+  const chips = [
+    {k:"all", name:"All sources"},
+    {k:"engine", name:"Engine"},
+    {k:"value_chain_map", name:"Value chain"},
+  ];
+  el("#sourcechips").innerHTML = chips.map(c=>{
+    const count = c.k==="all" ? mine.length : mine.filter(l=>l.source===c.k).length;
+    return `<button type="button" class="chip ${state.source===c.k?'on':''}" data-src="${c.k}" aria-pressed="${state.source===c.k}">
+      ${c.name}<span class="ct">${count}</span></button>`;
+  }).join("");
+  el("#sourcechips").querySelectorAll(".chip").forEach(ch=>ch.onclick=()=>{state.source=ch.dataset.src;renderAll();});
 }
 function renderSort(){
   const opts = SHOW_WARM_INTROS ? SORTS : SORTS.filter(s=>s.k!=="warm");
@@ -1018,7 +1050,15 @@ function contactBlock(l, active, followupWorst){
        </select>`
     : "";
   const links = [];
-  if(active.email && active.email.indexOf("@")!==-1) links.push(`<a href="mailto:${active.email}">${active.email}</a>`);
+  if(active.email && active.email.indexOf("@")!==-1){
+    // SHOW_SOURCE_FILTER only: a sober "unverified" tag next to any email
+    // whose email_status isn't exactly "VERIFIED" -- doesn't change whether
+    // the email renders (that's still just the "@" check above), only adds
+    // the indicator. Reuses .team-status's existing pill look, no new CSS.
+    const unverifiedTag = (SHOW_SOURCE_FILTER && active.email_status && active.email_status !== "VERIFIED")
+      ? `<span class="team-status" title="Email status: ${escAttr(active.email_status)}">unverified</span>` : "";
+    links.push(`<a href="mailto:${active.email}"${unverifiedTag?' style="color:var(--ink-3)"':''}>${active.email}</a>${unverifiedTag}`);
+  }
   const li = normalizeUrl(active.linkedin);
   if(li) links.push(`<a href="${li}" target="_blank">LinkedIn</a>`);
   const teamStatus = active.team_status ? `<span class="team-status">${active.team_status}</span>` : "";
@@ -1344,10 +1384,22 @@ function cardHtml(l, followupWorst){
   // cold ones included.
   const cardClass = `card ${showWarm?'haswarm':''}${worst ? ' clickable' : ''}`.trim();
   const cardAttrs = ` data-account="${escAttr(l.co)}"${worst ? ` data-contact-id="${escAttr(worst.c.id)}"` : ""}`;
+  // SHOW_SOURCE_FILTER only: a plain, category-color-independent badge
+  // ("Cooling · Tier 2") for value_chain_map accounts -- the "mínimo
+  // aceptable" from spec (per-card badge instead of a full re-grouping of
+  // sections by market_segment, lower risk to the shared groupByCategory()
+  // used by pipeline/followups/insequence alike).
+  const segmentBadge = (SHOW_SOURCE_FILTER && l.source === "value_chain_map" && l.market_segment)
+    ? (() => {
+        const seg = l.market_segment.split(";")[0].replace(/\s*\(Tier \d\)/, "");
+        const t = (l.tier || "").split(";")[0];
+        return `<span class="badge segment" title="value_chain_map">${seg}${t ? " · " + t : ""}</span>`;
+      })()
+    : "";
   return `<div class="${cardClass}" role="listitem"${cardAttrs}>${warm}
     <div class="cbody">
       <div>
-        <div class="co">${l.co}<span class="badge cat-${l.cat}" title="${CATS[l.cat].full}"><span class="cd" aria-hidden="true"></span>${l.cat}</span></div>
+        <div class="co">${l.co}<span class="badge cat-${l.cat}" title="${CATS[l.cat].full}"><span class="cd" aria-hidden="true"></span>${l.cat}</span>${segmentBadge}</div>
         ${badge}
         ${closedBadge}
         ${contactBlock(l, active, followupWorst)}
@@ -1477,7 +1529,7 @@ function renderSections(){
   // adding Replied/Stopped.
   bindCloseActions(el("#list"));
 }
-function renderAll(){ renderFollowups(); renderChips(); renderSort(); renderTiles(); renderSections(); }
+function renderAll(){ renderFollowups(); renderSourceChips(); renderChips(); renderSort(); renderTiles(); renderSections(); }
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Sheet/CSV stage was always text ("Not Contacted", "First Touch (Email)",
@@ -1513,6 +1565,13 @@ async function loadLeads(){
     co: a.account_name,
     cat: a.company_category,
     priority: a.priority,
+    // value_chain_map source columns -- inert unless SHOW_SOURCE_FILTER reads
+    // them (see feature flag comment near SHOW_WARM_INTROS). "engine" is the
+    // default for every pre-existing row, which never had a `source` value.
+    source: a.source || "engine",
+    market_segment: a.market_segment || "",
+    tier: a.tier || "",
+    icp_status: a.icp_status || "",
     signal: {
       // Classified once here (not re-classified in cardHtml) so every
       // consumer -- render, fresh(), compareLeads() -- agrees on whether a
