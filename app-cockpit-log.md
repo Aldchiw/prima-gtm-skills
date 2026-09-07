@@ -311,3 +311,29 @@ Enriquecidos viven en output/needs_contact*.csv — NADA en leads_master ni Supa
 - FLAG: Battery Storage 0/9 VERIFIED (gigantes catch-all). ABB-tipo dominios raros (global.abb) -> falsos NOT_FOUND (correcto, no invento).
 - GASTO batch 11.40cr; saldo 18.15 -> 6.75. Discrepancia arqueo ~0.30cr (~$0.03) a revisar. SALDO BAJO -> recargar antes de mas pago.
 - SESION TOTAL ~15.6cr (22.35->6.75). VERIFIED nuevos: 32 (7 Needs-contact + 25 value_chain).
+
+## 2026-09-07 — Cierre: sync engine↔Supabase + value_chain source + UI del source + owners (resumen consolidado)
+
+1. **SYNC engine→Supabase (`scripts/sync-supabase.js`)** — sigue como quedó construido/validado en prod (ver sesión 2026-08-31): REGLA DE ORO, el equipo siempre gana — nunca toca `stage`/`last_touch_at`/`team_status`/`notes`/`touches`/ids. Credencial `SUPABASE_SERVICE_ROLE` en `.env` (raíz, gitignored, nunca en chat, solo la pone Aldahir). Comando: `node scripts/sync-supabase.js` (dry-run) / `--apply` (escribe), siempre con respaldo antes de `--apply`.
+
+2. **Ingesta value_chain_map (`scripts/ingest-value-chain.js`)** — ingiere `output/value_chain_map.csv` filtrado a `icp_status==IN`: **86 cuentas IN** procesadas. Dedup exact-match primero, luego prefix-match seguro (ambos lados normalizados a 4+ caracteres) — nunca fuzzy suelto (lección de la vez que "Mitsubishi Power" casi matcheó contra "Mitsubishi Electric Power Products"). Nombres cortos (<4 char, ej. "Eos") se reportan `ambiguous_short` y NUNCA se auto-mergean; único override manual confirmado: `Eos -> Eos Energy Enterprises` (`CONFIRMED_MERGE_OVERRIDES`, humano-confirmado, no algorítmico). Dos formas de escritura: MERGE (cuenta ya existe -> solo pisa las **4 columnas nuevas** `source`/`market_segment`/`tier`/`icp_status`, todo lo demás protegido) vs INSERT (cuenta nueva -> fila completa + contacto si venía con nombre real en value_chain_batch/sample.csv). `assigned_user_id` nunca lo toca este script, ni en insert ni en merge. Dry-run por defecto, `--apply` para escribir de verdad.
+
+3. **UI del source en `docs/index.html`** — filtro engine/value_chain detrás del feature flag `SHOW_SOURCE_FILTER`; badge de `market_segment` por cuenta; indicador de email sin verificar; vista que junta las 86 cuentas de value_chain de un jalón (cruzando distintos lifecycle states) con conteos estables por chip de source; news feed con split New (<30d)/All; vista "Needs contact" para cuentas sin contacto real.
+
+4. **Asignación de dueños** — `accounts.assigned_user_id` ya está poblado en Supabase (vía writes manuales directos, fuera de estos scripts — `sync-supabase.js` e `ingest-value-chain.js` lo protegen y nunca lo tocan). `scripts/add-owner-to-csv.js` lee `accounts.assigned_user_id` + `users.email` -> nombre limpio (diccionario fijo `OWNER_NAME_BY_EMAIL`, nunca adivinado) y lo pega como columna `assigned_owner` DIRECTO en `output/leads_master.csv` (backup automático a `leads_master.backup-owner.csv` antes de escribir, idempotente — reintentable sin duplicar columna). `scripts/sync-sheet.js` sube ese `leads_master.csv` (ya con `assigned_owner`) al Sheet de Zadrac ("Prima Leads", Sheet1) vía `google-key.json` (service account, gitignored) + paquete `googleapis`; overwrite completo del rango usado (nunca append), preservando `team_status`/`notes` del Sheet (los lee antes de limpiar y los vuelve a pegar por `account_name|contact_name`).
+
+5. **Flujo de 3 pasos por batch** (manual, en este orden):
+   (a) engine genera/actualiza `output/leads_master.csv`
+   (b) `node scripts/add-owner-to-csv.js` -- pega `assigned_owner`
+   (c) `node scripts/sync-sheet.js` -- sube todo al Sheet de Zadrac
+
+6. **Value_chain: dueños temporales** — todas las cuentas nuevas de value_chain se asignaron a **Aldahir** por ahora. **Cooling -> pendiente de reasignar a Manu** (no hecho todavía).
+
+PENDIENTES:
+1. Sync automático del Sheet (hoy los 3 pasos del flujo son manuales).
+2. Asignación de dueños por vertical real (value_chain hoy está temporalmente todo en Aldahir; falta repartir Cooling a Manu y confirmar el resto).
+3. Historial de noticias acumulado por cuenta (tabla `signals` nueva + modal tipo FUPs) -- diseño ya cerrado en sesión 2026-08-30 (parte 2)/2026-08-31, no arrancado.
+4. Refrescar señales/noticias viejas (muchas con 100-500+ días de antigüedad) -- canal engine, no cockpit.
+
+- **Prompt de arranque próxima sesión:**
+  _"Cerramos con: sync engine→Supabase (scripts/sync-supabase.js, regla de oro) y la ingesta value_chain_map (scripts/ingest-value-chain.js, 86 IN, dedup exact/prefix + override manual Eos) ya construidos y aplicados; UI del source en docs/index.html (filtro engine/value_chain tras SHOW_SOURCE_FILTER, badge de market_segment, vista de las 86 juntas, news feed New/All, Needs contact); flujo de 3 pasos por batch (engine -> add-owner-to-csv.js -> sync-sheet.js) para refrescar assigned_owner en el Sheet de Zadrac. Pendiente: sync automático del Sheet, terminar de repartir dueños reales por vertical (Cooling -> Manu, hoy todo en Aldahir), historial acumulado de noticias por cuenta (tabla signals, diseño ya cerrado), y refrescar señales viejas. Paso a paso, uno a la vez."_
