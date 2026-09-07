@@ -337,3 +337,27 @@ PENDIENTES:
 
 - **Prompt de arranque próxima sesión:**
   _"Cerramos con: sync engine→Supabase (scripts/sync-supabase.js, regla de oro) y la ingesta value_chain_map (scripts/ingest-value-chain.js, 86 IN, dedup exact/prefix + override manual Eos) ya construidos y aplicados; UI del source en docs/index.html (filtro engine/value_chain tras SHOW_SOURCE_FILTER, badge de market_segment, vista de las 86 juntas, news feed New/All, Needs contact); flujo de 3 pasos por batch (engine -> add-owner-to-csv.js -> sync-sheet.js) para refrescar assigned_owner en el Sheet de Zadrac. Pendiente: sync automático del Sheet, terminar de repartir dueños reales por vertical (Cooling -> Manu, hoy todo en Aldahir), historial acumulado de noticias por cuenta (tabla signals, diseño ya cerrado), y refrescar señales viejas. Paso a paso, uno a la vez."_
+
+---
+
+## NOTA — este archivo es la fuente de verdad de reglas + estado del cockpit
+
+app-cockpit-log.md es el documento único que consolida tanto el ESTADO (qué se ha hecho, cronológico) como las REGLAS FUNCIONALES del cockpit (cómo debe comportarse). No existe un cockpit-rules.md separado — se evaluó crearlo y se descartó para no duplicar, porque las reglas ya viven aquí (regla de oro, classifySignal, Needs contact, acciones de cierre, asignación de dueños, modelo de source, flujo a Zadrac, etc.). Cualquier canal/persona que retome el cockpit lee ESTE archivo primero.
+
+### Pendientes de documentación (para una sesión futura, no urgente):
+- PRODUCT.md y DESIGN.md están DESACTUALIZADOS: describen el prototipo estático viejo (docs/outreach-cockpit.html, sample data de agosto), no la app real en vivo (docs/index.html + Supabase). Reescribirlos o marcarlos como obsoletos.
+
+### Pendientes funcionales / próximos cambios (platicados con Zadrac, se harán en canal dedicado):
+1. Buscador de contactos en "My leads" (buscar por nombre/similitud).
+2. Cerrar (Closed) por CONTACTO, no por empresa (excepción: si es el único contacto, la empresa entera va a Closed).
+3. Botón de LinkedIn + paso intermedio antes de secuencia: al iniciar secuencia, abrir el perfil de LinkedIn del contacto automáticamente + caja de correo (parqueada, sin envío real aún); flujo abre LinkedIn → confirmación → secuencia.
+4. BUG: no se guardan los comentarios de FUPs (touches) — investigar y arreglar.
+5. FUPs como desplegable: cajita colapsable tipo "You have 9 pending follow-ups" que se despliega, overdue primero. En inglés.
+
+### Pendientes de infraestructura / datos (de sesiones previas, siguen vivos):
+- Automatizar el sync del Sheet de Zadrac (hoy manual, 3 pasos: engine → add-owner-to-csv.js → sync-sheet.js).
+- Asignación de dueños por vertical real en el front (hoy value_chain todo a Aldahir; Cooling → Manu pendiente).
+- Historial de noticias acumulado por cuenta (tabla signals nueva + engine acumula en vez de sobrescribir).
+- Refrescar señales viejas (el engine busca noticias nuevas para cuentas con señal de 100-500+ días).
+
+---
