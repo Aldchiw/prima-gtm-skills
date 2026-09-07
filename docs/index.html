@@ -891,6 +891,12 @@ async function saveComment(wrap, contact, fupLabel){
   const note = wrap.querySelector(".comment-note");
   const commentText = textarea.value;
   const replied = repliedCb.checked;
+  // FIX 2: never overwrite an existing comment with an empty one (unless
+  // the user is marking Replied). Prevents the accidental wipe we saw.
+  if (!commentText.trim() && !replied) {
+    if (note) { note.textContent = "Write a comment first"; note.className = "comment-note err"; }
+    return;
+  }
   saveBtn.disabled = true;
   textarea.disabled = true;
   repliedCb.disabled = true;
@@ -1167,6 +1173,20 @@ document.addEventListener("keydown", e => { if(e.key==="Escape" && !el("#seqOver
 // current FUP last) for the touch modal. Same known simplification
 // previousStageText() itself carries (FUP 1's previous always reads as
 // "First Touch (Email)").
+// FIX 3: the ladder hard-codes "First Touch (Email)" as the first step
+// (previousStageText's known simplification), so a contact whose first
+// touch was LinkedIn had its comment stored under "First Touch (LinkedIn)"
+// and never matched -> invisible in the modal. This returns the first-touch
+// label the contact ACTUALLY has a touch for (preferring one with a
+// comment), falling back to Email.
+function firstTouchLabelFor(contact){
+  const ts = contact.touches || [];
+  const withComment = ts.find(t => t.fup_label && t.fup_label.indexOf("First Touch") === 0 && t.comment);
+  if (withComment) return withComment.fup_label;
+  const any = ts.find(t => t.fup_label && t.fup_label.indexOf("First Touch") === 0);
+  return any ? any.fup_label : "First Touch (Email)";
+}
+
 function touchHistorySteps(contact){
   const current = contact.stage_text;
   const steps = [];
@@ -1176,6 +1196,11 @@ function touchHistorySteps(contact){
     label = previousStageText(label);
   }
   if (current && current !== "Not Contacted") steps.push(current);
+  // FIX 3: swap the hard-coded first-touch step for the variant this
+  // contact really used (Email vs LinkedIn), so its comment shows.
+  if (steps.length && steps[0].indexOf("First Touch") === 0) {
+    steps[0] = firstTouchLabelFor(contact);
+  }
   return steps;
 }
 
@@ -1281,7 +1306,11 @@ function touchModalHtml(contact, accountName){
 // pipeline/Followups -- a comment/Replied-on-the-comment never changes the
 // contact's stage or set membership (that's markReplied(), still hidden).
 async function saveModalComment(contact){
-  await saveComment(el("#touchModal"), contact, contact.stage_text);
+  // FIX 1: scope to the bottom write zone's OWN fields, not the whole
+  // modal -- with a history "Edit" box open, the whole-modal query grabbed
+  // the FIRST .comment-textarea (the history one) and misrouted the text.
+  const wz = el("#touchModal").querySelector(".touch-writezone");
+  await saveComment(wz, contact, contact.stage_text);
   const historyEl = el("#touchModal").querySelector(".touch-history");
   if (historyEl) historyEl.innerHTML = touchHistoryHtml(contact);
 }
@@ -1303,7 +1332,7 @@ function openTouchModal(contact, accountName){
   el("#touchModal").dataset.contactId = contact.id;
   el("#touchModal").innerHTML = touchModalHtml(contact, accountName);
   el("#touchModal").querySelector(".touch-close").onclick = closeTouchModal;
-  el("#touchModal").querySelector(".comment-save").onclick = () => saveModalComment(contact);
+  el("#touchModal").querySelector(".touch-writezone .comment-save").onclick = () => saveModalComment(contact);
   const overlay = el("#touchOverlay");
   overlay.hidden = false;
   document.body.style.overflow = "hidden";
