@@ -63,6 +63,12 @@
   .cat-Cat1{--catc:var(--cat1)} .cat-Cat2{--catc:var(--cat2)} .cat-Cat3{--catc:var(--cat3)} .cat-Cat4{--catc:var(--cat4)}
 
   .sortctl{display:flex;align-items:center;gap:10px}
+  .searchwrap{margin-bottom:14px}
+  #leadsearch{width:100%;font-family:var(--sans);font-size:13.5px;color:var(--ink);
+    background:var(--surface);border:1px solid var(--border);border-radius:9px;
+    padding:10px 14px;outline:none;transition:.12s}
+  #leadsearch:focus{border-color:var(--border-2)}
+  #leadsearch::placeholder{color:var(--ink-3)}
 
   .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
   .tiles.cols-5{grid-template-columns:repeat(5,1fr)}
@@ -343,6 +349,10 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
     <h2>Your pipeline — by category</h2>
   </div>
 
+  <div class="searchwrap" id="searchwrap">
+    <input id="leadsearch" type="search" placeholder="Search your leads by contact or company…" autocomplete="off" aria-label="Search leads">
+  </div>
+
   <div class="chips" id="sourcechips" role="group" aria-label="Filter by source"></div>
 
   <div class="controls">
@@ -391,6 +401,9 @@ const SHOW_WARM_INTROS = false;
 // either way, since that alone is inert/harmless, but nothing else new does
 // anything when this is off).
 const SHOW_SOURCE_FILTER = true;
+// Feature flag: contact/company search over My leads. Searches across
+// pipeline/in-sequence/closed at once, ignoring the active view bucket.
+const SHOW_LEAD_SEARCH = true;
 
 /* DATA:START — generado por scripts/generate-cockpit.js, no editar a mano */
 const CATS = {
@@ -415,7 +428,7 @@ const SORTS = [
   {k:"stage", label:"Most advanced"}
 ];
 
-const state = {user:"me", cat:"all", source:"all", warmOnly:false, view:"pipeline", sort: SHOW_WARM_INTROS ? "warm" : "fresh", activeContact:{}};
+const state = {user:"me", cat:"all", source:"all", warmOnly:false, view:"pipeline", sort: SHOW_WARM_INTROS ? "warm" : "fresh", activeContact:{}, q:""};
 const el = s => document.querySelector(s);
 const initials = n => n.split(" ").map(w=>w[0]).slice(0,2).join("");
 function sigColor(s){ if(s.type==="none") return "var(--stale)"; return s.age<=7 ? "var(--good)" : "var(--stale)"; }
@@ -536,7 +549,22 @@ function viewBaseLeads(){
 // Which of the four above state.view currently browses. Shared by
 // filtered()/renderChips()/renderSections() so the pipeline listing and the
 // "All"/category counters always agree on what's on screen.
+// #1 search: an account matches if its company name OR any of its named
+// contacts' names contains the query (case-insensitive, partial).
+function matchesQuery(l, q){
+  if ((l.co || "").toLowerCase().includes(q)) return true;
+  return realContactsOf(l).some(c => (c.name || "").toLowerCase().includes(q));
+}
+// The search set: ALL of this user's leads that match the query, across
+// every lifecycle bucket (pipeline/in-sequence/closed) -- so you find a
+// contact regardless of where they sit. Overrides the view bucket below.
+function mySearchLeads(){
+  const q = state.q.toLowerCase();
+  return myAllLeads().filter(l => matchesQuery(l, q));
+}
+
 function currentBaseLeads(){
+  if (SHOW_LEAD_SEARCH && state.q) return mySearchLeads();
   if (SHOW_SOURCE_FILTER && state.source === "value_chain_map") return myValueChainLeads();
   return viewBaseLeads();
 }
@@ -1549,7 +1577,7 @@ function renderNewsFeed(){
 }
 
 function renderSections(){
-  if(state.view==="newsfeed"){ renderNewsFeed(); return; }
+  if(state.view==="newsfeed" && !state.q){ renderNewsFeed(); return; }
   const rows = filtered();
   const mine = currentBaseLeads();
   el("#summary").textContent = rows.length===mine.length ? "" : `Showing ${rows.length} of ${mine.length}`;
@@ -1561,7 +1589,7 @@ function renderSections(){
       ? `<div class="empty">No accounts need a contact</div>`
       : `<div class="empty">No leads match this filter<br><button type="button" class="clearbtn">Clear filters</button></div>`;
     const clearBtn = el(".clearbtn");
-    if (clearBtn) clearBtn.onclick = () => { state.cat="all"; state.warmOnly=false; renderAll(); };
+    if (clearBtn) clearBtn.onclick = () => { state.cat="all"; state.warmOnly=false; state.q=""; const si=el("#leadsearch"); if(si) si.value=""; renderAll(); };
     return;
   }
   const groups = groupByCategory(rows, l => l.cat);
@@ -1722,6 +1750,11 @@ el("#sendBtn").onclick = async () => {
 };
 
 el("#signoutBtn").onclick = async () => { await sb.auth.signOut(); };
+
+// #1 search box: live-filter My leads by contact/company. Lives in static
+// markup so renderAll() never re-creates it (keeps focus + typed text).
+if (!SHOW_LEAD_SEARCH) { const sw = el("#searchwrap"); if (sw) sw.hidden = true; }
+el("#leadsearch").oninput = (e) => { state.q = e.target.value.trim(); renderAll(); };
 
 sb.auth.onAuthStateChange((event, session) => {
   if (session) {

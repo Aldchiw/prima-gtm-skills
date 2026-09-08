@@ -338,6 +338,24 @@ PENDIENTES:
 - **Prompt de arranque próxima sesión:**
   _"Cerramos con: sync engine→Supabase (scripts/sync-supabase.js, regla de oro) y la ingesta value_chain_map (scripts/ingest-value-chain.js, 86 IN, dedup exact/prefix + override manual Eos) ya construidos y aplicados; UI del source en docs/index.html (filtro engine/value_chain tras SHOW_SOURCE_FILTER, badge de market_segment, vista de las 86 juntas, news feed New/All, Needs contact); flujo de 3 pasos por batch (engine -> add-owner-to-csv.js -> sync-sheet.js) para refrescar assigned_owner en el Sheet de Zadrac. Pendiente: sync automático del Sheet, terminar de repartir dueños reales por vertical (Cooling -> Manu, hoy todo en Aldahir), historial acumulado de noticias por cuenta (tabla signals, diseño ya cerrado), y refrescar señales viejas. Paso a paso, uno a la vez."_
 
+### Sesión 2026-09-07 — Canal cockpit (nuevo): BUG #4 comentarios de FUP RESUELTO
+DIAGNÓSTICO (no era la base):
+- Guardar y leer de `touches` FUNCIONAN — RLS/permisos bien (verificado con upsert directo y con la lectura anidada accounts→contacts→touches desde la consola del navegador). El "no se guarda" era de la UI del modal, no de Supabase.
+- 3 defectos reales:
+  ① MISRUTEO: `saveModalComment` pasaba el modal ENTERO a `saveComment`, que tomaba el PRIMER `.comment-textarea` (el de un "Edit" del historial si estaba abierto) → el texto se guardaba bajo la etiqueta equivocada. Confirmado con datos reales: "prubea 123f" quedó bajo First Touch (Email) y el FUP 1 quedó vacío.
+  ② GUARDAR VACÍO pisaba el comentario existente con "" (y "" se pinta como "No comment yet").
+  ③ Comentarios bajo "First Touch (LinkedIn)" INVISIBLES: la escalera (`touchHistorySteps`/`previousStageText`) hard-codea "First Touch (Email)".
+FIXES (docs/index.html):
+- ① `saveModalComment` scopea al `.touch-writezone`; `openTouchModal` cablea el save por `.touch-writezone .comment-save`.
+- ② `saveComment`: guard — si el textarea está vacío y no hay Replied, avisa "Write a comment first" y NO escribe (no pisa).
+- ③ nueva `firstTouchLabelFor(contact)`; `touchHistorySteps` usa la variante real de First Touch (Email/LinkedIn) del contacto.
+DEPLOY: commit `3f9d50b` (autor Aldahir) + mini-commit `53f5f1d` por GitHub web (destraba Vercel). Verificado en vivo (marcador `firstTouchLabelFor` en el HTML desplegado + prueba funcional de los 3). Local sincronizado (ff a 53f5f1d).
+BACKUP: `docs/index.html.bak-fupfix` (copia pre-fix).
+ENTORNO/APRENDIZAJE (Cowork vs Claude Code): esta sesión se hizo en Cowork (Claude en la nube + puente a la compu), NO en Claude Code. El puente (device_bash) NO borra archivos (deja `.lock` trabados), NO tiene credenciales de GitHub (push/ls-remote fallan), y su terminal en la nube no llega a vercel.app. Práctica: diagnóstico+edición por Cowork; git/push/deploy/verify desde la terminal propia (o Claude Code).
+CLEANUP PENDIENTE: borrar fila de prueba `DIAG TEST` en `touches` (contacto Michael Pankhurst).
+SIGUIENTES DEL CANAL (orden acordado): #1 buscador de contactos en My leads → #5 FUPs desplegable → #3 LinkedIn+paso intermedio → #2 Closed por contacto (RLS, el más delicado).
+
+
 ---
 
 ## NOTA — este archivo es la fuente de verdad de reglas + estado del cockpit
@@ -351,7 +369,7 @@ app-cockpit-log.md es el documento único que consolida tanto el ESTADO (qué se
 1. Buscador de contactos en "My leads" (buscar por nombre/similitud).
 2. Cerrar (Closed) por CONTACTO, no por empresa (excepción: si es el único contacto, la empresa entera va a Closed).
 3. Botón de LinkedIn + paso intermedio antes de secuencia: al iniciar secuencia, abrir el perfil de LinkedIn del contacto automáticamente + caja de correo (parqueada, sin envío real aún); flujo abre LinkedIn → confirmación → secuencia.
-4. BUG: no se guardan los comentarios de FUPs (touches) — investigar y arreglar.
+4. ✅ RESUELTO (2026-09-07): comentarios de FUPs (touches). No era la base — 3 defectos de UI (misruteo del textarea, guardar vacío pisaba, First Touch LinkedIn invisible). Commit 3f9d50b + mini-commit 53f5f1d, desplegado y verificado. Ver bitácora.
 5. FUPs como desplegable: cajita colapsable tipo "You have 9 pending follow-ups" que se despliega, overdue primero. En inglés.
 
 ### Pendientes de infraestructura / datos (de sesiones previas, siguen vivos):
