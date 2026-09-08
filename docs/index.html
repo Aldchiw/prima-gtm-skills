@@ -450,7 +450,7 @@ const SORTS = [
   {k:"stage", label:"Most advanced"}
 ];
 
-const state = {user:"me", cat:"all", source:"all", warmOnly:false, view:"pipeline", sort: SHOW_WARM_INTROS ? "warm" : "fresh", activeContact:{}, q:"", fupOpen:false};
+const state = {user:"me", cat:"all", source:"all", warmOnly:false, view:"pipeline", sort: SHOW_WARM_INTROS ? "warm" : "fresh", activeContact:{}, q:"", fupOpen:false, liStep:null};
 const el = s => document.querySelector(s);
 const initials = n => n.split(" ").map(w=>w[0]).slice(0,2).join("");
 function sigColor(s){ if(s.type==="none") return "var(--stale)"; return s.age<=7 ? "var(--good)" : "var(--stale)"; }
@@ -926,7 +926,13 @@ function showChannelPicker(btn){
   // LinkedIn mini-step (open their profile + a paused email box + a confirm)
   // instead of the plain picker -- nudges the LinkedIn action before marking.
   if (LINKEDIN_STEP && contact && normalizeUrl(contact.linkedin) && contact.email) {
-    showLinkedInStep(wrap, contact);
+    // Store the step in state and re-render (NOT a DOM injection) so it
+    // SURVIVES the re-render Supabase fires when you return from the
+    // LinkedIn tab (onAuthStateChange -> loadLeads -> renderAll).
+    const li = normalizeUrl(contact.linkedin);
+    if (li) window.open(li, "_blank", "noopener");
+    state.liStep = contactId;
+    renderSections();
     return;
   }
   wrap.innerHTML = `<span class="startpick-label">Channel:</span>
@@ -940,20 +946,16 @@ function showChannelPicker(btn){
 // blocked), shows a PAUSED email box (placeholder, disabled -- real sending
 // is a later phase), and a confirm button that reuses startSequence() to
 // mark First Touch (LinkedIn). Cancel just re-renders back to the card.
-function showLinkedInStep(wrap, contact){
-  const li = normalizeUrl(contact.linkedin);
-  if (li) window.open(li, "_blank", "noopener");
-  wrap.innerHTML = `<div class="li-step">
+function liStepHtml(active){
+  return `<span class="startwrap" data-contact-id="${escAttr(active.id)}"><div class="li-step">
     <div class="li-step-note">LinkedIn profile opened \u2014 connect / message there first.</div>
     <textarea class="li-step-email" placeholder="Email \u2014 sending coming soon" disabled></textarea>
     <div class="li-step-row">
-      <button type="button" class="start-channel li-confirm" data-contact-id="${escAttr(contact.id)}" data-channel="LinkedIn">Done on LinkedIn \u2192 Start sequence</button>
+      <button type="button" class="start-channel li-confirm" data-contact-id="${escAttr(active.id)}" data-channel="LinkedIn">Done on LinkedIn \u2192 Start sequence</button>
       <button type="button" class="li-cancel">Cancel</button>
       <span class="startpick-note"></span>
     </div>
-  </div>`;
-  wrap.querySelector(".li-confirm").onclick = (e) => startSequence(e.currentTarget);
-  wrap.querySelector(".li-cancel").onclick = () => renderSections();
+  </div></span>`;
 }
 
 // Same safe-save pattern as the rest: write to Supabase first, only touch
@@ -1166,6 +1168,7 @@ function stageSelectHtml(active){
 // Pipeline-only, stage-0 contacts only: a single button that expands into
 // an inline Email/LinkedIn channel picker (see showChannelPicker/startSequence).
 function startSequenceHtml(active){
+  if (LINKEDIN_STEP && state.liStep === active.id) return liStepHtml(active);
   return `<span class="startwrap" data-contact-id="${escAttr(active.id)}"><button type="button" class="start-seq">Start sequence</button></span>`;
 }
 
@@ -1679,6 +1682,12 @@ function renderSections(){
   });
   el("#list").querySelectorAll(".start-seq").forEach(b=>{
     b.onclick = () => showChannelPicker(b);
+  });
+  el("#list").querySelectorAll(".li-confirm").forEach(b=>{
+    b.onclick = () => { state.liStep = null; startSequence(b); };
+  });
+  el("#list").querySelectorAll(".li-cancel").forEach(b=>{
+    b.onclick = () => { state.liStep = null; renderSections(); };
   });
   // Pipeline/"In sequence" cards get a Done/Replied/Stopped footer whenever
   // an account has an in-flow contact (see cardHtml -> inSequenceFooterHtml)

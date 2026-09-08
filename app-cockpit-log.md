@@ -367,6 +367,11 @@ SIGUIENTES DEL CANAL (orden acordado): #1 buscador de contactos en My leads → 
 - Impl: state.fupOpen; renderFollowupSection() con param `collapsible`; renderFollowups() lo pasa; el toggle re-renderiza. N = cuentas overdue.
 - Commit 8ae95cb (autor Aldahir, tras pull --rebase --autostash) + mini-commit GitHub web. Verificado en vivo ("You have 22 pending follow-ups").
 
+### Sesión 2026-09-08 — Canal cockpit: Cambio #3 mini-paso LinkedIn antes de secuencia
+- Al dar "Start sequence" en un contacto con LinkedIn Y email: abre su perfil de LinkedIn en pestaña nueva + muestra una caja de correo EN PAUSA (deshabilitada, placeholder "Email \u2014 sending coming soon") + botón "Done on LinkedIn \u2192 Start sequence" que marca First Touch (LinkedIn). Si no tiene ambos, queda el picker Email/LinkedIn de siempre. Feature flag LINKEDIN_STEP.
+- BUG encontrado y corregido en la misma sesión: la v1 inyectaba el panel al DOM y Supabase re-renderiza al volver de la pestaña (onAuthStateChange -> loadLeads), borrandolo ("aparecia y se quitaba, no dejaba confirmar"). Fix v2: el mini-paso vive en state.liStep y se pinta como parte de la tarjeta (startSequenceHtml -> liStepHtml), asi sobrevive cualquier re-render; window.open una sola vez en el click; li-confirm/li-cancel cableados en renderSections.
+- Commit de75ca9 (v1) + fix v2, autor Aldahir + mini-commit GitHub web para el deploy.
+
 ---
 
 ## NOTA — este archivo es la fuente de verdad de reglas + estado del cockpit
