@@ -362,6 +362,11 @@ SIGUIENTES DEL CANAL (orden acordado): #1 buscador de contactos en My leads → 
 - Commit 06c7214 (autor Aldahir) + mini-commit por GitHub web para el deploy. Verificado en vivo (barra visible + marcador mySearchLeads en el HTML desplegado).
 - APRENDIZAJE deploy: Vercel necesita el mini-commit por GitHub web SIEMPRE para desplegar, aunque el commit local sea tuyo (no solo con commits de Claude). Cada deploy = push + mini-commit web.
 
+### Sesión 2026-09-08 — Canal cockpit: Cambio #5 FUPs colapsable
+- La sección Followups (arriba) ahora es una cajita colapsable: por defecto muestra "You have N pending follow-ups \u25b8"; al picar se despliegan las tarjetas con Done/Stopped. Sin overdue: "You're all caught up". Todo en inglés. Feature flag COLLAPSE_FOLLOWUPS.
+- Impl: state.fupOpen; renderFollowupSection() con param `collapsible`; renderFollowups() lo pasa; el toggle re-renderiza. N = cuentas overdue.
+- Commit 8ae95cb (autor Aldahir, tras pull --rebase --autostash) + mini-commit GitHub web. Verificado en vivo ("You have 22 pending follow-ups").
+
 ---
 
 ## NOTA — este archivo es la fuente de verdad de reglas + estado del cockpit

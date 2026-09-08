@@ -144,6 +144,16 @@
   .startpick-note{font-size:11px;font-weight:600}
   .startpick-note.ok{color:var(--good)}
   .startpick-note.err{color:var(--red-text)}
+  .li-step{display:flex;flex-direction:column;gap:8px;padding:8px 0}
+  .li-step-note{font-size:12px;color:var(--ink-2);font-weight:500}
+  .li-step-email{font-family:var(--sans);font-size:12.5px;color:var(--ink-2);background:var(--bg);
+    border:1px dashed var(--border-2);border-radius:8px;padding:8px 10px;min-height:52px;resize:none;cursor:not-allowed}
+  .li-step-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .li-confirm{font-family:var(--sans);font-size:12px;font-weight:600;color:#fff;
+    background:var(--link);border:none;border-radius:8px;padding:6px 14px;cursor:pointer}
+  .li-confirm:hover{background:color-mix(in srgb, var(--link) 85%, black)}
+  .li-cancel{font-family:var(--sans);font-size:12px;font-weight:600;color:var(--ink-2);
+    background:transparent;border:1px solid var(--border);border-radius:8px;padding:6px 12px;cursor:pointer}
   .fu-section{margin-bottom:28px;background:var(--red-soft);border-radius:14px;padding:16px 16px 4px}
   .fu-badge{display:flex;align-items:center;gap:8px;margin-top:5px;flex-wrap:wrap}
   .fu-stagereal{font-family:var(--mono);font-size:11px;color:var(--ink-2)}
@@ -412,6 +422,9 @@ const SHOW_LEAD_SEARCH = true;
 // Feature flag: collapse the Followups section into a "You have N pending
 // follow-ups" bar that expands on click (#5). Off -> old always-open list.
 const COLLAPSE_FOLLOWUPS = true;
+// Feature flag: LinkedIn mini-step before starting a sequence when the
+// contact has both a LinkedIn URL and an email (#3). Off -> plain picker.
+const LINKEDIN_STEP = true;
 
 /* DATA:START — generado por scripts/generate-cockpit.js, no editar a mano */
 const CATS = {
@@ -907,10 +920,39 @@ async function markStopped(btn){
 function showChannelPicker(btn){
   const wrap = btn.parentElement;
   const contactId = wrap.dataset.contactId;
+  const contact = findContactById(contactId);
+  // #3: when the contact has BOTH a LinkedIn URL and an email, run the
+  // LinkedIn mini-step (open their profile + a paused email box + a confirm)
+  // instead of the plain picker -- nudges the LinkedIn action before marking.
+  if (LINKEDIN_STEP && contact && normalizeUrl(contact.linkedin) && contact.email) {
+    showLinkedInStep(wrap, contact);
+    return;
+  }
   wrap.innerHTML = `<span class="startpick-label">Channel:</span>
     <button type="button" class="start-channel" data-contact-id="${escAttr(contactId)}" data-channel="Email">Email</button>
     <button type="button" class="start-channel" data-contact-id="${escAttr(contactId)}" data-channel="LinkedIn">LinkedIn</button>`;
   wrap.querySelectorAll(".start-channel").forEach(b => { b.onclick = () => startSequence(b); });
+}
+
+// #3: LinkedIn mini-step. Opens the contact's LinkedIn profile in a new tab
+// (the Start-sequence click is a real user gesture, so it isn't popup-
+// blocked), shows a PAUSED email box (placeholder, disabled -- real sending
+// is a later phase), and a confirm button that reuses startSequence() to
+// mark First Touch (LinkedIn). Cancel just re-renders back to the card.
+function showLinkedInStep(wrap, contact){
+  const li = normalizeUrl(contact.linkedin);
+  if (li) window.open(li, "_blank", "noopener");
+  wrap.innerHTML = `<div class="li-step">
+    <div class="li-step-note">LinkedIn profile opened \u2014 connect / message there first.</div>
+    <textarea class="li-step-email" placeholder="Email \u2014 sending coming soon" disabled></textarea>
+    <div class="li-step-row">
+      <button type="button" class="start-channel li-confirm" data-contact-id="${escAttr(contact.id)}" data-channel="LinkedIn">Done on LinkedIn \u2192 Start sequence</button>
+      <button type="button" class="li-cancel">Cancel</button>
+      <span class="startpick-note"></span>
+    </div>
+  </div>`;
+  wrap.querySelector(".li-confirm").onclick = (e) => startSequence(e.currentTarget);
+  wrap.querySelector(".li-cancel").onclick = () => renderSections();
 }
 
 // Same safe-save pattern as the rest: write to Supabase first, only touch
