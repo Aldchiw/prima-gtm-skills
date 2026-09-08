@@ -356,6 +356,12 @@ CLEANUP PENDIENTE: borrar fila de prueba `DIAG TEST` en `touches` (contacto Mich
 SIGUIENTES DEL CANAL (orden acordado): #1 buscador de contactos en My leads → #5 FUPs desplegable → #3 LinkedIn+paso intermedio → #2 Closed por contacto (RLS, el más delicado).
 
 
+### Sesión 2026-09-08 — Canal cockpit: Cambio #1 buscador de contactos/empresa
+- Barra de búsqueda en My leads (docs/index.html): filtra por nombre de CONTACTO o EMPRESA (parcial, case-insensitive), busca en TODOS los leads del usuario (pipeline + in-sequence + closed), no solo la vista activa. Tras feature flag SHOW_LEAD_SEARCH.
+- Impl: state.q; matchesQuery(); mySearchLeads(); currentBaseLeads() lo usa como override; input en markup fijo (no pierde foco al re-render); Clear filters también limpia la búsqueda; los tiles cuentan aparte (no se descuadran), los chips de categoría sí reflejan la búsqueda.
+- Commit 06c7214 (autor Aldahir) + mini-commit por GitHub web para el deploy. Verificado en vivo (barra visible + marcador mySearchLeads en el HTML desplegado).
+- APRENDIZAJE deploy: Vercel necesita el mini-commit por GitHub web SIEMPRE para desplegar, aunque el commit local sea tuyo (no solo con commits de Claude). Cada deploy = push + mini-commit web.
+
 ---
 
 ## NOTA — este archivo es la fuente de verdad de reglas + estado del cockpit

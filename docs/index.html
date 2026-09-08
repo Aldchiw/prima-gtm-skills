@@ -154,6 +154,12 @@
   .fu-tag.fu-replied-tag{color:var(--good)}
   .fu-tag.fu-stopped-tag{color:var(--ink-3);font-weight:400}
   .fu-empty{color:var(--ink-3);font-size:12.5px;padding:14px 0}
+  .fu-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;
+    background:transparent;border:none;cursor:pointer;font-family:var(--sans);padding:4px 2px}
+  .fu-toggle-label{font-size:14px;font-weight:600;color:var(--red-text)}
+  .fu-chevron{font-size:13px;color:var(--red-text)}
+  .fu-caughtup{color:var(--ink-3);font-size:13px;font-weight:500;padding:2px 2px}
+  .fu-body{margin-top:12px}
   .fu-donewrap{display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap}
   .fu-done{font-family:var(--sans);font-size:12px;font-weight:600;color:#fff;
     background:var(--link);border:none;border-radius:8px;padding:6px 14px;cursor:pointer}
@@ -404,6 +410,9 @@ const SHOW_SOURCE_FILTER = true;
 // Feature flag: contact/company search over My leads. Searches across
 // pipeline/in-sequence/closed at once, ignoring the active view bucket.
 const SHOW_LEAD_SEARCH = true;
+// Feature flag: collapse the Followups section into a "You have N pending
+// follow-ups" bar that expands on click (#5). Off -> old always-open list.
+const COLLAPSE_FOLLOWUPS = true;
 
 /* DATA:START — generado por scripts/generate-cockpit.js, no editar a mano */
 const CATS = {
@@ -428,7 +437,7 @@ const SORTS = [
   {k:"stage", label:"Most advanced"}
 ];
 
-const state = {user:"me", cat:"all", source:"all", warmOnly:false, view:"pipeline", sort: SHOW_WARM_INTROS ? "warm" : "fresh", activeContact:{}, q:""};
+const state = {user:"me", cat:"all", source:"all", warmOnly:false, view:"pipeline", sort: SHOW_WARM_INTROS ? "warm" : "fresh", activeContact:{}, q:"", fupOpen:false};
 const el = s => document.querySelector(s);
 const initials = n => n.split(" ").map(w=>w[0]).slice(0,2).join("");
 function sigColor(s){ if(s.type==="none") return "var(--stale)"; return s.age<=7 ? "var(--good)" : "var(--stale)"; }
@@ -996,12 +1005,35 @@ async function startSequence(btn){
 // the pipeline's own cardHtml(l) call (no second arg) gets "Start sequence"
 // instead. Also reuses groupByCategory()/categorySectionsHtml() so these
 // sections get the same category headers as the pipeline.
-function renderFollowupSection(selector, rows, title, extraClass, emptyText){
+function renderFollowupSection(selector, rows, title, extraClass, emptyText, collapsible){
   const groups = groupByCategory(rows, r => r.l.cat);
   const body = groups.length
     ? categorySectionsHtml(groups, r => cardHtml(r.l, r.worst))
     : `<div class="fu-empty">${emptyText}</div>`;
   const container = el(selector);
+  // #5: collapsible follow-ups. Collapsed by default -> you first see a
+  // "You have N pending follow-ups" bar; click it to expand the cards.
+  if (collapsible) {
+    const n = rows.length;
+    if (!n) {
+      container.innerHTML = `<div class="fu-section ${extraClass}">
+        <div class="fu-caughtup">You're all caught up \u2014 no pending follow-ups.</div>
+      </div>`;
+      return;
+    }
+    const open = !!state.fupOpen;
+    container.innerHTML = `<div class="fu-section ${extraClass}">
+      <button type="button" class="fu-toggle" aria-expanded="${open}">
+        <span class="fu-toggle-label">You have ${n} pending follow-up${n===1?"":"s"}</span>
+        <span class="fu-chevron">${open ? "\u25be" : "\u25b8"}</span>
+      </button>
+      ${open ? `<div class="fu-body">${body}</div>` : ""}
+    </div>`;
+    const toggle = container.querySelector(".fu-toggle");
+    if (toggle) toggle.onclick = () => { state.fupOpen = !state.fupOpen; renderFollowups(); };
+    if (open) bindCloseActions(container);
+    return;
+  }
   container.innerHTML = `<div class="fu-section ${extraClass}">
     <div class="sechead"><h2>${title}</h2></div>
     ${body}
@@ -1027,7 +1059,7 @@ function bindCloseActions(container){
 
 function renderFollowups(){
   renderFollowupSection("#followups", followupAccounts(d => d >= 1), "Followups", "",
-    "No overdue contacts.");
+    "No overdue contacts.", COLLAPSE_FOLLOWUPS);
 }
 
 function cadence(stage){
