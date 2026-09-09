@@ -10,14 +10,19 @@ Cat1/Cat2 23→33 (Cat1 17, Cat2 16).
 REASIGNACIÓN: Cat1/Cat2 = 100% Gustavo (antes 80/20 con Gaby). UPDATE assigned_user_id
 en Supabase, backup backup_supabase_reassign_20260909_004327. Final: Gus 33 / Gaby 0 /
 Sin asignar 0. Sheet refrescado (add-owner + sync-sheet).
-R2 PARQUEADO: output/cat1cat2_candidates_r2.csv, 9 candidatas. Crusoe EXCLUIDA (guardrail
-no-contactar). Theseus/Fermi riesgo landlord. ~6 limpias sin procesar: Northern Data/Ardent,
-Vultr, PaleBlueDot, Mawson, Argo, PowerCompute — RETOMAR.
+R2 PROCESADO: cat1cat2_candidates_r2.csv -> icp-check+committee $0 -> 8 IN / 1 excluded
+(Crusoe, cliente existente). Email Hunter->icypeas: 5 VERIFIED (Northern Data/Ardent [2],
+Mawson, Argo, PowerCompute), 3 catch-all (Vultr, PaleBlueDot, Fermi -> Apollo), Theseus
+needs-contact. Costo 2.40cr; Deepline recargado (saldo ~101.51). Merge +8 cuentas/+11
+contactos (backup leads_master.backup-pre-r2.csv), Supabase +8/+10, reasignacion barrio las
+nuevas -> Cat1/Cat2 = 41 TODAS Gustavo. Sheet 300 filas. Theseus/Fermi pasaron Powered Shell
+(si compran cooling/switchgear/BESS).
 ESTRATEGIA: Cat1/Cat2 US casi agotado (~39 techo, TAM chico por diseño). Volumen futuro:
 abrir Cat5/6 (campus builders) o ampliar Cat2 con subgrupo adyacente — decisión pendiente.
-PENDIENTES: procesar R2 (~6); regla documentada 80/20→100% Gus en generate-cockpit.js +
-app-cockpit-log.md; resolver IREN (Cat1 Notion vs Cat2 sistema); Apollo para 3 catch-all;
-reintentar Greenidge; opcional regla US-nexus en icp-check.
+PENDIENTES: regla documentada 80/20→100% Gus en generate-cockpit.js +
+app-cockpit-log.md; resolver IREN (Cat1 Notion vs Cat2 sistema); Apollo para 3+3 catch-all
+(Groq/QumulusAI/Digihost + Vultr/PaleBlueDot/Fermi); reintentar Greenidge; opcional regla
+US-nexus en icp-check.
 
 ## 2026-08-24 (cierre 2) — Arranca proyecto "app editable"; stack decidido (Supabase + Vercel)
 - Recap del cierre de hoy: (a) Sheet compartido con Manu/Gustavo/Gaby como Editor, acceso general
