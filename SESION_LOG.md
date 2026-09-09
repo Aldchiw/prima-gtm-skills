@@ -1,3 +1,24 @@
+## 2026-09-09 — Cat1/Cat2: poblado +10 US, reasignación a Gustavo, R2 parqueado
+POBLADO: discovery signal-first $0 → 20 candidatas → icp-check+committee $0 (17 IN /
+3 excluded por regla: Vantage+Aligned Powered Shell, Switch ya Cat5) → DECISIÓN solo US
+(fuera 7: G42, Firmus, Yotta, Neysa, Cango, DMG, Hive) → email Hunter→icypeas 10 US:
+6 VERIFIED (Cerebras, SambaNova, WhiteFiber, Bitfarms/Keel, Sphere3D, Hyperscale/Ault),
+3 catch-all (Groq, QumulusAI, Digihost → Apollo), 1 MISS (Greenidge). Costo 2.84cr.
+Deepline 6.75→3.91cr. Merge leads_master 275→288, Supabase +10/+13 (regla de oro OK,
+backup backup_supabase_20260908_234901), Sheet 289 filas 275 team-fields preservados.
+Cat1/Cat2 23→33 (Cat1 17, Cat2 16).
+REASIGNACIÓN: Cat1/Cat2 = 100% Gustavo (antes 80/20 con Gaby). UPDATE assigned_user_id
+en Supabase, backup backup_supabase_reassign_20260909_004327. Final: Gus 33 / Gaby 0 /
+Sin asignar 0. Sheet refrescado (add-owner + sync-sheet).
+R2 PARQUEADO: output/cat1cat2_candidates_r2.csv, 9 candidatas. Crusoe EXCLUIDA (guardrail
+no-contactar). Theseus/Fermi riesgo landlord. ~6 limpias sin procesar: Northern Data/Ardent,
+Vultr, PaleBlueDot, Mawson, Argo, PowerCompute — RETOMAR.
+ESTRATEGIA: Cat1/Cat2 US casi agotado (~39 techo, TAM chico por diseño). Volumen futuro:
+abrir Cat5/6 (campus builders) o ampliar Cat2 con subgrupo adyacente — decisión pendiente.
+PENDIENTES: procesar R2 (~6); regla documentada 80/20→100% Gus en generate-cockpit.js +
+app-cockpit-log.md; resolver IREN (Cat1 Notion vs Cat2 sistema); Apollo para 3 catch-all;
+reintentar Greenidge; opcional regla US-nexus en icp-check.
+
 ## 2026-08-24 (cierre 2) — Arranca proyecto "app editable"; stack decidido (Supabase + Vercel)
 - Recap del cierre de hoy: (a) Sheet compartido con Manu/Gustavo/Gaby como Editor, acceso general
   Restringido, aviso en columnas A:W para proteger las columnas del engine; (b) milestone "cockpit
