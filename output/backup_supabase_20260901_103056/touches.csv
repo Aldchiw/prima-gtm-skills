@@ -1,0 +1,4 @@
+id,contact_id,fup_label,comment,replied,created_at,updated_at
+2,acb3f958-f26f-4329-89a1-2979e072d53f,First Touch (Email),Prueba 1,false,2026-08-30T08:06:23.573608+00:00,2026-08-30T08:06:23.552+00:00
+4,acb3f958-f26f-4329-89a1-2979e072d53f,FUP 1,Prueba 2,false,2026-08-31T23:21:11.66249+00:00,2026-08-31T23:21:10.428+00:00
+1,acb3f958-f26f-4329-89a1-2979e072d53f,FUP 2,No contesto el primero,false,2026-08-30T05:17:27.670421+00:00,2026-08-31T23:21:15.031+00:00

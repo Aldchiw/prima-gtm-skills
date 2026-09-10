@@ -1,0 +1,12 @@
+DIFF de signal_detail/signal_url: respaldo pre-sync vs Supabase actual
+Respaldo: C:/Users/Aldahir Chiw/Downloads/accounts_rows.csv
+Generado solo-lectura, ningun write a Supabase ni a otros archivos.
+
+Accounts en respaldo: 160
+Accounts actuales en Supabase: 160
+
+CATEGORIA A (regresion real -- tenia signal_url, ahora vacio): 0
+CATEGORIA B (ambos tienen url, cambio el texto del detail): 0
+CATEGORIA C (sin cambio relevante o ambos vacios, o cuenta nueva sin match en respaldo): 160
+
+=== DETALLE CATEGORIA A (0) -- restaurar estas ===

@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prima · Outreach Cockpit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --red:#DA5551; --red-soft:rgba(218,85,81,.05); --red-text:#B83530;
+    --link:#2E6DA4;
+    --ink:#1A1A1A; --ink-2:#52525B; --ink-3:#64646D;
+    --bg:#F5F6F7; --surface:#FFFFFF; --border:#E4E4E7; --border-2:#D4D4D8;
+    --cat1:#4C5A92; --cat2:#8A6A22; --cat3:#7A5C8A; --cat4:#3D7A6C;
+    --good:#3D7A52; --stale:#8B8B93;
+    --sans:"Archivo",-apple-system,BlinkMacSystemFont,sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
+    --shadow:0 1px 2px rgba(26,26,26,.04),0 4px 12px rgba(26,26,26,.05);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--sans);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased;
+    background:var(--bg);padding-bottom:56px}
+  .wrap{max-width:1000px;margin:0 auto;padding:0 24px}
+
+  header{background:rgba(245,246,247,.88);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);
+    position:sticky;top:0;z-index:20;padding:18px 0 16px;margin-bottom:32px}
+  .htop{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:11px}
+  .logo{height:28px;width:auto;flex:none;display:block}
+  .wordmark{display:flex;align-items:baseline;gap:9px;line-height:1}
+  h1{font-size:16px;font-weight:600;letter-spacing:-.01em;color:var(--ink)}
+
+  .userbar{display:flex;align-items:center;gap:12px;margin-top:16px;flex-wrap:wrap}
+  .ulabel{font-size:12px;color:var(--ink-3);font-weight:500}
+  .useg{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:3px;flex-wrap:wrap}
+  .useg button{border:none;background:transparent;color:var(--ink-2);font-family:var(--sans);font-size:13px;font-weight:500;
+    padding:6px 12px;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:.12s}
+  .useg button:hover{color:var(--ink)}
+  .useg button.on{background:var(--ink);color:#fff}
+  .avatar{width:19px;height:19px;border-radius:5px;font-size:9px;font-weight:600;display:flex;
+    align-items:center;justify-content:center;color:#fff;font-family:var(--sans)}
+  .useg button.on .avatar{outline:1px solid rgba(255,255,255,.4)}
+
+  .sechead{margin-bottom:18px}
+  .sechead h2{font-size:13px;font-weight:600;color:var(--ink-2);letter-spacing:-.005em}
+
+  .controls{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+  .chips{display:flex;gap:7px;flex-wrap:wrap}
+  .chip{font-family:var(--sans);font-size:12.5px;font-weight:500;
+    padding:7px 13px;border-radius:999px;cursor:pointer;border:1px solid var(--border);background:var(--surface);
+    color:var(--ink-2);transition:.12s;display:flex;align-items:center;gap:7px;appearance:none;-webkit-appearance:none}
+  .chip:hover{border-color:var(--border-2);color:var(--ink)}
+  .chip.on{color:#fff;border-color:var(--ink);background:var(--ink)}
+  .chip .cd{width:6px;height:6px;border-radius:50%;background:var(--catc);flex:none}
+  .chip .ct{opacity:.55}
+  .cat-Cat1{--catc:var(--cat1)} .cat-Cat2{--catc:var(--cat2)} .cat-Cat3{--catc:var(--cat3)} .cat-Cat4{--catc:var(--cat4)}
+
+  .sortctl{display:flex;align-items:center;gap:10px}
+
+  .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+  .tiles.cols-3{grid-template-columns:repeat(3,1fr)}
+  @media(max-width:640px){.tiles,.tiles.cols-3{grid-template-columns:repeat(2,1fr)}}
+  .tile{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;
+    text-align:left;cursor:pointer;appearance:none;-webkit-appearance:none;font-family:var(--sans);transition:.12s}
+  .tile:hover{border-color:var(--border-2);transform:translateY(-1px)}
+  .tile .n{font-size:26px;font-weight:600;letter-spacing:-.02em;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums}
+  .tile .l{font-size:11px;color:var(--ink-3);margin-top:8px;font-weight:500}
+  .tile.warm .n{color:var(--red)}
+  .tile.fresh .n{color:var(--good)}
+  .tile.on{background:var(--ink);border-color:var(--ink)}
+  .tile.on .n,.tile.on .l{color:#fff}
+
+  .summary{font-size:11px;color:var(--ink-3);margin-bottom:14px}
+  .summary:empty{display:none;margin-bottom:0}
+
+  .section{margin-bottom:28px}
+  .section:last-child{margin-bottom:0}
+  .sechead2{display:flex;align-items:center;gap:9px;margin-bottom:12px;padding-bottom:9px;border-bottom:1px solid var(--border)}
+  .sechead2 .catdot{width:8px;height:8px;border-radius:50%;background:var(--catc);flex:none}
+  .sechead2 h3{font-size:14px;font-weight:600;color:var(--ink);letter-spacing:-.005em}
+  .sechead2 .catcode{font-size:11px;color:var(--ink-3);font-weight:500}
+  .sechead2 .seccount{margin-left:auto;font-size:11px;color:var(--ink-3);font-weight:500}
+
+  .list{display:flex;flex-direction:column;gap:14px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:.14s}
+  .card:hover{border-color:var(--border-2);box-shadow:var(--shadow)}
+  .card.haswarm{border-color:rgba(218,85,81,.22)}
+  .warmbar{background:var(--red-soft);border-bottom:1px solid rgba(218,85,81,.14);
+    padding:10px 20px;display:flex;align-items:center;gap:9px;font-size:12.5px}
+  .warmbar .wl{font-size:11px;font-weight:600;color:var(--red-text)}
+  .warmbar .who{color:var(--ink);font-weight:400}
+  .warmbar .who b{color:var(--ink);font-weight:600}
+  .warmbar .lvl{margin-left:auto;font-size:10.5px;color:var(--red-text);border:1px solid rgba(218,85,81,.28);border-radius:999px;padding:3px 9px;font-weight:500}
+  .cbody{padding:18px 20px;display:grid;grid-template-columns:1fr auto;gap:18px}
+  .co{font-size:16px;font-weight:600;letter-spacing:-.01em;display:flex;align-items:center;gap:9px;flex-wrap:wrap;color:var(--ink)}
+  .badge{font-family:var(--sans);font-size:11px;font-weight:600;
+    padding:4px 10px 4px 8px;border-radius:999px;display:inline-flex;align-items:center;gap:6px;
+    color:var(--catc);background:color-mix(in srgb, var(--catc) 9%, white);border:1px solid color-mix(in srgb, var(--catc) 24%, white)}
+  .badge .cd{width:6px;height:6px;border-radius:50%;background:var(--catc)}
+  .contact{font-size:12.5px;color:var(--ink-2);margin-top:5px}
+  .contact b{color:var(--ink);font-weight:500}
+  .srow{margin-top:12px}
+  .rlabel{font-size:11px;color:var(--ink-3);font-weight:500;margin-bottom:5px}
+  .signal{display:flex;align-items:center;gap:8px;font-size:12.5px;flex-wrap:wrap}
+  .sdot{width:7px;height:7px;border-radius:50%;flex:none}
+  .signal .stext{color:var(--ink);font-weight:500}
+  .signal a{color:var(--link);text-decoration:none;font-size:11px;font-weight:500;
+    display:inline-flex;align-items:center;gap:1px}
+  .signal a:hover{text-decoration:underline;text-underline-offset:2px}
+  .signal a .arrow{transition:transform .15s}
+  .signal a:hover .arrow{transform:translateX(2px)}
+  .signal .age{color:var(--ink-3);font-size:11px;font-family:var(--mono);font-weight:500}
+  .right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;text-align:right;min-width:150px}
+  .cadlabel{font-size:11px;color:var(--ink-3);font-weight:500}
+  .cadlabel b{color:var(--ink);font-weight:600}
+  .steps{display:flex;gap:5px;align-items:center;margin:6px 0 3px}
+  .step{display:flex;flex-direction:column;align-items:center;gap:3px}
+  .step .s{width:9px;height:9px;border-radius:2px;background:#EDEDF0;border:1px solid var(--border)}
+  .step.done .s{background:var(--ink-3);border-color:var(--ink-3)}
+  .step.now .s{background:#fff;border-color:var(--red);box-shadow:0 0 0 2px rgba(218,85,81,.14)}
+  .step .t{font-family:var(--mono);font-size:10px;color:var(--ink-3);letter-spacing:.02em}
+  .step.done .t,.step.now .t{color:var(--ink-2)}
+  .next{font-size:11px;color:var(--ink-3)}
+  .next b{color:var(--ink);font-weight:600}
+  .empty{text-align:center;color:var(--ink-3);padding:56px 20px;font-size:13px;animation:fadeIn .25s ease-out}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(2px)}to{opacity:1;transform:translateY(0)}}
+  .empty .clearbtn{margin-top:16px;display:inline-block;font-family:var(--sans);font-size:12px;font-weight:500;
+    color:var(--ink);background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:7px 15px;cursor:pointer}
+  .empty .clearbtn:hover{border-color:var(--border-2)}
+  .foot{margin-top:34px;padding-top:22px;border-top:1px solid var(--border);font-size:11px;color:var(--ink-3);line-height:1.8}
+  .foot b{color:var(--ink-2);font-weight:500}
+  .foot .fl{font-size:11px;font-weight:600;color:var(--ink);display:block;margin-bottom:7px}
+  .ico{width:13px;height:13px;flex:none;stroke:var(--red);fill:none;stroke-width:1.8}
+  .useg button:focus-visible,.chip:focus-visible,.tile:focus-visible,.empty .clearbtn:focus-visible,.signal a:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+  .signal a:focus-visible{border-radius:2px}
+  ::selection{background:rgba(218,85,81,.18);color:var(--ink)}
+  @media (prefers-reduced-motion: reduce){
+    *{transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}
+  }
+</style>
+</head>
+<body>
+<!--
+THESIS: A sales floor status board reads like a printed manifest, not a startup landing page — quiet paper-white ground, black ink type, and exactly one reserved red mark per row for what needs eyes now.
+OWN-WORLD: Near-black ink on off-white paper, 1px hairlines, Archivo for UI text, JetBrains Mono reserved for true measurements (signal age, cadence codes). Category identity carried by four muted, non-red hues — indigo, ochre, plum, teal — so red stays uncontested.
+STORY: A teammate scans their row and instantly reads: is there a warm path in (red), how fresh is the signal, where they sit in the follow-up cadence.
+STRUCTURE (2026-08-14 shape pass): leads group into real Cat1-4 sections (not a flat filtered stack), each section named by its full category, not its code. Sort order is a user choice (warm-first / freshest / most-advanced), not a hidden default. Stat tiles are real filters, one entry point per signal instead of duplicated controls.
+FORM: Restrained/editorial-manifest, brief-pinned (Linear/Vercel, Prima black-white-red).
+FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md.
+-->
+
+<header>
+  <div class="wrap">
+    <div class="htop">
+      <div class="brand">
+        <img class="logo" src="assets/prima-logo.png" alt="Prima" width="1042" height="334">
+        <div class="wordmark">
+          <h1>Outreach Cockpit</h1>
+        </div>
+      </div>
+    </div>
+    <div class="userbar">
+      <span class="ulabel" id="userlabel">Viewing as</span>
+      <div class="useg" id="userseg" role="group" aria-labelledby="userlabel"></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="sechead">
+    <h2>Your pipeline — by category</h2>
+  </div>
+
+  <div class="controls">
+    <div class="chips" id="catchips" role="group" aria-label="Filter by category"></div>
+    <div class="sortctl">
+      <span class="ulabel" id="sortlabel">Sort</span>
+      <div class="useg" id="sortseg" role="group" aria-labelledby="sortlabel"></div>
+    </div>
+  </div>
+
+  <div class="tiles" id="tiles"></div>
+  <div class="summary" id="summary"></div>
+  <div id="list"></div>
+
+  <div class="foot">
+    <span class="fl">How this works</span>
+    <b>Each teammate sees only the leads assigned to them, grouped by category.</b> Every lead updates live with its buy-window signal, its follow-up stage, and — the edge — whether Gaby or Daniel has a warm path in.<br>
+    Live wiring: signals from the Signal Radar · assignments &amp; follow-ups from Zadrac · warm intros from Gaby &amp; Daniel's exported connections (matched locally, zero API cost).
+  </div>
+</div>
+
+<script>
+// Feature flag: warm-intro detection (common-contact matching) isn't resolved yet
+// (future: Sales Navigator API or a manual list). Flip to true once that's decided —
+// every warm-intro banner, stat tile, and sort option reappears exactly as built, nothing
+// to rebuild.
+const SHOW_WARM_INTROS = true;
+
+const CATS = {
+  Cat1:{name:"Cat 1", full:"AI Operators", color:"#0f8cff"},
+  Cat2:{name:"Cat 2", full:"Crypto→AI", color:"#e5484d"},
+  Cat3:{name:"Cat 3", full:"Contractors", color:"#8e4ec6"},
+  Cat4:{name:"Cat 4", full:"Manufacturers", color:"#d98016"}
+};
+const USERS = [
+  {id:"manuel", name:"Manuel Ibarra", color:"#2b2bff"},
+  {id:"gustavo", name:"Gustavo Rivas", color:"#0f8cff"},
+  {id:"gabriela", name:"Gabriela Zacarias", color:"#8e4ec6"}
+];
+const STEPS = ["E1","LI","E2","E3"];
+const SORTS = [
+  {k:"warm", label:"Warm intro first"},
+  {k:"fresh", label:"Freshest signal"},
+  {k:"stage", label:"Most advanced"}
+];
+
+const LEADS = [
+  {co:"CoreWeave", cat:"Cat1", contact:"David Kim", title:"Dir. Data Center Deployment",
+   signal:{type:"news", text:"Announced 200 MW Texas campus", age:3, url:"#"}, stage:1,
+   warm:{who:"Daniel", target:"David Kim", level:"contact"}, user:"manuel"},
+  {co:"Rosendin Electric", cat:"Cat3", contact:"Sarah Chen", title:"Procurement Manager",
+   signal:{type:"job", text:"Opened: Procurement Specialist", age:6, url:"#"}, stage:1,
+   warm:{who:"Gaby", target:"Rosendin Electric", level:"company"}, user:"manuel"},
+  {co:"Form Energy", cat:"Cat4", contact:"Lisa Park", title:"Supply Chain Lead",
+   signal:{type:"job", text:"Opened: Strategic Sourcing Manager", age:4, url:"#"}, stage:2,
+   warm:null, user:"manuel"},
+  {co:"Riot Platforms", cat:"Cat2", contact:"Tom Reyes", title:"Head of Infrastructure",
+   signal:{type:"news", text:"New 100 MW site announced", age:8, url:"#"}, stage:0,
+   warm:{who:"Gaby", target:"Riot Platforms", level:"company"}, user:"gustavo"},
+  {co:"Pennsylvania Transformer", cat:"Cat4", contact:"Mike Doyle", title:"VP Operations",
+   signal:{type:"none", text:"Watching — no fresh signal", age:null, url:null}, stage:0,
+   warm:null, user:"gustavo"},
+  {co:"Nebius", cat:"Cat1", contact:"Elena Vos", title:"VP Infrastructure",
+   signal:{type:"news", text:"EU capacity expansion", age:2, url:"#"}, stage:0,
+   warm:null, user:"gustavo"},
+  {co:"STULZ USA", cat:"Cat4", contact:"Hans Weber", title:"Plant Manager",
+   signal:{type:"job", text:"Opened: Purchasing Manager", age:5, url:"#"}, stage:1,
+   warm:{who:"Daniel", target:"Hans Weber", level:"contact"}, user:"gabriela"},
+  {co:"Excellerate", cat:"Cat3", contact:"Priya Nair", title:"Procurement Director",
+   signal:{type:"job", text:"Opened: Buyer II", age:11, url:"#"}, stage:3,
+   warm:null, user:"gabriela"},
+  {co:"Mainspring Energy", cat:"Cat4", contact:"Raj Patel", title:"Procurement Lead",
+   signal:{type:"job", text:"Opened: Strategic Sourcing", age:9, url:"#"}, stage:2,
+   warm:{who:"Daniel", target:"Raj Patel", level:"contact"}, user:"gabriela"}
+];
+
+const state = {user:"manuel", cat:"all", warmOnly:false, freshOnly:false, sequenceOnly:false, sort: SHOW_WARM_INTROS ? "warm" : "fresh"};
+const el = s => document.querySelector(s);
+const initials = n => n.split(" ").map(w=>w[0]).slice(0,2).join("");
+function sigColor(s){ if(s.type==="none") return "var(--stale)"; return s.age<=7 ? "var(--good)" : "var(--stale)"; }
+function fresh(s){ return s.type!=="none" && s.age!=null && s.age<=14; }
+
+function compareLeads(a,b){
+  if(state.sort==="fresh"){
+    const av=a.signal.age==null?999:a.signal.age, bv=b.signal.age==null?999:b.signal.age;
+    return av-bv;
+  }
+  if(state.sort==="stage"){
+    return b.stage-a.stage;
+  }
+  if((!!b.warm) - (!!a.warm)) return (!!b.warm) - (!!a.warm);
+  const av=a.signal.age==null?999:a.signal.age, bv=b.signal.age==null?999:b.signal.age;
+  return av-bv;
+}
+
+function filtered(){
+  return LEADS.filter(l => l.user===state.user)
+    .filter(l => state.cat==="all" || l.cat===state.cat)
+    .filter(l => !state.warmOnly || l.warm)
+    .filter(l => !state.freshOnly || fresh(l.signal))
+    .filter(l => !state.sequenceOnly || (l.stage>0 && l.stage<4))
+    .sort(compareLeads);
+}
+
+function renderUsers(){
+  el("#userseg").innerHTML = USERS.map(u=>`
+    <button type="button" data-u="${u.id}" class="${state.user===u.id?'on':''}" aria-pressed="${state.user===u.id}">
+      <span class="avatar" aria-hidden="true" style="background:${u.color}">${initials(u.name)}</span>${u.name}
+    </button>`).join("");
+  el("#userseg").querySelectorAll("button").forEach(b=>b.onclick=()=>{state.user=b.dataset.u;renderAll();});
+}
+function renderChips(){
+  const mine = LEADS.filter(l=>l.user===state.user);
+  const chips = [{k:"all",name:"All"}].concat(
+    Object.keys(CATS).map(k=>({k,name:CATS[k].name})));
+  el("#catchips").innerHTML = chips.map(c=>{
+    const count = c.k==="all"? mine.length : mine.filter(l=>l.cat===c.k).length;
+    return `<button type="button" class="chip ${c.k!=='all'?'cat-'+c.k:''} ${state.cat===c.k?'on':''}" data-c="${c.k}" aria-pressed="${state.cat===c.k}">
+      ${c.k!=="all"?`<span class="cd" aria-hidden="true"></span>`:""}${c.name}<span class="ct">${count}</span></button>`;
+  }).join("");
+  el("#catchips").querySelectorAll(".chip").forEach(ch=>ch.onclick=()=>{state.cat=ch.dataset.c;renderAll();});
+}
+function renderSort(){
+  const opts = SHOW_WARM_INTROS ? SORTS : SORTS.filter(s=>s.k!=="warm");
+  el("#sortseg").innerHTML = opts.map(s=>`
+    <button type="button" data-s="${s.k}" class="${state.sort===s.k?'on':''}" aria-pressed="${state.sort===s.k}">${s.label}</button>`).join("");
+  el("#sortseg").querySelectorAll("button").forEach(b=>b.onclick=()=>{state.sort=b.dataset.s;renderAll();});
+}
+function renderTiles(){
+  const mine = LEADS.filter(l=>l.user===state.user);
+  const f = mine.filter(l=>fresh(l.signal)).length;
+  const w = mine.filter(l=>l.warm).length;
+  const nf = mine.filter(l=>l.stage>0 && l.stage<4).length;
+  const allActive = !state.warmOnly && !state.freshOnly && !state.sequenceOnly;
+  el("#tiles").classList.toggle("cols-3", !SHOW_WARM_INTROS);
+  const warmTile = SHOW_WARM_INTROS
+    ? `<button type="button" class="tile warm ${state.warmOnly?'on':''}" data-t="warm" aria-pressed="${state.warmOnly}"><div class="n">${w}</div><div class="l">Warm intros</div></button>`
+    : "";
+  el("#tiles").innerHTML = `
+    <button type="button" class="tile ${allActive?'on':''}" data-t="all" aria-pressed="${allActive}"><div class="n">${mine.length}</div><div class="l">My leads</div></button>
+    <button type="button" class="tile fresh ${state.freshOnly?'on':''}" data-t="fresh" aria-pressed="${state.freshOnly}"><div class="n">${f}</div><div class="l">Fresh signals</div></button>
+    ${warmTile}
+    <button type="button" class="tile ${state.sequenceOnly?'on':''}" data-t="seq" aria-pressed="${state.sequenceOnly}"><div class="n">${nf}</div><div class="l">In sequence</div></button>`;
+  el("#tiles").querySelectorAll(".tile").forEach(t=>t.onclick=()=>{
+    const k = t.dataset.t;
+    if(k==="all"){ state.warmOnly=false; state.freshOnly=false; state.sequenceOnly=false; }
+    else if(k==="fresh"){ const next=!state.freshOnly; state.freshOnly=next; state.warmOnly=false; state.sequenceOnly=false; }
+    else if(k==="warm"){ const next=!state.warmOnly; state.warmOnly=next; state.freshOnly=false; state.sequenceOnly=false; }
+    else if(k==="seq"){ const next=!state.sequenceOnly; state.sequenceOnly=next; state.warmOnly=false; state.freshOnly=false; }
+    renderAll();
+  });
+}
+function cadence(stage){
+  const dots = STEPS.map((s,i)=>{
+    const cls = i<stage?"done":(i===stage?"now":"");
+    return `<div class="step ${cls}"><span class="s"></span><span class="t">${s}</span></div>`;
+  }).join("");
+  const label = stage===0 ? "Not started" : `Follow-up ${stage}/4`;
+  const next = stage>=4 ? `<span class="next">Complete</span>` : `<span class="next">Next: <b>${STEPS[stage]==="LI"?"LinkedIn":STEPS[stage]}</b></span>`;
+  return `<span class="cadlabel"><b>${label}</b></span><div class="steps">${dots}</div>${next}`;
+}
+function warmText(w){
+  return w.level==="contact" ? `<span class="who">${w.who} knows <b>${w.target}</b></span>`
+    : `<span class="who">${w.who} — contact at <b>${w.target}</b></span>`;
+}
+const peopleIco = `<svg class="ico" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M16 6a3 3 0 0 1 0 6"/><path d="M18 20a6 6 0 0 0-3-5"/></svg>`;
+
+function cardHtml(l){
+  const showWarm = SHOW_WARM_INTROS && l.warm;
+  const warm = showWarm ? `<div class="warmbar">${peopleIco}<span class="wl">Warm intro</span>${warmText(l.warm)}
+    <span class="lvl">${l.warm.level==="contact"?"Direct":"Company"}</span></div>` : "";
+  const sig = l.signal.type==="none"
+    ? `<div class="signal"><span class="sdot" style="background:var(--stale)"></span><span class="stext" style="color:var(--ink-3);font-weight:400">${l.signal.text}</span></div>`
+    : `<div class="signal"><span class="sdot" style="background:${sigColor(l.signal)}"></span>
+       <span class="stext">${l.signal.text}</span><span class="age">${l.signal.age}d</span>
+       <a href="${l.signal.url}" target="_blank">source <span class="arrow">→</span></a></div>`;
+  return `<div class="card ${showWarm?'haswarm':''}" role="listitem">${warm}
+    <div class="cbody">
+      <div>
+        <div class="co">${l.co}<span class="badge cat-${l.cat}" title="${CATS[l.cat].full}"><span class="cd" aria-hidden="true"></span>${l.cat}</span></div>
+        <div class="contact"><b>${l.contact}</b> · ${l.title}</div>
+        <div class="srow"><div class="rlabel">Signal</div>${sig}</div>
+      </div>
+      <div class="right">${cadence(l.stage)}</div>
+    </div></div>`;
+}
+
+function renderSections(){
+  const rows = filtered();
+  const mine = LEADS.filter(l=>l.user===state.user);
+  el("#summary").textContent = rows.length===mine.length ? "" : `Showing ${rows.length} of ${mine.length}`;
+  if(!rows.length){
+    el("#list").innerHTML = `<div class="empty">No leads match this filter<br><button type="button" class="clearbtn">Clear filters</button></div>`;
+    el(".clearbtn").onclick = () => { state.cat="all"; state.warmOnly=false; state.freshOnly=false; state.sequenceOnly=false; renderAll(); };
+    return;
+  }
+  const groups = Object.keys(CATS)
+    .map(k=>({k, full:CATS[k].full, code:CATS[k].name, rows: rows.filter(l=>l.cat===k)}))
+    .filter(g=>g.rows.length>0);
+  el("#list").innerHTML = groups.map(g=>`
+    <div class="section cat-${g.k}">
+      <div class="sechead2"><span class="catdot" aria-hidden="true"></span><h3>${g.full}</h3><span class="catcode">${g.code}</span><span class="seccount">${g.rows.length}</span></div>
+      <div class="list" role="list">${g.rows.map(cardHtml).join("")}</div>
+    </div>`).join("");
+}
+function renderAll(){ renderUsers(); renderChips(); renderSort(); renderTiles(); renderSections(); }
+renderAll();
+</script>
+</body>
+</html>

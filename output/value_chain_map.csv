@@ -1,0 +1,136 @@
+account_name,source,market_segment,tier,company_category,sub_segment_draft,icp_status,owner_vertical,dup_flag,reason
+ABB,value_chain_map,Electrical Infrastructure (Tier 1),Tier 1,Cat4,4A/4B (confirmar),IN,Aldahir,,Subcategoria: Electrical Infrastructure (Tier 1).
+Accelsius,value_chain_map,Cooling (Tier 2),Tier 2,Cat4,4C,IN,Manu,,Subcategoria: Cooling (Tier 2).
+Alloy Enterprises,value_chain_map,Cooling (Tier 2),Tier 2,Cat4,4C,IN,Manu,,Subcategoria: Cooling (Tier 2).
+Amperesand,value_chain_map,Electrical Infrastructure (Tier 2),Tier 2,Cat4,4C,IN,Aldahir,already_in_pipeline,"Match en pipeline: ""Amperesand""."
+Ansaldo Energia,value_chain_map,Gas Turbines (Tier 1),Tier 1,Cat4,4A/4B (confirmar),IN,Aldahir,,Subcategoria: Gas Turbines (Tier 1).
+Asperitas,value_chain_map,Cooling (Tier 2),Tier 2,Cat4,4C,IN,Manu,,Subcategoria: Cooling (Tier 2).
+Baker Hughes,value_chain_map,Gas Turbines (Tier 1),Tier 1,Cat4,4A/4B (confirmar),IN,Aldahir,,Subcategoria: Gas Turbines (Tier 1).
+Ballard,value_chain_map,Fuel Cells (Tier 2),Tier 2,Cat4,4C,IN,Aldahir,,Subcategoria: Fuel Cells (Tier 2).
+Bechtel,value_chain_map,EPC,,Cat3,,IN,"Aldahir;Manu",,Subcategoria: EPC.
+Bloom Energy,value_chain_map,Fuel Cells (Tier 1),Tier 1,Cat4,4A/4B (confirmar),IN,Aldahir,already_in_pipeline,"Match en pipeline: ""Bloom Energy""."
+Boom,value_chain_map,Gas Turbines (Tier 2),Tier 2,Cat4,4C,IN,Aldahir,,Subcategoria: Gas Turbines (Tier 2).
+Burns & McDonnell,value_chain_map,EPC,,Cat3,,IN,"Aldahir;Manu",,Subcategoria: EPC.
+BYD,value_chain_map,Battery Storage (Tier 1),Tier 1,Cat4,4A/4B (confirmar),IN,Aldahir,,Subcategoria: Battery Storage (Tier 1).
+Caterpillar,value_chain_map,Gas Engines (Tier 1),Tier 1,Cat4,4A/4B (confirmar),IN,Aldahir,,Subcategoria: Gas Engines (Tier 1).
+CATL,value_chain_map,Battery Storage (Tier 1),Tier 1,Cat4,4A/4B (confirmar),IN,Aldahir,,Subcategoria: Battery Storage (Tier 1).
+Centrax,value_chain_map,Gas Turbines (Tier 2),Tier 2,Cat4,4C,IN,Aldahir,,Subcategoria: Gas Turbines (Tier 2).
+Ceres,value_chain_map,Fuel Cells (Tier 2),Tier 2,Cat4,4C,IN,Aldahir,,Subcategoria: Fuel Cells (Tier 2).
+Clarke Energy,value_chain_map,Gas Engines (Tier 2),Tier 2,Cat4,4C,IN,Aldahir,,Subcategoria: Gas Engines (Tier 2).
+Collen,value_chain_map,EPC,,Cat3,,IN,"Aldahir;Manu",,Subcategoria: EPC.
+Convion,value_chain_map,Fuel Cells (Tier 2),Tier 2,Cat4,4C,IN,Aldahir,,Subcategoria: Fuel Cells (Tier 2).
+Corintis,value_chain_map,Cooling (Tier 2),Tier 2,Cat4,4C,IN,Manu,,Subcategoria: Cooling (Tier 2).
+Cummins,value_chain_map,Gas Engines (Tier 1),Tier 1,Cat4,4A/4B (confirmar),IN,Aldahir,,Subcategoria: Gas Engines (Tier 1).
+Daikin,value_chain_map,Cooling (Tier 1),Tier 1,Cat4,4A/4B (confirmar),IN,Manu,,Subcategoria: Cooling (Tier 1).
+Delta,value_chain_map,Fuel Cells (Tier 2),Tier 2,Cat4,4C,IN,Aldahir,,Subcategoria: Fuel Cells (Tier 2).
+DG Matrix,value_chain_map,Electrical Infrastructure (Tier 2),Tier 2,Cat4,4C,IN,Aldahir,already_in_pipeline,"Match en pipeline: ""DG Matrix""."
+Doosan,value_chain_map,Fuel Cells (Tier 1),Tier 1,Cat4,4A/4B (confirmar),IN,Aldahir,,Subcategoria: Fuel Cells (Tier 1).
+DPR,value_chain_map,EPC,,Cat3,,IN,"Aldahir;Manu",,Subcategoria: EPC.
+Eaton,value_chain_map,Electrical Infrastructure (Tier 1),Tier 1,Cat4,4A/4B (confirmar),IN,Aldahir,,Subcategoria: Electrical Infrastructure (Tier 1).
+Ecolab,value_chain_map,Cooling (Tier 1),Tier 1,Cat4,4A/4B (confirmar),IN,Manu,,Subcategoria: Cooling (Tier 1).
+Enchanted Rock,value_chain_map,Gas Engines (Tier 2),Tier 2,Cat4,4C,IN,Aldahir,,Subcategoria: Gas Engines (Tier 2).
+EnerSys,value_chain_map,Battery Storage (Tier 1),Tier 1,Cat4,4A/4B (confirmar),IN,Aldahir,,Subcategoria: Battery Storage (Tier 1).
+Eos,value_chain_map,Battery Storage (Tier 2),Tier 2,Cat4,4C,IN,Aldahir,,Subcategoria: Battery Storage (Tier 2).
+Everllence,value_chain_map,Gas Engines (Tier 1),Tier 1,Cat4,4A/4B (confirmar),IN,Aldahir,,Subcategoria: Gas Engines (Tier 1).
+Exowatt,value_chain_map,Battery Storage (Tier 2),Tier 2,Cat4,4C,IN,Aldahir,already_in_pipeline,"Match en pipeline: ""Exowatt""."
+Flexgen,value_chain_map,Battery Storage (Tier 2),Tier 2,Cat4,4C,IN,Aldahir,,Subcategoria: Battery Storage (Tier 2).
+Fluence,value_chain_map,Battery Storage (Tier 1),Tier 1,Cat4,4A/4B (confirmar),IN,Aldahir,,Subcategoria: Battery Storage (Tier 1).
+Fluor,value_chain_map,"CCUS (Tier 1);EPC","Tier 1;",Cat3,,IN,"Aldahir;Manu",,"Multi-segmento: aparece en CCUS (Tier 1); EPC. CONFLICTO de status entre segmentos (IN/OUT) -- se tomo IN, revisar cual unidad de negocio aplica para outreach."
+Form Energy,value_chain_map,Battery Storage (Tier 2),Tier 2,Cat4,4C,IN,Aldahir,already_in_pipeline,"Match en pipeline: ""Form Energy""."
+FTAI Aviation,value_chain_map,Gas Turbines (Tier 2),Tier 2,Cat4,4C,IN,Aldahir,,Subcategoria: Gas Turbines (Tier 2).
+FuelCell Energy,value_chain_map,Fuel Cells (Tier 1),Tier 1,Cat4,4A/4B (confirmar),IN,Aldahir,already_in_pipeline,"Match en pipeline: ""FuelCell Energy""."
+GaltTec,value_chain_map,Fuel Cells (Tier 2),Tier 2,Cat4,4C,IN,Aldahir,,Subcategoria: Fuel Cells (Tier 2).
+GE,value_chain_map,"Gas Turbines (Tier 1);Electrical Infrastructure (Tier 1)",Tier 1,Cat4,4A/4B (confirmar),IN,Aldahir,,"Multi-segmento: aparece en Gas Turbines (Tier 1); Electrical Infrastructure (Tier 1)."
+Generac,value_chain_map,Gas Engines (Tier 1),Tier 1,Cat4,4A/4B (confirmar),IN,Aldahir,,Subcategoria: Gas Engines (Tier 1).
+Heron,value_chain_map,Electrical Infrastructure (Tier 2),Tier 2,Cat4,4C,IN,Aldahir,already_in_pipeline,"Match en pipeline: ""Heron Power""."
+Hitachi Energy,value_chain_map,Electrical Infrastructure (Tier 1),Tier 1,Cat4,4A/4B (confirmar),IN,Aldahir,already_in_pipeline,"Match en pipeline: ""Hitachi Energy""."
+Hyliion,value_chain_map,Gas Engines (Tier 2),Tier 2,Cat4,4C,IN,Aldahir,,Subcategoria: Gas Engines (Tier 2).
+Hyperscale Power,value_chain_map,Electrical Infrastructure (Tier 2),Tier 2,Cat4,4C,IN,Aldahir,,Subcategoria: Electrical Infrastructure (Tier 2).
+Iceotope,value_chain_map,Cooling (Tier 2),Tier 2,Cat4,4C,IN,Manu,,Subcategoria: Cooling (Tier 2).
+Innovo Solutions,value_chain_map,Gas Turbines (Tier 2),Tier 2,Cat4,4C,IN,Aldahir,,Subcategoria: Gas Turbines (Tier 2).
+Jenbacher,value_chain_map,Gas Engines (Tier 1),Tier 1,Cat4,4A/4B (confirmar),IN,Aldahir,,Subcategoria: Gas Engines (Tier 1).
+Johnson Controls,value_chain_map,Cooling (Tier 1),Tier 1,Cat4,4A/4B (confirmar),IN,Manu,,Subcategoria: Cooling (Tier 1).
+Kawasaki,value_chain_map,Gas Turbines (Tier 1),Tier 1,Cat4,4A/4B (confirmar),IN,Aldahir,,Subcategoria: Gas Turbines (Tier 1).
+Kiewit,value_chain_map,EPC,,Cat3,,IN,"Aldahir;Manu",,Subcategoria: EPC.
+Legrand,value_chain_map,Electrical Infrastructure (Tier 1),Tier 1,Cat4,4A/4B (confirmar),IN,Aldahir,,Subcategoria: Electrical Infrastructure (Tier 1).
+LG Energy Solution,value_chain_map,Battery Storage (Tier 1),Tier 1,Cat4,4A/4B (confirmar),IN,Aldahir,,Subcategoria: Battery Storage (Tier 1).
+Mainspring,value_chain_map,Gas Engines (Tier 2),Tier 2,Cat4,4C,IN,Aldahir,,Subcategoria: Gas Engines (Tier 2).
+Mercury,value_chain_map,EPC,,Cat3,,IN,"Aldahir;Manu",,Subcategoria: EPC.
+Mitsubishi Electric,value_chain_map,Electrical Infrastructure (Tier 1),Tier 1,Cat4,4A/4B (confirmar),IN,Aldahir,already_in_pipeline,"Match en pipeline: ""Mitsubishi Electric Power Products""."
+Mitsubishi Power,value_chain_map,Gas Turbines (Tier 1),Tier 1,Cat4,4A/4B (confirmar),IN,Aldahir,,Subcategoria: Gas Turbines (Tier 1).
+Mortenson,value_chain_map,EPC,,Cat3,,IN,"Aldahir;Manu",,Subcategoria: EPC.
+Peak Energy,value_chain_map,Battery Storage (Tier 2),Tier 2,Cat4,4C,IN,Aldahir,already_in_pipeline,"Match en pipeline: ""Peak Energy""."
+Plug,value_chain_map,Fuel Cells (Tier 2),Tier 2,Cat4,4C,IN,Aldahir,,Subcategoria: Fuel Cells (Tier 2).
+PowerCell,value_chain_map,Fuel Cells (Tier 2),Tier 2,Cat4,4C,IN,Aldahir,,Subcategoria: Fuel Cells (Tier 2).
+ProEnergy,value_chain_map,Gas Turbines (Tier 2),Tier 2,Cat4,4C,IN,Aldahir,,Subcategoria: Gas Turbines (Tier 2).
+Redwood,value_chain_map,Battery Storage (Tier 2),Tier 2,Cat4,4C,IN,Aldahir,already_in_pipeline,"Match en pipeline: ""Redwood Materials""."
+Rolls-Royce,value_chain_map,Gas Engines (Tier 1),Tier 1,Cat4,4A/4B (confirmar),IN,Aldahir,,Subcategoria: Gas Engines (Tier 1).
+Samsung SDI,value_chain_map,Battery Storage (Tier 1),Tier 1,Cat4,4A/4B (confirmar),IN,Aldahir,,Subcategoria: Battery Storage (Tier 1).
+Schneider Electric,value_chain_map,"Electrical Infrastructure (Tier 1);Cooling (Tier 1)",Tier 1,Cat4,4A/4B (confirmar),IN,"Aldahir;Manu",,"Multi-segmento: aparece en Electrical Infrastructure (Tier 1); Cooling (Tier 1)."
+Siemens,value_chain_map,Electrical Infrastructure (Tier 1),Tier 1,Cat4,4A/4B (confirmar),IN,Aldahir,,Subcategoria: Electrical Infrastructure (Tier 1).
+Siemens Energy,value_chain_map,Gas Turbines (Tier 1),Tier 1,Cat4,4A/4B (confirmar),IN,Aldahir,,Subcategoria: Gas Turbines (Tier 1).
+Skeleton Technologies,value_chain_map,Battery Storage (Tier 2),Tier 2,Cat4,4C,IN,Aldahir,,Subcategoria: Battery Storage (Tier 2).
+Solar Turbines,value_chain_map,Gas Turbines (Tier 1),Tier 1,Cat4,4A/4B (confirmar),IN,Aldahir,,Subcategoria: Gas Turbines (Tier 1).
+SolidEra,value_chain_map,Fuel Cells (Tier 2),Tier 2,Cat4,4C,IN,Aldahir,,Subcategoria: Fuel Cells (Tier 2).
+SRC,value_chain_map,Cooling (Tier 2),Tier 2,Cat4,4C,IN,Manu,,Subcategoria: Cooling (Tier 2).
+Stulz,value_chain_map,Cooling (Tier 1),Tier 1,Cat4,4A/4B (confirmar),IN,Manu,,Subcategoria: Cooling (Tier 1).
+Submer,value_chain_map,Cooling (Tier 2),Tier 2,Cat4,4C,IN,Manu,,Subcategoria: Cooling (Tier 2).
+Sungrow,value_chain_map,Battery Storage (Tier 1),Tier 1,Cat4,4A/4B (confirmar),IN,Aldahir,,Subcategoria: Battery Storage (Tier 1).
+Tesla Energy,value_chain_map,Battery Storage (Tier 1),Tier 1,Cat4,4A/4B (confirmar),IN,Aldahir,,Subcategoria: Battery Storage (Tier 1).
+Trane Technologies,value_chain_map,Cooling (Tier 1),Tier 1,Cat4,4A/4B (confirmar),IN,Manu,,Subcategoria: Cooling (Tier 1).
+Turner,value_chain_map,EPC,,Cat3,,IN,"Aldahir;Manu",,Subcategoria: EPC.
+UP,value_chain_map,Fuel Cells (Tier 2),Tier 2,Cat4,4C,IN,Aldahir,,Subcategoria: Fuel Cells (Tier 2).
+Vertiv,value_chain_map,Cooling (Tier 1),Tier 1,Cat4,4A/4B (confirmar),IN,Manu,,Subcategoria: Cooling (Tier 1).
+VoltaGrid,value_chain_map,Gas Engines (Tier 2),Tier 2,Cat4,4C,IN,Aldahir,,Subcategoria: Gas Engines (Tier 2).
+Wärtsilä,value_chain_map,Gas Engines (Tier 1),Tier 1,Cat4,4A/4B (confirmar),IN,Aldahir,,Subcategoria: Gas Engines (Tier 1).
+Zauner Group,value_chain_map,EPC,,Cat3,,IN,"Aldahir;Manu",,Subcategoria: EPC.
+ZutaCore,value_chain_map,Cooling (Tier 2),Tier 2,Cat4,4C,IN,Manu,,Subcategoria: Cooling (Tier 2).
+Alibaba,value_chain_map,Clients,,Cat1,,MARGINAL,,,Subcategoria: Clients.
+Aligned,value_chain_map,Developer,,Cat1,,MARGINAL,,,Subcategoria: Developer.
+Anthropic,value_chain_map,Clients,,Cat1,,MARGINAL,,,Subcategoria: Clients.
+AWS,value_chain_map,"Chip design (Custom ASIC);Developer;Clients",,Cat1,,MARGINAL,,,"Multi-segmento: aparece en Chip design (Custom ASIC); Developer; Clients. CONFLICTO de status entre segmentos (MARGINAL/OUT) -- se tomo MARGINAL, revisar cual unidad de negocio aplica para outreach."
+Crusoe,value_chain_map,Developer,,Cat1,,MARGINAL,,,Subcategoria: Developer.
+CyrusOne,value_chain_map,Developer,,Cat1,,MARGINAL,,,Subcategoria: Developer.
+Digital Realty,value_chain_map,Developer,,Cat1,,MARGINAL,,,Subcategoria: Developer.
+Equinix,value_chain_map,Developer,,Cat1,,MARGINAL,,,Subcategoria: Developer.
+Google,value_chain_map,"Chip design (Custom ASIC);Developer;Clients",,Cat1,,MARGINAL,,,"Multi-segmento: aparece en Chip design (Custom ASIC); Developer; Clients. CONFLICTO de status entre segmentos (MARGINAL/OUT) -- se tomo MARGINAL, revisar cual unidad de negocio aplica para outreach."
+Meta,value_chain_map,"Chip design (Custom ASIC);Developer;Clients",,Cat1,,MARGINAL,,,"Multi-segmento: aparece en Chip design (Custom ASIC); Developer; Clients. CONFLICTO de status entre segmentos (MARGINAL/OUT) -- se tomo MARGINAL, revisar cual unidad de negocio aplica para outreach."
+Microsoft,value_chain_map,"Chip design (Custom ASIC);Developer;Clients",,Cat1,,MARGINAL,,,"Multi-segmento: aparece en Chip design (Custom ASIC); Developer; Clients. CONFLICTO de status entre segmentos (MARGINAL/OUT) -- se tomo MARGINAL, revisar cual unidad de negocio aplica para outreach."
+NTT,value_chain_map,Developer,,Cat1,,MARGINAL,,,Subcategoria: Developer.
+Oracle,value_chain_map,Clients,,Cat1,,MARGINAL,,,Subcategoria: Clients.
+QTS,value_chain_map,Developer,,Cat1,,MARGINAL,,,Subcategoria: Developer.
+Vantage Data Centers,value_chain_map,Developer,,Cat1,,MARGINAL,,,Subcategoria: Developer.
+xAI,value_chain_map,"Developer;Clients",,Cat1,,MARGINAL,,already_in_pipeline,"Multi-segmento: aparece en Developer; Clients. Match en pipeline: ""xAI""."
+8 Rivers,value_chain_map,CCUS (Tier 2),Tier 2,,,OUT,,,Subcategoria: CCUS (Tier 2).
+Air Liquide,value_chain_map,CCUS (Tier 1),Tier 1,,,OUT,,,Subcategoria: CCUS (Tier 1).
+AMD,value_chain_map,Chip design (Merchant silicon),,,,OUT,,,Subcategoria: Chip design (Merchant silicon).
+Arista,value_chain_map,Networking,,,,OUT,,,Subcategoria: Networking.
+BASF,value_chain_map,CCUS (Tier 1),Tier 1,,,OUT,,,Subcategoria: CCUS (Tier 1).
+Broadcom,value_chain_map,Chip design (Custom ASIC),,,,OUT,,,Subcategoria: Chip design (Custom ASIC).
+Capsol Technologies,value_chain_map,CCUS (Tier 2),Tier 2,,,OUT,,,Subcategoria: CCUS (Tier 2).
+Carbon Clean,value_chain_map,CCUS (Tier 2),Tier 2,,,OUT,,,Subcategoria: CCUS (Tier 2).
+Cisco,value_chain_map,Networking,,,,OUT,,,Subcategoria: Networking.
+Coherent,value_chain_map,Networking,,,,OUT,,,Subcategoria: Networking.
+Dell,value_chain_map,Server & rack,,,,OUT,,,Subcategoria: Server & rack.
+Foxconn,value_chain_map,Server & rack,,,,OUT,,,Subcategoria: Server & rack.
+Honeywell UOP,value_chain_map,CCUS (Tier 1),Tier 1,,,OUT,,,Subcategoria: CCUS (Tier 1).
+HPE,value_chain_map,Server & rack,,,,OUT,,,Subcategoria: Server & rack.
+Huawei,value_chain_map,Chip design (Merchant silicon),,,,OUT,,,Subcategoria: Chip design (Merchant silicon).
+Intel,value_chain_map,Foundries,,,,OUT,,,Subcategoria: Foundries.
+ION,value_chain_map,CCUS (Tier 2),Tier 2,,,OUT,,,Subcategoria: CCUS (Tier 2).
+Marvell,value_chain_map,Chip design (Custom ASIC),,,,OUT,,,Subcategoria: Chip design (Custom ASIC).
+Micron,value_chain_map,Memory,,,,OUT,,,Subcategoria: Memory.
+Mitsubishi Heavy Industries,value_chain_map,CCUS (Tier 1),Tier 1,,,OUT,,,Subcategoria: CCUS (Tier 1).
+MTR,value_chain_map,CCUS (Tier 2),Tier 2,,,OUT,,,Subcategoria: CCUS (Tier 2).
+NetPower,value_chain_map,CCUS (Tier 2),Tier 2,,,OUT,,,Subcategoria: CCUS (Tier 2).
+Nuada,value_chain_map,CCUS (Tier 2),Tier 2,,,OUT,,,Subcategoria: CCUS (Tier 2).
+NVIDIA,value_chain_map,"Chip design (Merchant silicon);Networking",,,,OUT,,,"Multi-segmento: aparece en Chip design (Merchant silicon); Networking."
+Quanta Computer,value_chain_map,Server & rack,,,,OUT,,,Subcategoria: Server & rack.
+Samsung,value_chain_map,"Foundries;Memory",,,,OUT,,,"Multi-segmento: aparece en Foundries; Memory."
+Shell,value_chain_map,CCUS (Tier 1),Tier 1,,,OUT,,,Subcategoria: CCUS (Tier 1).
+SK hynix,value_chain_map,Memory,,,,OUT,,,Subcategoria: Memory.
+SLB Capturi,value_chain_map,CCUS (Tier 1),Tier 1,,,OUT,,,Subcategoria: CCUS (Tier 1).
+SMIC,value_chain_map,Foundries,,,,OUT,,,Subcategoria: Foundries.
+Supermicro,value_chain_map,Server & rack,,,,OUT,,,Subcategoria: Server & rack.
+Svante,value_chain_map,CCUS (Tier 2),Tier 2,,,OUT,,,Subcategoria: CCUS (Tier 2).
+TSMC,value_chain_map,Foundries,,,,OUT,,,Subcategoria: Foundries.

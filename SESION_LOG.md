@@ -1,4 +1,8 @@
 ## 2026-09-09 — Cat1/Cat2: poblado +10 US, reasignación a Gustavo, R2 parqueado
+FILL DE BANCA: committee $0 parcial (cupo WebSearch) -> 17 contactos nuevos en 14 cuentas;
+email 7 VERIFIED (TensorWave, Nebius, Hut 8 x2, Cipher, Applied Digital, Core Scientific) +
+10 unverified/NOT_FOUND (2.40cr). Merge a leads_master (316 filas), Supabase, Sheet 317 match.
+Cat1/Cat2 sigue 41 todas Gustavo. PENDIENTE: 15 cuentas no intentadas (cupo) + xAI/Theseus sin contacto.
 POBLADO: discovery signal-first $0 → 20 candidatas → icp-check+committee $0 (17 IN /
 3 excluded por regla: Vantage+Aligned Powered Shell, Switch ya Cat5) → DECISIÓN solo US
 (fuera 7: G42, Firmus, Yotta, Neysa, Cango, DMG, Hive) → email Hunter→icypeas 10 US:

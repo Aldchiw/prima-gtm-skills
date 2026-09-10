@@ -1,0 +1,1718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prima · Outreach Cockpit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --red:#DA5551; --red-soft:rgba(218,85,81,.05); --red-text:#B83530;
+    --link:#2E6DA4;
+    --ink:#1A1A1A; --ink-2:#52525B; --ink-3:#64646D;
+    --bg:#F5F6F7; --surface:#FFFFFF; --border:#E4E4E7; --border-2:#D4D4D8;
+    --cat1:#4C5A92; --cat2:#8A6A22; --cat3:#7A5C8A; --cat4:#3D7A6C;
+    --good:#3D7A52; --stale:#8B8B93;
+    --sans:"Archivo",-apple-system,BlinkMacSystemFont,sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
+    --shadow:0 1px 2px rgba(26,26,26,.04),0 4px 12px rgba(26,26,26,.05);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--sans);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased;
+    background:var(--bg);padding-bottom:56px}
+  .wrap{max-width:1000px;margin:0 auto;padding:0 24px}
+
+  header{background:rgba(245,246,247,.88);backdrop-filter:blur(8px);border-bottom:1px solid var(--border);
+    position:sticky;top:0;z-index:20;padding:18px 0 16px;margin-bottom:32px}
+  .htop{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:11px}
+  .logo{height:28px;width:auto;flex:none;display:block}
+  .wordmark{display:flex;align-items:baseline;gap:9px;line-height:1}
+  h1{font-size:16px;font-weight:600;letter-spacing:-.01em;color:var(--ink)}
+
+  .userbar{display:flex;align-items:center;gap:12px;margin-top:16px;flex-wrap:wrap}
+  .ulabel{font-size:12px;color:var(--ink-3);font-weight:500}
+  .useg{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:3px;flex-wrap:wrap}
+  .useg button{border:none;background:transparent;color:var(--ink-2);font-family:var(--sans);font-size:13px;font-weight:500;
+    padding:6px 12px;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:.12s}
+  .useg button:hover{color:var(--ink)}
+  .useg button.on{background:var(--ink);color:#fff}
+  .avatar{width:19px;height:19px;border-radius:5px;font-size:9px;font-weight:600;display:flex;
+    align-items:center;justify-content:center;color:#fff;font-family:var(--sans)}
+  .useg button.on .avatar{outline:1px solid rgba(255,255,255,.4)}
+
+  .sechead{margin-bottom:18px}
+  .sechead h2{font-size:13px;font-weight:600;color:var(--ink-2);letter-spacing:-.005em}
+
+  .controls{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+  .chips{display:flex;gap:7px;flex-wrap:wrap}
+  /* Zero footprint when empty (SHOW_SOURCE_FILTER off, or nothing rendered
+     into it yet) -- only takes vertical space once actually populated. */
+  #sourcechips:not(:empty){margin-bottom:14px}
+  .badge.segment{color:var(--ink-2);background:var(--bg);border-color:var(--border)}
+  .chip{font-family:var(--sans);font-size:12.5px;font-weight:500;
+    padding:7px 13px;border-radius:999px;cursor:pointer;border:1px solid var(--border);background:var(--surface);
+    color:var(--ink-2);transition:.12s;display:flex;align-items:center;gap:7px;appearance:none;-webkit-appearance:none}
+  .chip:hover{border-color:var(--border-2);color:var(--ink)}
+  .chip.on{color:#fff;border-color:var(--ink);background:var(--ink)}
+  .chip .cd{width:6px;height:6px;border-radius:50%;background:var(--catc);flex:none}
+  .chip .ct{opacity:.55}
+  .cat-Cat1{--catc:var(--cat1)} .cat-Cat2{--catc:var(--cat2)} .cat-Cat3{--catc:var(--cat3)} .cat-Cat4{--catc:var(--cat4)}
+
+  .sortctl{display:flex;align-items:center;gap:10px}
+
+  .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+  .tiles.cols-5{grid-template-columns:repeat(5,1fr)}
+  @media(max-width:640px){.tiles,.tiles.cols-5{grid-template-columns:repeat(2,1fr)}}
+  .needscontact-linkwrap{display:flex;justify-content:flex-end;margin:2px 0 16px}
+  .needscontact-link.on{font-weight:700;color:var(--ink)}
+  .tile{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;
+    text-align:left;cursor:pointer;appearance:none;-webkit-appearance:none;font-family:var(--sans);transition:.12s}
+  .tile:hover{border-color:var(--border-2);transform:translateY(-1px)}
+  .tile .n{font-size:26px;font-weight:600;letter-spacing:-.02em;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums}
+  .tile .l{font-size:11px;color:var(--ink-3);margin-top:8px;font-weight:500}
+  .tile.warm .n{color:var(--red)}
+  .tile.fresh .n{color:var(--good)}
+  .tile.on{background:var(--ink);border-color:var(--ink)}
+  .tile.on .n,.tile.on .l{color:#fff}
+
+  .summary{font-size:11px;color:var(--ink-3);margin-bottom:14px}
+  .summary:empty{display:none;margin-bottom:0}
+
+  .section{margin-bottom:28px}
+  .section:last-child{margin-bottom:0}
+  .sechead2{display:flex;align-items:center;gap:9px;margin-bottom:12px;padding-bottom:9px;border-bottom:1px solid var(--border)}
+  .sechead2 .catdot{width:8px;height:8px;border-radius:50%;background:var(--catc);flex:none}
+  .sechead2 h3{font-size:14px;font-weight:600;color:var(--ink);letter-spacing:-.005em}
+  .sechead2 .catcode{font-size:11px;color:var(--ink-3);font-weight:500}
+  .sechead2 .seccount{margin-left:auto;font-size:11px;color:var(--ink-3);font-weight:500}
+
+  .list{display:flex;flex-direction:column;gap:14px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:.14s}
+  .card:hover{border-color:var(--border-2);box-shadow:var(--shadow)}
+  .card.clickable{cursor:pointer}
+  .card.clickable:hover{border-color:var(--link);box-shadow:var(--shadow)}
+  .card.haswarm{border-color:rgba(218,85,81,.22)}
+  .warmbar{background:var(--red-soft);border-bottom:1px solid rgba(218,85,81,.14);
+    padding:10px 20px;display:flex;align-items:center;gap:9px;font-size:12.5px}
+  .warmbar .wl{font-size:11px;font-weight:600;color:var(--red-text)}
+  .warmbar .who{color:var(--ink);font-weight:400}
+  .warmbar .who b{color:var(--ink);font-weight:600}
+  .warmbar .lvl{margin-left:auto;font-size:10.5px;color:var(--red-text);border:1px solid rgba(218,85,81,.28);border-radius:999px;padding:3px 9px;font-weight:500}
+  .cbody{padding:18px 20px;display:grid;grid-template-columns:1fr auto;gap:18px}
+  .co{font-size:16px;font-weight:600;letter-spacing:-.01em;display:flex;align-items:center;gap:9px;flex-wrap:wrap;color:var(--ink)}
+  .badge{font-family:var(--sans);font-size:11px;font-weight:600;
+    padding:4px 10px 4px 8px;border-radius:999px;display:inline-flex;align-items:center;gap:6px;
+    color:var(--catc);background:color-mix(in srgb, var(--catc) 9%, white);border:1px solid color-mix(in srgb, var(--catc) 24%, white)}
+  .badge .cd{width:6px;height:6px;border-radius:50%;background:var(--catc)}
+  .contact{font-size:12.5px;color:var(--ink-2);margin-top:5px}
+  .contact b{color:var(--ink);font-weight:500}
+  .contact-empty{color:var(--ink-3)}
+  .contact-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .contactsel{font-family:var(--sans);font-size:11.5px;color:var(--ink-2);background:var(--surface);
+    border:1px solid var(--border);border-radius:6px;padding:3px 7px;cursor:pointer}
+  .contactsel:hover{border-color:var(--border-2)}
+  .contact-links{margin-top:3px;font-size:11.5px;color:var(--ink-3);display:flex;gap:10px;flex-wrap:wrap}
+  .contact-links a{color:var(--link)}
+  .team-status{font-family:var(--sans);font-size:10px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;
+    color:var(--ink-2);border:1px solid var(--border);border-radius:999px;padding:2px 8px}
+  .team-notes{margin-top:4px;font-size:11.5px;color:var(--ink-3)}
+  .stagewrap{display:inline-flex;align-items:center;gap:6px}
+  .stagesel{font-family:var(--sans);font-size:11.5px;color:var(--ink-2);background:var(--surface);
+    border:1px solid var(--border);border-radius:6px;padding:3px 7px;cursor:pointer}
+  .stagesel:hover{border-color:var(--border-2)}
+  .stagesave{font-size:11px;font-weight:600}
+  .stagesave.ok{color:var(--good)}
+  .stagesave.err{color:var(--red-text)}
+  .startwrap{display:inline-flex;align-items:center;gap:6px}
+  .start-seq{font-family:var(--sans);font-size:12px;font-weight:600;color:#fff;
+    background:var(--link);border:none;border-radius:8px;padding:6px 14px;cursor:pointer}
+  .start-seq:hover{background:color-mix(in srgb, var(--link) 85%, black)}
+  .start-channel{font-family:var(--sans);font-size:11.5px;color:var(--ink-2);background:var(--surface);
+    border:1px solid var(--border);border-radius:6px;padding:3px 9px;cursor:pointer}
+  .start-channel:hover:not(:disabled){border-color:var(--border-2);color:var(--ink)}
+  .start-channel:disabled{opacity:.5;cursor:default}
+  .startpick-label{font-size:11px;color:var(--ink-3)}
+  .startpick-note{font-size:11px;font-weight:600}
+  .startpick-note.ok{color:var(--good)}
+  .startpick-note.err{color:var(--red-text)}
+  .fu-section{margin-bottom:28px;background:var(--red-soft);border-radius:14px;padding:16px 16px 4px}
+  .fu-badge{display:flex;align-items:center;gap:8px;margin-top:5px;flex-wrap:wrap}
+  .fu-stagereal{font-family:var(--mono);font-size:11px;color:var(--ink-2)}
+  .fu-tag{font-size:11.5px;font-weight:600}
+  .fu-tag.fu-over{color:var(--red-text)}
+  .fu-tag.fu-ok{color:var(--ink-3);font-weight:400}
+  .fu-tag.fu-replied-tag{color:var(--good)}
+  .fu-tag.fu-stopped-tag{color:var(--ink-3);font-weight:400}
+  .fu-empty{color:var(--ink-3);font-size:12.5px;padding:14px 0}
+  .fu-donewrap{display:inline-flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .fu-done{font-family:var(--sans);font-size:12px;font-weight:600;color:#fff;
+    background:var(--link);border:none;border-radius:8px;padding:6px 14px;cursor:pointer}
+  .fu-done:hover:not(:disabled){background:color-mix(in srgb, var(--link) 85%, black)}
+  .fu-done:disabled{background:var(--border);color:var(--ink-3);cursor:default}
+  .fu-done.fu-replied{background:var(--good)}
+  .fu-done.fu-replied:hover:not(:disabled){background:color-mix(in srgb, var(--good) 85%, black)}
+  .fu-done.fu-stopped{background:var(--ink-3)}
+  .fu-done.fu-stopped:hover:not(:disabled){background:color-mix(in srgb, var(--ink-3) 85%, black)}
+  .fu-donenote{font-size:11px;font-weight:600}
+  .fu-donenote.ok{color:var(--good)}
+  .fu-donenote.err{color:var(--red-text)}
+  .comment-replied{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-2);cursor:pointer}
+  .comment-saverow{display:flex;align-items:center;gap:8px}
+  .comment-save{font-family:var(--sans);font-size:12px;font-weight:600;color:#fff;background:var(--link);
+    border:none;border-radius:8px;padding:6px 14px;cursor:pointer}
+  .comment-save:hover:not(:disabled){background:color-mix(in srgb, var(--link) 85%, black)}
+  .comment-note{font-size:11px;font-weight:600}
+  .comment-note.ok{color:var(--good)}
+  .comment-note.err{color:var(--red-text)}
+  .srow{margin-top:12px}
+  .rlabel{font-size:11px;color:var(--ink-3);font-weight:500;margin-bottom:5px}
+  .signal{display:flex;align-items:center;gap:8px;font-size:12.5px;flex-wrap:wrap}
+  .sdot{width:7px;height:7px;border-radius:50%;flex:none}
+  .signal .stext{color:var(--ink);font-weight:500}
+  .signal a{color:var(--link);text-decoration:none;font-size:11px;font-weight:500;
+    display:inline-flex;align-items:center;gap:1px}
+  .signal a:hover{text-decoration:underline;text-underline-offset:2px}
+  .signal a .arrow{transition:transform .15s}
+  .signal a:hover .arrow{transform:translateX(2px)}
+  .signal .age{color:var(--ink-3);font-size:11px;font-family:var(--mono);font-weight:500}
+  .right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;text-align:right;min-width:150px}
+  .cadlabel{font-size:11px;color:var(--ink-3);font-weight:500}
+  .cadlabel b{color:var(--ink);font-weight:600}
+  .steps{display:flex;gap:5px;align-items:center;margin:6px 0 3px}
+  .step{display:flex;flex-direction:column;align-items:center;gap:3px}
+  .step .s{width:9px;height:9px;border-radius:2px;background:#EDEDF0;border:1px solid var(--border)}
+  .step.done .s{background:var(--ink-3);border-color:var(--ink-3)}
+  .step.now .s{background:#fff;border-color:var(--red);box-shadow:0 0 0 2px rgba(218,85,81,.14)}
+  .step .t{font-family:var(--mono);font-size:10px;color:var(--ink-3);letter-spacing:.02em}
+  .step.done .t,.step.now .t{color:var(--ink-2)}
+  .next{font-size:11px;color:var(--ink-3)}
+  .next b{color:var(--ink);font-weight:600}
+  .empty{text-align:center;color:var(--ink-3);padding:56px 20px;font-size:13px;animation:fadeIn .25s ease-out}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(2px)}to{opacity:1;transform:translateY(0)}}
+  /* Brief highlight on a card scrolled to from "View in pipeline" (news feed). */
+  @keyframes cardFlash{0%{box-shadow:0 0 0 3px color-mix(in srgb, var(--link) 45%, transparent)}100%{box-shadow:0 0 0 3px transparent}}
+  .card-flash{animation:cardFlash 1.5s ease-out}
+  .empty .clearbtn{margin-top:16px;display:inline-block;font-family:var(--sans);font-size:12px;font-weight:500;
+    color:var(--ink);background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:7px 15px;cursor:pointer}
+  .empty .clearbtn:hover{border-color:var(--border-2)}
+  .cfoot{padding:10px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:14px;flex-wrap:wrap}
+  .seq-open{font-family:var(--sans);font-size:12px;font-weight:500;color:var(--link);background:none;border:none;
+    cursor:pointer;display:inline-flex;align-items:center;gap:1px;padding:2px}
+  /* News feed ("Fresh signals" tile): reuses .card/.cbody/.co/.badge/.srow/
+     .signal/.cfoot/.seq-open -- only the news blurb itself needs its own rule. */
+  .news-card-text{font-size:13px;line-height:1.5;color:var(--ink-2);margin:8px 0 10px}
+  .news-section-head{margin-top:28px}
+  .news-caughtup{padding:24px 20px}
+  .seq-open:hover{text-decoration:underline;text-underline-offset:2px}
+  .seq-open .arrow{transition:transform .15s}
+  .seq-open:hover .arrow{transform:translateX(2px)}
+  .seq-overlay{position:fixed;inset:0;background:rgba(26,26,26,.45);display:flex;align-items:center;justify-content:center;
+    padding:24px;z-index:50}
+  .seq-overlay[hidden]{display:none}
+  .seq-panel{background:var(--surface);border-radius:12px;box-shadow:0 8px 24px rgba(26,26,26,.18),0 2px 6px rgba(26,26,26,.1);
+    max-width:560px;width:100%;max-height:min(720px,86vh);overflow-y:auto;padding:22px 24px 26px}
+  .seq-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:18px;
+    padding-bottom:16px;border-bottom:1px solid var(--border)}
+  .seq-co{font-size:16px;font-weight:600;letter-spacing:-.01em;color:var(--ink)}
+  .seq-contact{font-size:12.5px;color:var(--ink-2);margin-top:4px}
+  .seq-close{font-family:var(--sans);font-size:16px;line-height:1;color:var(--ink-3);background:none;border:none;
+    cursor:pointer;padding:6px;border-radius:6px;flex:none}
+  .seq-close:hover{color:var(--ink);background:var(--bg)}
+  .seq-steps{display:flex;flex-direction:column;gap:14px}
+  .seq-step{border:1px solid var(--border);border-radius:12px;padding:14px 16px}
+  .seq-step.seq-now{border-color:rgba(218,85,81,.32);box-shadow:0 0 0 1px rgba(218,85,81,.1)}
+  .seq-step.seq-done{opacity:.72}
+  .seq-step-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .seq-fup{font-size:11.5px;font-weight:600;color:var(--ink)}
+  .seq-day{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);letter-spacing:.02em}
+  .seq-status{margin-left:auto;font-size:10.5px;font-weight:500;color:var(--ink-3);border:1px solid var(--border);
+    border-radius:999px;padding:2px 9px}
+  .seq-now .seq-status{color:var(--red-text);border-color:rgba(218,85,81,.28)}
+  .seq-done .seq-status{color:var(--ink-3)}
+  .seq-textarea{width:100%;min-height:84px;resize:vertical;font-family:var(--sans);font-size:12.5px;color:var(--ink);
+    background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:10px 12px;line-height:1.5}
+  .seq-textarea:focus-visible{outline:2px solid var(--red);outline-offset:1px;border-color:transparent}
+  .seq-textarea::placeholder{color:var(--ink-3)}
+  .seq-sendrow{display:flex;align-items:center;gap:10px;margin-top:9px;flex-wrap:wrap}
+  .seq-send{font-family:var(--sans);font-size:12px;font-weight:500;color:var(--ink-3);background:var(--bg);
+    border:1px solid var(--border);border-radius:6px;padding:6px 14px;cursor:not-allowed}
+  .seq-sendnote{font-size:11px;color:var(--ink-3);font-style:italic}
+  .seq-li-marker{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink-2);font-weight:500;
+    background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:9px 12px;width:fit-content}
+  .seq-li-marker .ico{stroke:var(--ink-3)}
+  .touch-overlay{position:fixed;inset:0;background:rgba(26,26,26,.45);backdrop-filter:blur(6px);
+    display:flex;align-items:center;justify-content:center;padding:24px;z-index:60}
+  .touch-overlay[hidden]{display:none}
+  .touch-modal{background:var(--surface);border-radius:12px;box-shadow:0 8px 24px rgba(26,26,26,.18),0 2px 6px rgba(26,26,26,.1);
+    max-width:520px;width:100%;max-height:80vh;overflow-y:auto;padding:22px 24px 26px}
+  .touch-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:18px;
+    padding-bottom:16px;border-bottom:1px solid var(--border)}
+  .touch-who b{font-size:16px;font-weight:600;letter-spacing:-.01em;color:var(--ink);display:block}
+  .touch-who .role{font-size:12.5px;color:var(--ink-2);margin-top:2px}
+  .touch-who .fup{font-size:11px;color:var(--ink-3);font-weight:500;margin-top:6px;font-family:var(--mono)}
+  .touch-close{font-family:var(--sans);font-size:16px;line-height:1;color:var(--ink-3);background:none;border:none;
+    cursor:pointer;padding:6px;border-radius:6px;flex:none}
+  .touch-close:hover{color:var(--ink);background:var(--bg)}
+  .touch-history{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+  .touch-item{border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+  .touch-item.empty{opacity:.55}
+  .touch-item.touch-item-editing{opacity:1;border-color:var(--link)}
+  .touch-item-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .touch-item-head-left{display:flex;align-items:center;gap:8px}
+  .touch-item-head-right{display:flex;align-items:center;gap:8px}
+  .touch-item-fup{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--ink)}
+  .touch-item-date{font-size:10.5px;color:var(--ink-3)}
+  .touch-item-replied{font-size:10.5px;font-weight:600;color:var(--good);border:1px solid rgba(61,122,82,.3);
+    border-radius:999px;padding:1px 8px}
+  .touch-item-comment{font-size:12.5px;color:var(--ink-2);margin-top:6px;white-space:pre-wrap}
+  .touch-item-empty-text{font-size:12px;color:var(--ink-3);font-style:italic;margin-top:4px}
+  .touch-edit-btn{font-family:var(--sans);font-size:11px;font-weight:600;color:var(--link);background:none;
+    border:none;cursor:pointer;padding:2px 4px}
+  .touch-edit-btn:hover{text-decoration:underline}
+  .touch-edit-fup{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--ink);margin-bottom:8px}
+  .touch-edit-cancel{font-family:var(--sans);font-size:12px;font-weight:500;color:var(--ink-3);background:none;
+    border:none;cursor:pointer;padding:6px 10px}
+  .touch-edit-cancel:hover{color:var(--ink)}
+  .touch-writezone{border-top:1px solid var(--border);padding-top:16px}
+  .foot{margin-top:34px;padding-top:22px;border-top:1px solid var(--border);font-size:11px;color:var(--ink-3);line-height:1.8}
+  .foot b{color:var(--ink-2);font-weight:500}
+  .foot .fl{font-size:11px;font-weight:600;color:var(--ink);display:block;margin-bottom:7px}
+  .ico{width:13px;height:13px;flex:none;stroke:var(--red);fill:none;stroke-width:1.8}
+  .useg button:focus-visible,.chip:focus-visible,.tile:focus-visible,.empty .clearbtn:focus-visible,.signal a:focus-visible,
+  .seq-open:focus-visible,.seq-close:focus-visible,.contactsel:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+  .signal a:focus-visible{border-radius:2px}
+  ::selection{background:rgba(218,85,81,.18);color:var(--ink)}
+  @media (prefers-reduced-motion: reduce){
+    *{transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}
+  }
+</style>
+</head>
+<body>
+<div id="loginView">
+  <div class="loginCard">
+    <div class="loginBrand">Outreach Cockpit</div>
+    <input id="loginEmail" type="email" placeholder="tu@prima.ai" autocomplete="email">
+    <button type="button" id="sendBtn">Enviar Magic Link</button>
+    <div id="loginMsg"></div>
+  </div>
+</div>
+<style>
+  #loginView{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:var(--bg);}
+  #loginView .loginCard{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:32px;width:100%;max-width:360px;box-sizing:border-box;}
+  #loginView .loginBrand{font-size:16px;font-weight:600;color:var(--ink);margin-bottom:16px;}
+  #loginView input{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;margin-bottom:10px;color:var(--ink);}
+  #loginView button{width:100%;padding:10px 12px;border:none;border-radius:8px;background:var(--link);color:#fff;font-size:13px;font-weight:600;cursor:pointer;}
+  #loginView #loginMsg{margin-top:10px;font-size:12px;min-height:16px;}
+  #loginView #loginMsg.ok{color:var(--good);}
+  #loginView #loginMsg.err{color:var(--red-text);}
+</style>
+<!--
+THESIS: A sales floor status board reads like a printed manifest, not a startup landing page — quiet paper-white ground, black ink type, and exactly one reserved red mark per row for what needs eyes now.
+OWN-WORLD: Near-black ink on off-white paper, 1px hairlines, Archivo for UI text, JetBrains Mono reserved for true measurements (signal age, cadence codes). Category identity carried by four muted, non-red hues — indigo, ochre, plum, teal — so red stays uncontested.
+STORY: A teammate scans their row and instantly reads: is there a warm path in (red), how fresh is the signal, where they sit in the follow-up cadence.
+STRUCTURE (2026-08-14 shape pass): leads group into real Cat1-4 sections (not a flat filtered stack), each section named by its full category, not its code. Sort order is a user choice (warm-first / freshest / most-advanced), not a hidden default. Stat tiles are real filters, one entry point per signal instead of duplicated controls.
+FORM: Restrained/editorial-manifest, brief-pinned (Linear/Vercel, Prima black-white-red).
+FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md.
+-->
+
+<header>
+  <div class="wrap">
+    <div class="htop">
+      <div class="brand">
+        <img class="logo" src="assets/prima-logo.png" alt="Prima" width="1042" height="334">
+        <div class="wordmark">
+          <h1>Outreach Cockpit</h1>
+        </div>
+      </div>
+    </div>
+    <div class="userbar">
+      <span class="ulabel" id="sessionEmail"></span>
+      <button type="button" id="signoutBtn">Sign out</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div id="followups"></div>
+
+  <div class="sechead">
+    <h2>Your pipeline — by category</h2>
+  </div>
+
+  <div class="chips" id="sourcechips" role="group" aria-label="Filter by source"></div>
+
+  <div class="controls">
+    <div class="chips" id="catchips" role="group" aria-label="Filter by category"></div>
+    <div class="sortctl">
+      <span class="ulabel" id="sortlabel">Sort</span>
+      <div class="useg" id="sortseg" role="group" aria-labelledby="sortlabel"></div>
+    </div>
+  </div>
+
+  <div class="tiles" id="tiles"></div>
+  <div class="needscontact-linkwrap" id="needscontact-link"></div>
+  <div class="summary" id="summary"></div>
+  <div id="list"></div>
+
+  <div class="foot">
+    <span class="fl">How this works</span>
+    <b>Each teammate sees only the leads assigned to them, grouped by category.</b> Every lead updates live with its buy-window signal, its follow-up stage, and — the edge — whether Gaby or Daniel has a warm path in.<br>
+    Live wiring: signals from the Signal Radar · assignments &amp; follow-ups from Zadrac · warm intros from Gaby &amp; Daniel's exported connections (matched locally, zero API cost).
+  </div>
+</div>
+
+<div class="seq-overlay" id="seqOverlay" hidden>
+  <div class="seq-panel" id="seqPanel" role="dialog" aria-modal="true" aria-label="Contact sequence"></div>
+</div>
+
+<div class="touch-overlay" id="touchOverlay" hidden>
+  <div class="touch-modal" id="touchModal" role="dialog" aria-modal="true" aria-label="Contact comments"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = "https://axknjzbiteuwrjpbuows.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4a25qemJpdGV1d3JqcGJ1b3dzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc1OTMwNjUsImV4cCI6MjEwMzE2OTA2NX0.hRXz4xrsDGwyjr9r2O3ja4OThYxe7ywWmAD2aiJN29M";
+</script>
+<script>
+// Feature flag: warm-intro detection (common-contact matching) isn't resolved yet
+// (future: Sales Navigator API or a manual list). Flip to true once that's decided —
+// every warm-intro banner, stat tile, and sort option reappears exactly as built, nothing
+// to rebuild.
+const SHOW_WARM_INTROS = false;
+// Feature flag: source filter (engine vs value_chain_map) + market_segment/
+// tier badge + email-verification indicator. Everything new for this feature
+// is gated behind this flag -- flip to false and the cockpit renders exactly
+// as it did before this feature (loadLeads still reads the 4 new columns
+// either way, since that alone is inert/harmless, but nothing else new does
+// anything when this is off).
+const SHOW_SOURCE_FILTER = true;
+
+/* DATA:START — generado por scripts/generate-cockpit.js, no editar a mano */
+const CATS = {
+  Cat1:{name:"Cat 1", full:"AI Operators", color:"#0f8cff"},
+  Cat2:{name:"Cat 2", full:"Crypto→AI", color:"#e5484d"},
+  Cat3:{name:"Cat 3", full:"Contractors", color:"#8e4ec6"},
+  Cat4:{name:"Cat 4", full:"Manufacturers", color:"#d98016"}
+};
+const USERS = [
+  {id:"aldahir", name:"Aldahir", color:"#DA5551"},
+  {id:"manu", name:"Manuel Ibarra", color:"#2E6DA4"},
+  {id:"gustavo", name:"Gustavo Rivas", color:"#3D7A6C"},
+  {id:"gaby", name:"Gabriela Zacarias", color:"#7A5C8A"},
+  {id:"unassigned", name:"Sin asignar", color:"#8B8B93"}
+];
+let LEADS = [];
+/* DATA:END */
+const STEPS = ["E1","LI","E2","E3"];
+const SORTS = [
+  {k:"warm", label:"Warm intro first"},
+  {k:"fresh", label:"Freshest signal"},
+  {k:"stage", label:"Most advanced"}
+];
+
+const state = {user:"me", cat:"all", source:"all", warmOnly:false, view:"pipeline", sort: SHOW_WARM_INTROS ? "warm" : "fresh", activeContact:{}};
+const el = s => document.querySelector(s);
+const initials = n => n.split(" ").map(w=>w[0]).slice(0,2).join("");
+function sigColor(s){ if(s.type==="none") return "var(--stale)"; return s.age<=7 ? "var(--good)" : "var(--stale)"; }
+// Only a real dated news signal counts as "fresh" -- firmographic/ICP notes
+// carry no meaningful date, so they must never light up "Fresh signals".
+function fresh(s){ return s.type==="news" && s.age!=null && s.age<=14; }
+// Wider than fresh() (30d, not 14d) -- drives the "Fresh signals" tile count
+// and the news feed's "New" section specifically, kept separate from fresh()
+// so existing fresh()-based behavior (sigColor et al.) doesn't shift.
+function isNewSignal(s){ return s.type==="news" && s.age!=null && s.age<30; }
+// Sort key for "freshest signal" ordering: real age for news, otherwise a
+// fixed 999 so firmographic/icp/none all sink to the bottom like "none" did.
+function signalSortAge(s){ return s.type==="news" ? (s.age==null?999:s.age) : 999; }
+
+// A contact row with no real name is a TAM placeholder (account sourced,
+// no verified contact yet), not a workable lead -- some accounts (~38) have
+// only this kind of row. Never treat one as active/in-flow/selectable.
+function isRealContact(c){
+  const n = String((c && c.name) || "").trim();
+  return n !== "" && n.toLowerCase() !== "null";
+}
+function realContactsOf(l){
+  return l.contacts.filter(isRealContact);
+}
+
+function activeContactOf(l){
+  const real = realContactsOf(l);
+  if(!real.length) return null;
+  const idx = Math.min(state.activeContact[l.co] || 0, real.length-1);
+  return real[idx];
+}
+function activeStage(l){ const c = activeContactOf(l); return c ? c.stage : 0; }
+
+function compareLeads(a,b){
+  // "In sequence" always orders by most-recently-touched account first,
+  // regardless of the sort control (which drives pipeline/closed instead) --
+  // that control stays visible but is a no-op in this view, same trade-off
+  // already accepted for the news feed's fixed ordering.
+  if(state.view==="insequence"){
+    return latestInFlowTouchMs(b) - latestInFlowTouchMs(a);
+  }
+  if(state.sort==="fresh"){
+    return signalSortAge(a)-signalSortAge(b);
+  }
+  if(state.sort==="stage"){
+    return activeStage(b)-activeStage(a);
+  }
+  if((!!b.warm) - (!!a.warm)) return (!!b.warm) - (!!a.warm);
+  return signalSortAge(a)-signalSortAge(b);
+}
+
+// A contact is "closed" once it replied or the sequence was stopped on it --
+// either way it's done moving through stages and should drop out of the
+// active flow (Followups, "in sequence" membership) entirely.
+function isClosed(c){
+  return c.stage_text === "Replied" || c.stage_text === "Stopped";
+}
+// An account is "in sequence" once ANY of its contacts has stage > 0 and
+// isn't closed -- that account belongs to the "In sequence" view/tile now,
+// not the cold pipeline (Followups is a further, overdue-only subset of
+// "in sequence"). A closed contact no longer counts, even though its stage
+// number (4) would otherwise still read as "advanced".
+function accountInSequence(l){
+  return realContactsOf(l).some(c => c.stage > 0 && !isClosed(c));
+}
+// True once every contact on the account is closed -- such an account
+// belongs in neither the cold pipeline nor "in sequence" (only in Closed).
+function accountAllClosed(l){
+  return l.contacts.length > 0 && l.contacts.every(c => isClosed(c));
+}
+function myAllLeads(){
+  return LEADS.filter(l => l.user===state.user);
+}
+// The "cold" pipeline set: this user's accounts, minus anything already in
+// sequence or fully closed.
+function myOpenLeads(){
+  return myAllLeads().filter(l => !accountInSequence(l) && !accountAllClosed(l));
+}
+// The mirror set for the "In sequence" tile/view: accounts with at least
+// one contact past stage 0 that isn't closed.
+function myInSequenceLeads(){
+  return myAllLeads().filter(l => accountInSequence(l));
+}
+// Accounts with at least one closed (Replied/Stopped) contact -- the
+// "Closed" tile/view. Not mutually exclusive with "in sequence": an account
+// with one closed contact and one still-active contact shows in both.
+function myClosedLeads(){
+  return myAllLeads().filter(l => l.contacts.some(c => isClosed(c)));
+}
+// "Needs contact" tile/view: accounts with zero real (named) contacts --
+// TAM entries the engine hasn't found a verified contact for yet (the ~38
+// nameless placeholders from the orphan-contact fix). Overlaps with none of
+// the other three sets, since a real contact is required for all of them.
+function myNeedsContactLeads(){
+  return myAllLeads().filter(l => realContactsOf(l).length === 0);
+}
+// SHOW_SOURCE_FILTER only: every value_chain_map account for this user,
+// regardless of pipeline/in-sequence/closed/needs-contact status. That
+// account-lifecycle split is an engine-pipeline concept; a value_chain_map
+// account can land in any of those states too, but browsing "Value chain"
+// is about seeing the whole source at once, not one lifecycle slice of it.
+function myValueChainLeads(){
+  return myAllLeads().filter(l => l.source === "value_chain_map");
+}
+// Which of the four view-only sets state.view currently browses. This is
+// what currentBaseLeads() falls back to once the value_chain_map override
+// below doesn't apply -- kept as its own function (not inlined into
+// currentBaseLeads()) so renderSourceChips() can count "Engine"/"All
+// sources" against the current VIEW even while "Value chain" is the active
+// source chip, instead of those counts collapsing once currentBaseLeads()
+// itself gets overridden.
+function viewBaseLeads(){
+  if (state.view === "insequence") return myInSequenceLeads();
+  if (state.view === "closed") return myClosedLeads();
+  if (state.view === "needscontact") return myNeedsContactLeads();
+  return myOpenLeads();
+}
+// Which of the four above state.view currently browses. Shared by
+// filtered()/renderChips()/renderSections() so the pipeline listing and the
+// "All"/category counters always agree on what's on screen.
+function currentBaseLeads(){
+  if (SHOW_SOURCE_FILTER && state.source === "value_chain_map") return myValueChainLeads();
+  return viewBaseLeads();
+}
+
+function filtered(){
+  return currentBaseLeads()
+    .filter(l => state.cat==="all" || l.cat===state.cat)
+    .filter(l => !SHOW_SOURCE_FILTER || state.source==="all" || l.source===state.source)
+    .filter(l => !state.warmOnly || l.warm)
+    .sort(compareLeads);
+}
+
+function renderUsers(){
+  el("#userseg").innerHTML = USERS.map(u=>`
+    <button type="button" data-u="${u.id}" class="${state.user===u.id?'on':''}" aria-pressed="${state.user===u.id}">
+      <span class="avatar" aria-hidden="true" style="background:${u.color}">${initials(u.name)}</span>${u.name}
+    </button>`).join("");
+  el("#userseg").querySelectorAll("button").forEach(b=>b.onclick=()=>{state.user=b.dataset.u;renderAll();});
+}
+function renderChips(){
+  const mine = currentBaseLeads();
+  const chips = [{k:"all",name:"All"}].concat(
+    Object.keys(CATS).map(k=>({k,name:CATS[k].name})));
+  el("#catchips").innerHTML = chips.map(c=>{
+    const count = c.k==="all"? mine.length : mine.filter(l=>l.cat===c.k).length;
+    return `<button type="button" class="chip ${c.k!=='all'?'cat-'+c.k:''} ${state.cat===c.k?'on':''}" data-c="${c.k}" aria-pressed="${state.cat===c.k}">
+      ${c.k!=="all"?`<span class="cd" aria-hidden="true"></span>`:""}${c.name}<span class="ct">${count}</span></button>`;
+  }).join("");
+  el("#catchips").querySelectorAll(".chip").forEach(ch=>ch.onclick=()=>{state.cat=ch.dataset.c;renderAll();});
+}
+// SHOW_SOURCE_FILTER only. Same reused .chip look as renderChips() above, so
+// it reads as one consistent filter row family, not a bolted-on control.
+// "All sources"/"Engine" count against viewBaseLeads() (the current
+// pipeline/in-sequence/closed/needs-contact view) deliberately, NOT
+// currentBaseLeads() -- once "Value chain" is the active chip,
+// currentBaseLeads() itself is overridden to the all-86 set, and counting
+// this row's OWN chips against that would make "Engine" collapse to 0 and
+// "All sources" read as just the value_chain total the moment you click
+// "Value chain". "Value chain"'s count is the one deliberate exception: it
+// always shows the true full total (myValueChainLeads().length), since
+// that's exactly what clicking it reveals, regardless of view.
+function renderSourceChips(){
+  if(!SHOW_SOURCE_FILTER){ el("#sourcechips").innerHTML = ""; return; }
+  const mine = viewBaseLeads();
+  const chips = [
+    {k:"all", name:"All sources", count: mine.length},
+    {k:"engine", name:"Engine", count: mine.filter(l=>l.source==="engine").length},
+    {k:"value_chain_map", name:"Value chain", count: myValueChainLeads().length},
+  ];
+  el("#sourcechips").innerHTML = chips.map(c=>{
+    return `<button type="button" class="chip ${state.source===c.k?'on':''}" data-src="${c.k}" aria-pressed="${state.source===c.k}">
+      ${c.name}<span class="ct">${c.count}</span></button>`;
+  }).join("");
+  el("#sourcechips").querySelectorAll(".chip").forEach(ch=>ch.onclick=()=>{state.source=ch.dataset.src;renderAll();});
+}
+function renderSort(){
+  const opts = SHOW_WARM_INTROS ? SORTS : SORTS.filter(s=>s.k!=="warm");
+  el("#sortseg").innerHTML = opts.map(s=>`
+    <button type="button" data-s="${s.k}" class="${state.sort===s.k?'on':''}" aria-pressed="${state.sort===s.k}">${s.label}</button>`).join("");
+  el("#sortseg").querySelectorAll("button").forEach(b=>b.onclick=()=>{state.sort=b.dataset.s;renderAll();});
+}
+function renderTiles(){
+  const mine = myOpenLeads();
+  const mineSeq = myInSequenceLeads();
+  const mineClosed = myClosedLeads();
+  const mineNeedsContact = myNeedsContactLeads();
+  const f = myAllLeads().filter(l=>isNewSignal(l.signal)).length;
+  const w = mine.filter(l=>l.warm).length;
+  const allActive = state.view==="pipeline" && !state.warmOnly;
+  const newsfeedActive = state.view==="newsfeed";
+  const needsContactActive = state.view==="needscontact";
+  const seqActive = state.view==="insequence";
+  const closedActive = state.view==="closed";
+  // 5 tiles with the warm tile shown, 4 without it (base .tiles is already
+  // a 4-column grid, so only the warm-shown case needs the override).
+  el("#tiles").classList.toggle("cols-5", SHOW_WARM_INTROS);
+  const warmTile = SHOW_WARM_INTROS
+    ? `<button type="button" class="tile warm ${state.warmOnly?'on':''}" data-t="warm" aria-pressed="${state.warmOnly}"><div class="n">${w}</div><div class="l">Warm intros</div></button>`
+    : "";
+  el("#tiles").innerHTML = `
+    <button type="button" class="tile ${allActive?'on':''}" data-t="all" aria-pressed="${allActive}"><div class="n">${mine.length}</div><div class="l">My leads</div></button>
+    <button type="button" class="tile fresh ${newsfeedActive?'on':''}" data-t="fresh" aria-pressed="${newsfeedActive}"><div class="n">${f}</div><div class="l">Fresh signals</div></button>
+    ${warmTile}
+    <button type="button" class="tile ${seqActive?'on':''}" data-t="seq" aria-pressed="${seqActive}"><div class="n">${mineSeq.length}</div><div class="l">In sequence</div></button>
+    <button type="button" class="tile ${closedActive?'on':''}" data-t="closed" aria-pressed="${closedActive}"><div class="n">${mineClosed.length}</div><div class="l">Closed</div></button>`;
+  el("#tiles").querySelectorAll(".tile").forEach(t=>t.onclick=()=>{
+    const k = t.dataset.t;
+    if(k==="all"){ state.view="pipeline"; state.warmOnly=false; }
+    else if(k==="fresh"){ state.view = state.view==="newsfeed" ? "pipeline" : "newsfeed"; state.warmOnly=false; }
+    else if(k==="warm"){ const next=!state.warmOnly; state.warmOnly=next; }
+    else if(k==="seq"){ state.view = state.view==="insequence" ? "pipeline" : "insequence"; state.warmOnly=false; }
+    else if(k==="closed"){ state.view = state.view==="closed" ? "pipeline" : "closed"; state.warmOnly=false; }
+    renderAll();
+  });
+  // Discreet secondary access to the "Needs contact" view -- demoted from a
+  // 5th tile (crowded the row) to a plain link under it. Hidden entirely at
+  // N===0, since there's nothing to review.
+  el("#needscontact-link").innerHTML = mineNeedsContact.length
+    ? `<button type="button" class="seq-open needscontact-link ${needsContactActive?'on':''}">${mineNeedsContact.length} account${mineNeedsContact.length===1?"":"s"} need a contact <span class="arrow">→</span></button>`
+    : "";
+  const ncBtn = el("#needscontact-link").querySelector(".needscontact-link");
+  if (ncBtn) ncBtn.onclick = () => {
+    state.view = state.view==="needscontact" ? "pipeline" : "needscontact";
+    state.warmOnly=false;
+    renderAll();
+  };
+}
+function stageLabel(stage){ return stage===0 ? "Not started" : `Follow-up ${stage}/4`; }
+
+// Whole days elapsed from an ISO timestamp (last_touch_at) to now. null for
+// missing/unparseable input -- a contact with no touch yet has no timer.
+function daysSinceTouch(iso){
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return null;
+  return Math.floor((Date.now() - d.getTime()) / 86400000);
+}
+
+// An account is "in flow" once at least one of its contacts has stage > 0
+// with a recorded touch date, and isn't closed (Replied/Stopped). Fixed
+// 7-day cadence: delay = days since touch - 7, so day 8 is delay 1 (the
+// design's "day 8 = 1 day of delay"). When an account has multiple in-flow
+// contacts, this reflects whichever is most overdue (worst-case) -- shared
+// by followupAccounts() (Followups section) and cardHtml() (pipeline/"In
+// sequence" cards) so both agree on which contact drives an account's
+// badge/footer. Returns null if the account has no in-flow contact at all.
+function worstInFlowContact(l){
+  let worst = null;
+  for (const c of realContactsOf(l)) {
+    if (c.stage > 0 && c.last_touch_at && !isClosed(c)) {
+      const days = daysSinceTouch(c.last_touch_at);
+      if (days === null) continue;
+      const delay = days - 7;
+      if (!worst || delay > worst.delay) worst = { c, days, delay };
+    }
+  }
+  return worst;
+}
+
+// Most recent last_touch_at (ms) among an account's real in-flow contacts --
+// the opposite pick from worstInFlowContact (which picks by most OVERDUE).
+// Used only to order the "In sequence" view by most-recently-started/touched
+// account first. -Infinity for an account with no in-flow touch, so it sinks
+// to the bottom of that view.
+function latestInFlowTouchMs(l){
+  let latest = -Infinity;
+  for (const c of realContactsOf(l)) {
+    if (c.stage > 0 && !isClosed(c) && c.last_touch_at) {
+      const t = new Date(c.last_touch_at).getTime();
+      if (!isNaN(t) && t > latest) latest = t;
+    }
+  }
+  return latest;
+}
+
+// `predicate(delay)` narrows the worst-in-flow accounts to a section (today
+// just "overdue", d >= 1, for Followups -- FUP on Time was removed).
+function followupAccounts(predicate){
+  const rows = [];
+  for (const l of LEADS) {
+    const worst = worstInFlowContact(l);
+    if (worst && predicate(worst.delay)) rows.push({ l, worst });
+  }
+  return rows.sort((a, b) => b.worst.delay - a.worst.delay);
+}
+
+// Small badge injected into the shared cardHtml() output -- the account's
+// worst-case followup status, showing the REAL stage text (e.g. "FUP 7"),
+// not the 0-4 collapsed number cadence()/stagesel show elsewhere.
+function followupTagHtml(worst){
+  const overdue = worst.delay >= 1;
+  const delayTag = overdue
+    ? `<span class="fu-tag fu-over">${worst.delay} day${worst.delay===1?"":"s"} overdue</span>`
+    : `<span class="fu-tag fu-ok">${7 - worst.days} day${(7 - worst.days)===1?"":"s"} left</span>`;
+  return `<div class="fu-badge"><span class="fu-stagereal">${worst.c.stage_text || "—"}</span>${delayTag}</div>`;
+}
+
+// Fixed progression a "Done" click walks forward. Capped at FUP 10 -- what
+// happens at the cap (closing the flow) is out of scope here (Entrega B).
+const STAGE_SEQUENCE = ["Not Contacted","First Touch (Email)","FUP 1","FUP 2","FUP 3","FUP 4","FUP 5","FUP 6","FUP 7","FUP 8","FUP 9","FUP 10"];
+function nextStageText(stageText){
+  const t = (stageText || "Not Contacted").trim();
+  if (t === "Not Contacted") return STAGE_SEQUENCE[1];
+  // Both First Touch variants (Email/LinkedIn) are UI-equivalent (stage 1) --
+  // either one's "next" is FUP 1.
+  if (t.indexOf("First Touch") === 0) return "FUP 1";
+  const idx = STAGE_SEQUENCE.indexOf(t);
+  if (idx !== -1 && idx < STAGE_SEQUENCE.length - 1) return STAGE_SEQUENCE[idx + 1];
+  return null; // FUP 10, "Replied", or unrecognized -- no next step from here
+}
+
+// Inverse of nextStageText() -- the FUP immediately before the contact's
+// current stage_text, per the fixed STAGE_SEQUENCE. Used only for the
+// comment box's read-only "Last FUP" preview. "Not Contacted" and either
+// First Touch variant have no previous FUP (nothing to preview yet) --
+// returns null. Known simplification, same spirit as stageToText()'s: FUP
+// 1's previous is always read back as "First Touch (Email)" (can't tell
+// from stage_text alone whether the contact's actual first touch was Email
+// or LinkedIn) -- fine for a best-effort preview, not load-bearing data.
+function previousStageText(stageText){
+  const t = (stageText || "Not Contacted").trim();
+  if (t === "Not Contacted" || t.indexOf("First Touch") === 0) return null;
+  const idx = STAGE_SEQUENCE.indexOf(t);
+  if (idx <= 0) return null;
+  return STAGE_SEQUENCE[idx - 1];
+}
+
+// Looks up an existing touches row for a contact by FUP label -- null if
+// none exists yet. Never fabricated.
+function touchFor(contact, fupLabel){
+  if (!fupLabel) return null;
+  return (contact.touches || []).find(t => t.fup_label === fupLabel) || null;
+}
+
+// Done/Replied/Stopped button trio for the worst-case in-flow contact --
+// shared by Followups cards (plain footer) and "in sequence" pipeline
+// cards (inSequenceFooterHtml). Done is disabled (not hidden) once
+// nextStageText() has nowhere left to go; Replied/Stopped stay available
+// regardless, since a contact can close out of any stage.
+function doneButtonHtml(worst){
+  const next = nextStageText(worst.c.stage_text);
+  const contactId = escAttr(worst.c.id);
+  const contactName = escAttr(worst.c.name);
+  const doneBtn = next
+    ? `<button type="button" class="fu-done" data-contact-id="${contactId}">Done</button><span class="fu-donenote"></span>`
+    : `<button type="button" class="fu-done" disabled>Done</button>`;
+  // Replied button hidden for now -- markReplied()/bindCloseActions stay
+  // wired, this is getting reworked into a per-FUP comment instead of a
+  // close action, not deleted.
+  const stoppedBtn = `<button type="button" class="fu-done fu-stopped" data-contact-id="${contactId}" data-contact-name="${contactName}">Stopped</button><span class="fu-donenote"></span>`;
+  return `<span class="fu-donewrap">${doneBtn}${stoppedBtn}</span>`;
+}
+
+// Pipeline/"In sequence" card footer for an account already in flow: the
+// real FUP text + days since last touch (not the Followups badge's
+// "delay/days left" framing -- this isn't the overdue-only Followups view),
+// plus the same Done button/logic as Followups.
+function inSequenceFooterHtml(worst){
+  const stageReal = worst.c.stage_text || "—";
+  return `<span class="fu-badge"><span class="fu-stagereal">${stageReal}</span><span class="fu-tag fu-ok">${worst.days} day${worst.days===1?"":"s"} since last touch</span></span>${doneButtonHtml(worst)}`;
+}
+
+// Badge listing every closed (Replied/Stopped) contact on the account --
+// shown regardless of view, since an account can carry a closed contact
+// alongside a still-active one (e.g. in "In sequence"). Empty string when
+// nothing's closed, so it costs nothing outside the Closed view.
+function closedContactsBadgeHtml(l){
+  const closed = l.contacts.filter(c => isClosed(c));
+  if (!closed.length) return "";
+  const tags = closed.map(c => {
+    const cls = c.stage_text === "Replied" ? "fu-replied-tag" : "fu-stopped-tag";
+    return `<span class="fu-tag ${cls}">${escAttr(c.name)}: ${escAttr(c.stage_text)}</span>`;
+  }).join("");
+  return `<div class="fu-badge">${tags}</div>`;
+}
+
+// Same safe-save pattern as saveStage(): write to Supabase first, only touch
+// memory (and only report success) if that write didn't error.
+async function markDone(btn){
+  const contactId = btn.dataset.contactId;
+  const contact = findContactById(contactId);
+  if (!contact) return;
+  const next = nextStageText(contact.stage_text);
+  if (!next) return;
+  const note = btn.nextElementSibling;
+  const touchedAt = new Date().toISOString();
+  btn.disabled = true;
+  const { error } = await sb.from("contacts").update({ stage: next, last_touch_at: touchedAt }).eq("id", contactId);
+  if (error) {
+    btn.disabled = false;
+    if (note) { note.textContent = "Save error"; note.className = "fu-donenote err"; }
+    return;
+  }
+  contact.stage = stageFromText(next);
+  contact.stage_text = next;
+  contact.last_touch_at = touchedAt;
+  if (note) { note.textContent = "Saved ✓"; note.className = "fu-donenote ok"; }
+  // Brief pause so "Saved ✓" is actually visible before the re-render
+  // moves/removes this card (its delay just reset).
+  setTimeout(() => { renderFollowups(); }, 800);
+}
+
+// Same safe-save pattern as markDone(), but for the two terminal actions:
+// closes the contact out of the active flow instead of advancing it.
+// last_touch_at is intentionally left untouched -- a closed contact has no
+// more 7-day timer to reset. Confirms first since both are one-way (no
+// "undo" button exists yet). Full renderAll()-style re-render afterward
+// (not just renderFollowups(), unlike markDone) because closing a contact
+// can move its account across Open/In sequence/Closed set membership.
+async function markReplied(btn){
+  const contactId = btn.dataset.contactId;
+  const contact = findContactById(contactId);
+  if (!contact) return;
+  const name = btn.dataset.contactName || contact.name || "this contact";
+  if (!window.confirm(`Mark ${name} as replied? This closes the sequence.`)) return;
+  const note = btn.nextElementSibling;
+  btn.disabled = true;
+  const { error } = await sb.from("contacts").update({ stage: "Replied" }).eq("id", contactId);
+  if (error) {
+    btn.disabled = false;
+    if (note) { note.textContent = "Save error"; note.className = "fu-donenote err"; }
+    return;
+  }
+  contact.stage = stageFromText("Replied");
+  contact.stage_text = "Replied";
+  if (note) { note.textContent = "Saved ✓"; note.className = "fu-donenote ok"; }
+  setTimeout(() => { renderFollowups(); renderSections(); renderTiles(); renderChips(); }, 800);
+}
+
+async function markStopped(btn){
+  const contactId = btn.dataset.contactId;
+  const contact = findContactById(contactId);
+  if (!contact) return;
+  const name = btn.dataset.contactName || contact.name || "this contact";
+  if (!window.confirm(`Stop ${name}? This closes the sequence without a reply.`)) return;
+  const note = btn.nextElementSibling;
+  btn.disabled = true;
+  const { error } = await sb.from("contacts").update({ stage: "Stopped" }).eq("id", contactId);
+  if (error) {
+    btn.disabled = false;
+    if (note) { note.textContent = "Save error"; note.className = "fu-donenote err"; }
+    return;
+  }
+  contact.stage = stageFromText("Stopped");
+  contact.stage_text = "Stopped";
+  if (note) { note.textContent = "Saved ✓"; note.className = "fu-donenote ok"; }
+  setTimeout(() => { renderFollowups(); renderSections(); renderTiles(); renderChips(); }, 800);
+}
+
+// Expands a pipeline card's "Start sequence" button into an inline
+// Email/LinkedIn channel picker, in place.
+function showChannelPicker(btn){
+  const wrap = btn.parentElement;
+  const contactId = wrap.dataset.contactId;
+  wrap.innerHTML = `<span class="startpick-label">Channel:</span>
+    <button type="button" class="start-channel" data-contact-id="${escAttr(contactId)}" data-channel="Email">Email</button>
+    <button type="button" class="start-channel" data-contact-id="${escAttr(contactId)}" data-channel="LinkedIn">LinkedIn</button>`;
+  wrap.querySelectorAll(".start-channel").forEach(b => { b.onclick = () => startSequence(b); });
+}
+
+// Same safe-save pattern as the rest: write to Supabase first, only touch
+// memory (and only report success) if that write didn't error. Buttons
+// disabled during the request, re-enabled on error so the user can retry.
+// UPSERT on (contact_id, fup_label) -- one comment per contact per FUP,
+// edited in place on repeat saves rather than inserting a new row. Marking
+// Replied here is just a data point on the comment -- it does NOT touch
+// contact.stage/stage_text, so it never closes the contact (that's
+// markReplied(), currently hidden -- see doneButtonHtml()).
+async function saveComment(wrap, contact, fupLabel){
+  const textarea = wrap.querySelector(".comment-textarea");
+  const repliedCb = wrap.querySelector(".comment-replied-cb");
+  const saveBtn = wrap.querySelector(".comment-save");
+  const note = wrap.querySelector(".comment-note");
+  const commentText = textarea.value;
+  const replied = repliedCb.checked;
+  saveBtn.disabled = true;
+  textarea.disabled = true;
+  repliedCb.disabled = true;
+  const { data, error } = await sb.from("touches")
+    .upsert(
+      { contact_id: contact.id, fup_label: fupLabel, comment: commentText, replied, updated_at: new Date().toISOString() },
+      { onConflict: "contact_id,fup_label" }
+    )
+    .select()
+    .single();
+  saveBtn.disabled = false;
+  textarea.disabled = false;
+  repliedCb.disabled = false;
+  if (error) {
+    if (note) { note.textContent = "Save error"; note.className = "comment-note err"; }
+    return;
+  }
+  contact.touches = contact.touches || [];
+  const savedTouch = {
+    id: data.id, fup_label: data.fup_label, comment: data.comment,
+    replied: data.replied, created_at: data.created_at, updated_at: data.updated_at,
+  };
+  const existingIdx = contact.touches.findIndex(t => t.fup_label === fupLabel);
+  if (existingIdx !== -1) contact.touches[existingIdx] = savedTouch;
+  else contact.touches.push(savedTouch);
+  if (note) { note.textContent = "Saved ✓"; note.className = "comment-note ok"; }
+}
+
+// Same safe-save pattern as saveStage()/markDone(): write to Supabase
+// first, only touch memory (and only report success) if that write
+// didn't error. Buttons stay disabled during the request and re-enable on
+// error so the user can retry.
+async function startSequence(btn){
+  const contactId = btn.dataset.contactId;
+  const channel = btn.dataset.channel;
+  const contact = findContactById(contactId);
+  if (!contact) return;
+  const stageText = channel === "LinkedIn" ? "First Touch (LinkedIn)" : "First Touch (Email)";
+  const wrap = btn.parentElement;
+  let note = wrap.querySelector(".startpick-note");
+  if (!note) {
+    note = document.createElement("span");
+    note.className = "startpick-note";
+    wrap.appendChild(note);
+  }
+  const touchedAt = new Date().toISOString();
+  wrap.querySelectorAll("button").forEach(b => { b.disabled = true; });
+  const { error } = await sb.from("contacts").update({ stage: stageText, last_touch_at: touchedAt }).eq("id", contactId);
+  if (error) {
+    wrap.querySelectorAll("button").forEach(b => { b.disabled = false; });
+    note.textContent = "Save error";
+    note.className = "startpick-note err";
+    return;
+  }
+  contact.stage = stageFromText(stageText);
+  contact.stage_text = stageText;
+  contact.last_touch_at = touchedAt;
+  note.textContent = "Saved ✓";
+  note.className = "startpick-note ok";
+  // Brief pause so "Saved ✓" is visible before the re-render: the account
+  // now counts as "in sequence" and leaves the cold pipeline/its counters.
+  setTimeout(() => { renderFollowups(); renderSections(); renderTiles(); renderChips(); }, 800);
+}
+
+// Reuses cardHtml() -- same design, same signal, same contact block, same
+// E1/LI/E2/E3 bar -- for both followup sections. The footer becomes the
+// "Done" button only inside cardHtml, only when a `worst` object is passed;
+// the pipeline's own cardHtml(l) call (no second arg) gets "Start sequence"
+// instead. Also reuses groupByCategory()/categorySectionsHtml() so these
+// sections get the same category headers as the pipeline.
+function renderFollowupSection(selector, rows, title, extraClass, emptyText){
+  const groups = groupByCategory(rows, r => r.l.cat);
+  const body = groups.length
+    ? categorySectionsHtml(groups, r => cardHtml(r.l, r.worst))
+    : `<div class="fu-empty">${emptyText}</div>`;
+  const container = el(selector);
+  container.innerHTML = `<div class="fu-section ${extraClass}">
+    <div class="sechead"><h2>${title}</h2></div>
+    ${body}
+  </div>`;
+  bindCloseActions(container);
+}
+
+// Wires the Done/Replied/Stopped controls doneButtonHtml() renders --
+// shared by the Followups section and the pipeline/"In sequence" list,
+// since both reuse cardHtml()'s footer. Kept as one function so both call
+// sites can't drift (e.g. one forgetting to wire a new action). The
+// per-FUP comment reworked from an inline box into the touch modal (see
+// openTouchModal()) -- opened by clicking the card itself, not a button
+// here, so it's wired separately in the card-click delegation below.
+function bindCloseActions(container){
+  container.querySelectorAll(".fu-done").forEach(b=>{
+    if (b.classList.contains("fu-replied") || b.classList.contains("fu-stopped")) return;
+    if (!b.disabled) b.onclick = () => markDone(b);
+  });
+  container.querySelectorAll(".fu-replied").forEach(b=>{ b.onclick = () => markReplied(b); });
+  container.querySelectorAll(".fu-stopped").forEach(b=>{ b.onclick = () => markStopped(b); });
+}
+
+function renderFollowups(){
+  renderFollowupSection("#followups", followupAccounts(d => d >= 1), "Followups", "",
+    "No overdue contacts.");
+}
+
+function cadence(stage){
+  const dots = STEPS.map((s,i)=>{
+    const cls = i<stage?"done":(i===stage?"now":"");
+    return `<div class="step ${cls}"><span class="s"></span><span class="t">${s}</span></div>`;
+  }).join("");
+  const next = stage>=4 ? `<span class="next">Complete</span>` : `<span class="next">Next: <b>${STEPS[stage]==="LI"?"LinkedIn":STEPS[stage]}</b></span>`;
+  return `<span class="cadlabel"><b>${stageLabel(stage)}</b></span><div class="steps">${dots}</div>${next}`;
+}
+function warmText(w){
+  return w.level==="contact" ? `<span class="who">${w.who} knows <b>${w.target}</b></span>`
+    : `<span class="who">${w.who} — contact at <b>${w.target}</b></span>`;
+}
+const peopleIco = `<svg class="ico" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M16 6a3 3 0 0 1 0 6"/><path d="M18 20a6 6 0 0 0-3-5"/></svg>`;
+
+function escAttr(s){ return String(s==null?"":s).replace(/"/g,"&quot;"); }
+
+// Normalizes a stored link value into a safe href, or "" (meaning "don't
+// render a link"). Some rows in Supabase (linkedin_url especially, ~136 of
+// them) were saved without a scheme, e.g. "linkedin.com/in/x" -- real,
+// working URLs, just missing "https://". A plain presence/prefix check either
+// renders those broken (bare domain resolves as a relative path off the
+// cockpit's own URL) or hides them outright, so instead this repairs them:
+//   - "" / null              -> "" (nothing to link to)
+//   - already has a scheme   -> returned as-is (case-insensitive check)
+//   - looks like a URL       -> "https://" prepended (has a "." and no spaces,
+//                                so "linkedin.com/in/x" qualifies but
+//                                "N/A"/"pendiente"/"-" don't)
+//   - anything else          -> "" (not confidently a URL, don't guess)
+function normalizeUrl(u){
+  const s = String(u==null?"":u).trim();
+  if (!s) return "";
+  if (/^https?:\/\//i.test(s)) return s;
+  if (s.indexOf(".")!==-1 && s.indexOf(" ")===-1) return "https://" + s;
+  return "";
+}
+
+// signal_detail in Supabase holds 3 shapes, not just "news vs. none":
+// a real dated news blurb (display as-is, the common case), or one of two
+// fixed, account-independent qualification notes pasted identically across
+// many rows during sourcing ("Firmographic fit: ..." / "ICP_VALID via
+// WebSearch: ..."). Those aren't news -- there's no real "age" for a static
+// criteria paragraph, so classify them separately and render as a plain
+// label instead of the raw technical text + a misleading "999d".
+const SIGNAL_LABELS = { firmographic: "Firmographic fit", icp: "ICP validated" };
+function classifySignal(signalText){
+  const s = String(signalText==null?"":signalText).trim();
+  if (!s) return { kind: "none" };
+  if (s.indexOf("Firmographic fit")===0) return { kind: "firmographic", label: SIGNAL_LABELS.firmographic };
+  if (s.indexOf("ICP_VALID")===0) return { kind: "icp", label: SIGNAL_LABELS.icp };
+  return { kind: "news" };
+}
+
+// The old numeric 0-4 stage select -- kept only for followup/FUP-on-time
+// cards (followupWorst truthy). Pipeline cards use startSequenceHtml()
+// instead (see contactBlock below).
+function stageSelectHtml(active){
+  return `<span class="stagewrap"><select class="stagesel" data-contact-id="${escAttr(active.id)}" aria-label="Stage for ${escAttr(active.name)}">${[0,1,2,3,4].map(n=>`<option value="${n}" ${n===active.stage?"selected":""}>${stageLabel(n)}</option>`).join("")}</select><span class="stagesave"></span></span>`;
+}
+
+// Pipeline-only, stage-0 contacts only: a single button that expands into
+// an inline Email/LinkedIn channel picker (see showChannelPicker/startSequence).
+function startSequenceHtml(active){
+  return `<span class="startwrap" data-contact-id="${escAttr(active.id)}"><button type="button" class="start-seq">Start sequence</button></span>`;
+}
+
+// `followupWorst` truthy = a followup/FUP-on-time card (keeps the old
+// numeric stage select). Falsy = a pipeline card: no select at all: a
+// "Start sequence" button on not-yet-contacted (stage 0) contacts, nothing
+// on contacts already in flow (their progress lives in cadence()/the
+// followup sections instead).
+function contactBlock(l, active, followupWorst){
+  const contacts = realContactsOf(l);
+  if(!contacts.length){
+    return `<div class="contact contact-empty">No contact identified yet</div>`;
+  }
+  const selector = contacts.length>1
+    ? `<select class="contactsel" data-co="${escAttr(l.co)}" aria-label="Choose contact at ${escAttr(l.co)}">
+         ${contacts.map((c,i)=>`<option value="${i}" ${c===active?"selected":""}>${c.name} — ${stageLabel(c.stage)}</option>`).join("")}
+       </select>`
+    : "";
+  const links = [];
+  if(active.email && active.email.indexOf("@")!==-1){
+    // SHOW_SOURCE_FILTER only: a sober "unverified" tag next to any email
+    // whose email_status isn't exactly "VERIFIED" -- doesn't change whether
+    // the email renders (that's still just the "@" check above), only adds
+    // the indicator. Reuses .team-status's existing pill look, no new CSS.
+    const unverifiedTag = (SHOW_SOURCE_FILTER && active.email_status && active.email_status !== "VERIFIED")
+      ? `<span class="team-status" title="Email status: ${escAttr(active.email_status)}">unverified</span>` : "";
+    links.push(`<a href="mailto:${active.email}"${unverifiedTag?' style="color:var(--ink-3)"':''}>${active.email}</a>${unverifiedTag}`);
+  }
+  const li = normalizeUrl(active.linkedin);
+  if(li) links.push(`<a href="${li}" target="_blank">LinkedIn</a>`);
+  const teamStatus = active.team_status ? `<span class="team-status">${active.team_status}</span>` : "";
+  const notes = active.notes ? `<div class="team-notes">${active.notes}</div>` : "";
+  // Pipeline cards no longer get a stage control here -- "Start sequence"
+  // lives in the card footer instead (see cardHtml).
+  const stageControl = (followupWorst && active.id) ? stageSelectHtml(active) : "";
+  return `<div class="contact">
+    <div class="contact-row"><b>${active.name}</b> · ${active.title||"—"}${teamStatus}${stageControl}${selector}</div>
+    ${links.length?`<div class="contact-links">${links.join("")}</div>`:""}
+    ${notes}
+  </div>`;
+}
+
+// Official cadence: E1 day 0, LinkedIn touch +2d, E2 +5d, E3 breakup +12d.
+// Structure only — textareas don't persist, "Enviar" is a placeholder.
+const SEQUENCE_STEPS = [
+  { code:"E1", label:"E1", type:"email", day:"Día 0", fup:1 },
+  { code:"LI", label:"LinkedIn", type:"linkedin", day:"+2d", fup:2 },
+  { code:"E2", label:"E2", type:"email", day:"+5d", fup:3 },
+  { code:"E3", label:"E3 breakup", type:"email", day:"+12d", fup:4 },
+];
+
+function seqStepStatus(idx, stage){ return idx<stage ? "done" : (idx===stage ? "now" : "pending"); }
+function seqStatusLabel(status){ return status==="done" ? "Done" : (status==="now" ? "Current" : "Pending"); }
+
+function seqStepHtml(step, idx, stage){
+  const status = seqStepStatus(idx, stage);
+  const fupLabel = `FUP ${step.fup} / ${step.label}`;
+  const body = step.type==="linkedin"
+    ? `<div class="seq-li-marker">${peopleIco}<span>LinkedIn touch</span></div>`
+    : `<textarea class="seq-textarea" aria-label="${fupLabel}" placeholder="Escribe el ${step.label}..."></textarea>
+       <div class="seq-sendrow">
+         <button type="button" class="seq-send" disabled>Enviar</button>
+         <span class="seq-sendnote">próximamente — se conecta al correo del usuario</span>
+       </div>`;
+  return `<div class="seq-step seq-${status}">
+    <div class="seq-step-head">
+      <span class="seq-fup">${fupLabel}</span>
+      <span class="seq-day">${step.day}</span>
+      <span class="seq-status">${seqStatusLabel(status)}</span>
+    </div>
+    ${body}
+  </div>`;
+}
+
+function seqPanelHtml(l, contact){
+  const stage = contact ? contact.stage : 0;
+  const who = contact ? `${contact.name}${contact.title? " · "+contact.title:""}` : "No contact identified yet";
+  const steps = SEQUENCE_STEPS.map((s,i)=>seqStepHtml(s,i,stage)).join("");
+  return `<div class="seq-head">
+      <div>
+        <div class="seq-co">${l.co}</div>
+        <div class="seq-contact">${who}</div>
+      </div>
+      <button type="button" class="seq-close" aria-label="Close sequence">✕</button>
+    </div>
+    <div class="seq-steps">${steps}</div>`;
+}
+
+function openSequence(co){
+  const l = LEADS.find(x=>x.co===co);
+  if(!l) return;
+  el("#seqPanel").innerHTML = seqPanelHtml(l, activeContactOf(l));
+  el("#seqPanel").querySelector(".seq-close").onclick = closeSequence;
+  const overlay = el("#seqOverlay");
+  overlay.hidden = false;
+  document.body.style.overflow = "hidden";
+  el("#seqPanel").querySelector(".seq-close").focus();
+}
+function closeSequence(){
+  el("#seqOverlay").hidden = true;
+  document.body.style.overflow = "";
+}
+el("#seqOverlay").addEventListener("click", e => { if(e.target.id==="seqOverlay") closeSequence(); });
+document.addEventListener("keydown", e => { if(e.key==="Escape" && !el("#seqOverlay").hidden) closeSequence(); });
+
+// Walks previousStageText() backward from the contact's current FUP to
+// build the full FUP history in chronological order (First Touch first,
+// current FUP last) for the touch modal. Same known simplification
+// previousStageText() itself carries (FUP 1's previous always reads as
+// "First Touch (Email)").
+function touchHistorySteps(contact){
+  const current = contact.stage_text;
+  const steps = [];
+  let label = previousStageText(current);
+  while (label) {
+    steps.unshift(label);
+    label = previousStageText(label);
+  }
+  if (current && current !== "Not Contacted") steps.push(current);
+  return steps;
+}
+
+// Short, locale-formatted date for a touch's updated_at -- "" if missing/
+// unparseable (never fabricated).
+function formatTouchDate(iso){
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
+
+// One FUP's row in the modal's history -- its saved touch (comment +
+// Replied tag + date) if any, else a dimmed "No comment yet" placeholder so
+// the full FUP walk stays visible even where nothing was written. Either
+// way it gets an Edit/Add comment button (data-fup-label so the delegated
+// click handler on #touchModal knows which FUP to open -- see
+// touchEditItemHtml() and the click listener near openTouchModal()).
+function touchHistoryItemHtml(contact, fupLabel){
+  const t = touchFor(contact, fupLabel);
+  const fupAttr = escAttr(fupLabel);
+  if (!t || !t.comment) {
+    return `<div class="touch-item empty" data-fup-label="${fupAttr}">
+      <div class="touch-item-head">
+        <span class="touch-item-head-left"><span class="touch-item-fup">${escAttr(fupLabel)}</span></span>
+        <span class="touch-item-head-right"><button type="button" class="touch-edit-btn" data-fup-label="${fupAttr}">Add comment</button></span>
+      </div>
+      <div class="touch-item-empty-text">No comment yet</div>
+    </div>`;
+  }
+  const repliedTag = t.replied ? `<span class="touch-item-replied">Replied</span>` : "";
+  return `<div class="touch-item" data-fup-label="${fupAttr}">
+    <div class="touch-item-head">
+      <span class="touch-item-head-left"><span class="touch-item-fup">${escAttr(fupLabel)}</span>${repliedTag}</span>
+      <span class="touch-item-head-right">
+        <span class="touch-item-date">${formatTouchDate(t.updated_at)}</span>
+        <button type="button" class="touch-edit-btn" data-fup-label="${fupAttr}">Edit</button>
+      </span>
+    </div>
+    <div class="touch-item-comment">${t.comment}</div>
+  </div>`;
+}
+
+function touchHistoryHtml(contact){
+  const steps = touchHistorySteps(contact);
+  if (!steps.length) return `<div class="touch-item-empty-text">No FUP history yet.</div>`;
+  return steps.map(fupLabel => touchHistoryItemHtml(contact, fupLabel)).join("");
+}
+
+// In-place edit zone for one history item -- swapped in over that item's
+// outerHTML when its Edit/Add comment button is clicked (see the delegated
+// click listener near openTouchModal()). Carries the EXACT classes
+// saveComment() already knows how to read (.comment-textarea/
+// .comment-replied-cb/.comment-save/.comment-note) so saveHistoryItemComment()
+// can call saveComment() unchanged, scoped to just this item instead of the
+// whole modal.
+function touchEditItemHtml(contact, fupLabel){
+  const t = touchFor(contact, fupLabel);
+  return `<div class="touch-item touch-item-editing" data-fup-label="${escAttr(fupLabel)}">
+    <div class="touch-edit-fup">${escAttr(fupLabel)}</div>
+    <textarea class="comment-textarea seq-textarea" placeholder="Comment for ${escAttr(fupLabel)}...">${t ? (t.comment || "") : ""}</textarea>
+    <label class="comment-replied"><input type="checkbox" class="comment-replied-cb" ${t && t.replied ? "checked" : ""}> Replied</label>
+    <span class="comment-saverow">
+      <button type="button" class="comment-save">Save</button>
+      <button type="button" class="touch-edit-cancel">Cancel</button>
+      <span class="comment-note"></span>
+    </span>
+  </div>`;
+}
+
+// Full modal body: header (contact/title/account/current FUP) + read-only
+// history + a write zone for the CURRENT FUP, precharged from any existing
+// touches row for it. The write zone reuses the exact .comment-textarea/
+// .comment-replied-cb/.comment-save/.comment-note classes saveComment()
+// already knows how to read -- see saveModalComment().
+function touchModalHtml(contact, accountName){
+  const currentFup = contact.stage_text || "—";
+  const curTouch = touchFor(contact, currentFup);
+  return `<div class="touch-head">
+      <div class="touch-who">
+        <b>${contact.name}</b>
+        <div class="role">${contact.title || "—"}${accountName ? " · " + accountName : ""}</div>
+        <div class="fup">Current FUP: ${escAttr(currentFup)}</div>
+      </div>
+      <button type="button" class="touch-close" aria-label="Close">✕</button>
+    </div>
+    <div class="touch-history">${touchHistoryHtml(contact)}</div>
+    <div class="touch-writezone">
+      <div class="rlabel">Comment for ${escAttr(currentFup)}</div>
+      <textarea class="comment-textarea seq-textarea" placeholder="Comment for ${escAttr(currentFup)}...">${curTouch ? (curTouch.comment || "") : ""}</textarea>
+      <label class="comment-replied"><input type="checkbox" class="comment-replied-cb" ${curTouch && curTouch.replied ? "checked" : ""}> Replied</label>
+      <span class="comment-saverow">
+        <button type="button" class="comment-save">Save</button>
+        <span class="comment-note"></span>
+      </span>
+    </div>`;
+}
+
+// Saves via the exact same saveComment() UPSERT logic used before (now
+// pointed at the modal's write zone instead of an inline per-card box),
+// then refreshes just the read-only history in place so the just-saved
+// entry shows immediately without closing the modal or re-rendering
+// pipeline/Followups -- a comment/Replied-on-the-comment never changes the
+// contact's stage or set membership (that's markReplied(), still hidden).
+async function saveModalComment(contact){
+  await saveComment(el("#touchModal"), contact, contact.stage_text);
+  const historyEl = el("#touchModal").querySelector(".touch-history");
+  if (historyEl) historyEl.innerHTML = touchHistoryHtml(contact);
+}
+
+// Save for a history item's in-place edit zone (touchEditItemHtml()) --
+// same saveComment() UPSERT, scoped to just that item's own container
+// (not the whole modal, unlike saveModalComment() above -- the modal can
+// have this edit zone AND the bottom write zone's .comment-textarea/etc.
+// present at once, so saveComment() needs the narrower wrap to find the
+// right one). Refreshes the WHOLE history afterward so the edited item
+// falls back to its read-only view already updated.
+async function saveHistoryItemComment(itemEl, contact, fupLabel){
+  await saveComment(itemEl, contact, fupLabel);
+  const historyEl = el("#touchModal").querySelector(".touch-history");
+  if (historyEl) historyEl.innerHTML = touchHistoryHtml(contact);
+}
+
+function openTouchModal(contact, accountName){
+  el("#touchModal").dataset.contactId = contact.id;
+  el("#touchModal").innerHTML = touchModalHtml(contact, accountName);
+  el("#touchModal").querySelector(".touch-close").onclick = closeTouchModal;
+  el("#touchModal").querySelector(".comment-save").onclick = () => saveModalComment(contact);
+  const overlay = el("#touchOverlay");
+  overlay.hidden = false;
+  document.body.style.overflow = "hidden";
+  el("#touchModal").querySelector(".touch-close").focus();
+}
+function closeTouchModal(){
+  el("#touchOverlay").hidden = true;
+  document.body.style.overflow = "";
+}
+el("#touchOverlay").addEventListener("click", e => { if(e.target.id==="touchOverlay") closeTouchModal(); });
+document.addEventListener("keydown", e => { if(e.key==="Escape" && !el("#touchOverlay").hidden) closeTouchModal(); });
+
+// Wires the per-FUP Edit/Add comment, Cancel, and item-level Save buttons
+// the history renders -- delegated on #touchModal (a stable element
+// openTouchModal only ever refills, never replaces) so it survives every
+// history-only refresh (saveModalComment, an item's own Edit/Cancel/Save)
+// without needing to be re-bound after each one -- same stability
+// reasoning as the card-click delegation on #list's parent. Reads the
+// contact from #touchModal's own data-contact-id (set by openTouchModal)
+// rather than closing over it, so it's always the currently-open contact
+// even across repeated modal opens. Scoped so it can never fire for the
+// bottom write zone's own .comment-save (that one lives in
+// .touch-writezone, not inside a .touch-item-editing, and is wired
+// directly by openTouchModal already).
+el("#touchModal").addEventListener("click", e => {
+  const contact = findContactById(el("#touchModal").dataset.contactId);
+  if (!contact) return;
+
+  const editBtn = e.target.closest(".touch-edit-btn");
+  if (editBtn) {
+    const item = editBtn.closest(".touch-item");
+    if (!item) return;
+    item.outerHTML = touchEditItemHtml(contact, editBtn.dataset.fupLabel);
+    return;
+  }
+
+  const cancelBtn = e.target.closest(".touch-edit-cancel");
+  if (cancelBtn) {
+    const historyEl = el("#touchModal").querySelector(".touch-history");
+    if (historyEl) historyEl.innerHTML = touchHistoryHtml(contact);
+    return;
+  }
+
+  const editingItem = e.target.closest(".touch-item-editing");
+  if (editingItem && e.target.closest(".comment-save")) {
+    saveHistoryItemComment(editingItem, contact, editingItem.dataset.fupLabel);
+  }
+});
+
+// Clicking anywhere on an in-flow card's "dead" area (not a button/select/
+// link/input/textarea/label -- Done, Stopped, Start sequence, the stage
+// select, LinkedIn/source links) opens the touch modal for that card's
+// worst-in-flow contact. Cold-pipeline and fully-closed cards never get the
+// "clickable" class/data-* (see cardHtml), so they're inert here regardless
+// of what's clicked. Delegated on #list's parent container (never itself re-rendered) so it
+// keeps working across every renderFollowups()/renderSections() re-render
+// of #followups/#list underneath it.
+el("#list").parentElement.addEventListener("click", e => {
+  const card = e.target.closest(".card.clickable");
+  if (!card) return;
+  if (e.target.closest("button, select, a, input, textarea, label")) return;
+  const contact = findContactById(card.dataset.contactId);
+  if (!contact) return;
+  openTouchModal(contact, card.dataset.account);
+});
+
+// `followupWorst` is only ever passed by the Followups section (its
+// overdue-filtered worst-in-flow-contact) -- it drives the badge near the
+// contact AND the plain Done-button footer there. Every other call
+// (pipeline, "In sequence" view) computes its own worst-in-flow-contact via
+// worstInFlowContact(), since accountInSequence() is what actually decides
+// pipeline vs "In sequence" membership, not whether a caller happened to
+// pass followupWorst in. Result: an in-sequence account never gets "Start
+// sequence" (that's stage-0-only), it gets FUP text + days + Done instead --
+// in the pipeline's own card, not just in Followups.
+function cardHtml(l, followupWorst){
+  const active = activeContactOf(l);
+  const showWarm = SHOW_WARM_INTROS && l.warm;
+  const warm = showWarm ? `<div class="warmbar">${peopleIco}<span class="wl">Warm intro</span>${warmText(l.warm)}
+    <span class="lvl">${l.warm.level==="contact"?"Direct":"Company"}</span></div>` : "";
+  const su = normalizeUrl(l.signal.url);
+  const sourceLink = su
+    ? `<a href="${su}" target="_blank">source <span class="arrow">→</span></a>` : "";
+  // l.signal.type is already classified once in loadLeads (news/firmographic/
+  // icp/none) -- read it directly here rather than re-running classifySignal.
+  const sig = l.signal.type === "news"
+    ? `<div class="signal"><span class="sdot" style="background:${sigColor(l.signal)}"></span>
+       <span class="stext">${l.signal.text}</span><span class="age">${l.signal.age}d</span>
+       ${sourceLink}</div>`
+    : l.signal.type === "none"
+    ? `<div class="signal"><span class="sdot" style="background:var(--stale)"></span><span class="stext" style="color:var(--ink-3);font-weight:400">No signal</span></div>`
+    : `<div class="signal"><span class="sdot" style="background:var(--stale)"></span><span class="stext" style="color:var(--ink-3);font-weight:400">${SIGNAL_LABELS[l.signal.type] || ""}</span></div>`;
+  const worst = followupWorst || worstInFlowContact(l);
+  const badge = followupWorst ? followupTagHtml(followupWorst) : "";
+  const closedBadge = closedContactsBadgeHtml(l);
+  const footer = worst
+    ? (followupWorst ? doneButtonHtml(worst) : inSequenceFooterHtml(worst))
+    : (active && active.id && active.stage === 0 ? startSequenceHtml(active) : "");
+  // Only an in-flow card (has a worst-in-flow contact) opens the touch modal
+  // on click -- cold-pipeline/closed cards skip the "clickable" class and
+  // data-contact-id, so the delegated click handler below ignores them.
+  // data-account, though, goes on every card regardless -- it's how "View in
+  // pipeline" from the news feed finds a specific card to scroll to/flash,
+  // cold ones included.
+  const cardClass = `card ${showWarm?'haswarm':''}${worst ? ' clickable' : ''}`.trim();
+  const cardAttrs = ` data-account="${escAttr(l.co)}"${worst ? ` data-contact-id="${escAttr(worst.c.id)}"` : ""}`;
+  // SHOW_SOURCE_FILTER only: a plain, category-color-independent badge
+  // ("Cooling · Tier 2") for value_chain_map accounts -- the "mínimo
+  // aceptable" from spec (per-card badge instead of a full re-grouping of
+  // sections by market_segment, lower risk to the shared groupByCategory()
+  // used by pipeline/followups/insequence alike).
+  const segmentBadge = (SHOW_SOURCE_FILTER && l.source === "value_chain_map" && l.market_segment)
+    ? (() => {
+        const seg = l.market_segment.split(";")[0].replace(/\s*\(Tier \d\)/, "");
+        const t = (l.tier || "").split(";")[0];
+        return `<span class="badge segment" title="value_chain_map">${seg}${t ? " · " + t : ""}</span>`;
+      })()
+    : "";
+  return `<div class="${cardClass}" role="listitem"${cardAttrs}>${warm}
+    <div class="cbody">
+      <div>
+        <div class="co">${l.co}<span class="badge cat-${l.cat}" title="${CATS[l.cat].full}"><span class="cd" aria-hidden="true"></span>${l.cat}</span>${segmentBadge}</div>
+        ${badge}
+        ${closedBadge}
+        ${contactBlock(l, active, followupWorst)}
+        <div class="srow"><div class="rlabel">Signal</div>${sig}</div>
+      </div>
+      <div class="right">${cadence(active?active.stage:0)}</div>
+    </div>
+    <div class="cfoot">${footer}</div>
+    </div>`;
+}
+
+// Groups arbitrary items into CATS-ordered category sections, skipping
+// empty categories. `catOf` extracts the category key from an item -- the
+// pipeline groups lead objects directly (l => l.cat), the followup sections
+// group {l, worst} pairs (r => r.l.cat). Shared so category headers/counts
+// render identically in the pipeline and both followup sections.
+function groupByCategory(items, catOf){
+  return Object.keys(CATS)
+    .map(k=>({k, full:CATS[k].full, code:CATS[k].name, rows: items.filter(item => catOf(item)===k)}))
+    .filter(g=>g.rows.length>0);
+}
+function categorySectionsHtml(groups, cardFn){
+  return groups.map(g=>`
+    <div class="section cat-${g.k}">
+      <div class="sechead2"><span class="catdot" aria-hidden="true"></span><h3>${g.full}</h3><span class="catcode">${g.code}</span><span class="seccount">${g.rows.length}</span></div>
+      <div class="list" role="list">${g.rows.map(cardFn).join("")}</div>
+    </div>`).join("");
+}
+
+// "Fresh signals" tile view: a flat wall of every real news signal across
+// the user's accounts, freshest first -- independent of the cat chips/sort
+// controls above (those drive the pipeline/in-sequence/closed views; a plain
+// news wall has one fixed ordering, not a user-picked sort).
+function newsCardHtml(l){
+  const su = normalizeUrl(l.signal.url);
+  const sourceLink = su ? `<a href="${su}" target="_blank">Read <span class="arrow">→</span></a>` : "";
+  return `<div class="card news-card" role="listitem">
+    <div class="cbody">
+      <div>
+        <div class="co">${l.co}<span class="badge cat-${l.cat}" title="${CATS[l.cat].full}"><span class="cd" aria-hidden="true"></span>${l.cat}</span></div>
+        <div class="news-card-text">${l.signal.text}</div>
+        <div class="srow"><div class="signal">
+          <span class="sdot" style="background:${fresh(l.signal)?'var(--good)':'var(--stale)'}"></span>
+          <span class="age">${l.signal.age}d ago</span>
+          ${sourceLink}
+        </div></div>
+      </div>
+    </div>
+    <div class="cfoot"><button type="button" class="seq-open news-view-pipeline" data-cat="${escAttr(l.cat)}" data-account="${escAttr(l.co)}">View in pipeline <span class="arrow">→</span></button></div>
+  </div>`;
+}
+function renderNewsFeed(){
+  const allNews = myAllLeads()
+    .filter(l => l.signal.type === "news")
+    .sort((a,b) => signalSortAge(a) - signalSortAge(b));
+  el("#summary").textContent = "";
+  if(!allNews.length){
+    el("#list").innerHTML = `<div class="empty">No news signals yet</div>`;
+    return;
+  }
+  const newRows = allNews.filter(l => isNewSignal(l.signal));
+  const newSection = newRows.length
+    ? `<div class="list" role="list">${newRows.map(newsCardHtml).join("")}</div>`
+    : `<div class="empty news-caughtup">You're all caught up — no new signals in the last 30 days.</div>`;
+  // "All signals" deliberately repeats everything (including what's already
+  // in "New" above) rather than only the >=30d leftovers -- it's meant to
+  // read as the full archive of every real news signal, not a second,
+  // disjoint list a user would have to check separately from "New".
+  el("#list").innerHTML = `
+    <div class="sechead2"><h3>New — ${newRows.length}</h3></div>
+    ${newSection}
+    <div class="sechead2 news-section-head"><h3>All signals — ${allNews.length}</h3></div>
+    <div class="list" role="list">${allNews.map(newsCardHtml).join("")}</div>`;
+  el("#list").querySelectorAll(".news-view-pipeline").forEach(b=>{
+    b.onclick = () => {
+      const targetAccount = b.dataset.account;
+      state.view="pipeline"; state.cat=b.dataset.cat||"all"; renderAll();
+      // renderAll() re-renders #list synchronously, so the target card (if
+      // it's on screen under this category filter) already exists here.
+      // An account already "in sequence"/closed won't be in the cold
+      // pipeline this filter shows -- silently do nothing further then,
+      // per spec (the category filter alone is still a reasonable result).
+      if (!targetAccount) return;
+      const card = [...el("#list").querySelectorAll(".card")].find(c => c.dataset.account === targetAccount);
+      if (!card) return;
+      card.scrollIntoView({behavior:"smooth", block:"center"});
+      card.classList.add("card-flash");
+      setTimeout(() => card.classList.remove("card-flash"), 1500);
+    };
+  });
+}
+
+function renderSections(){
+  if(state.view==="newsfeed"){ renderNewsFeed(); return; }
+  const rows = filtered();
+  const mine = currentBaseLeads();
+  el("#summary").textContent = rows.length===mine.length ? "" : `Showing ${rows.length} of ${mine.length}`;
+  if(!rows.length){
+    // The base set itself (not just this cat/warm filter) is empty --
+    // "Needs contact" gets its own honest message instead of implying a
+    // filter is hiding something that doesn't exist.
+    el("#list").innerHTML = (state.view==="needscontact" && mine.length===0)
+      ? `<div class="empty">No accounts need a contact</div>`
+      : `<div class="empty">No leads match this filter<br><button type="button" class="clearbtn">Clear filters</button></div>`;
+    const clearBtn = el(".clearbtn");
+    if (clearBtn) clearBtn.onclick = () => { state.cat="all"; state.warmOnly=false; renderAll(); };
+    return;
+  }
+  const groups = groupByCategory(rows, l => l.cat);
+  el("#list").innerHTML = categorySectionsHtml(groups, l=>cardHtml(l));
+  el("#list").querySelectorAll(".contactsel").forEach(sel=>{
+    sel.onchange = () => { state.activeContact[sel.dataset.co] = parseInt(sel.value,10); renderSections(); };
+  });
+  el("#list").querySelectorAll(".stagesel").forEach(sel=>{
+    sel.onchange = () => saveStage(sel);
+  });
+  el("#list").querySelectorAll(".seq-open").forEach(b=>{
+    b.onclick = () => openSequence(b.dataset.co);
+  });
+  el("#list").querySelectorAll(".start-seq").forEach(b=>{
+    b.onclick = () => showChannelPicker(b);
+  });
+  // Pipeline/"In sequence" cards get a Done/Replied/Stopped footer whenever
+  // an account has an in-flow contact (see cardHtml -> inSequenceFooterHtml)
+  // -- this was never wired here before (only Followups bound it), so
+  // "Done" silently did nothing in the "In sequence" view. Fixed alongside
+  // adding Replied/Stopped.
+  bindCloseActions(el("#list"));
+}
+function renderAll(){ renderFollowups(); renderSourceChips(); renderChips(); renderSort(); renderTiles(); renderSections(); }
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Sheet/CSV stage was always text ("Not Contacted", "First Touch (Email)",
+// "FUP 2", ...) -- the UI needs the 0-4 number SEQUENCE_STEPS/stageLabel
+// already expect. "First Touch" covers both the Email and LinkedIn variants,
+// so it's matched by prefix, not exact equality.
+function stageFromText(s){
+  const t = (s || "").trim();
+  if (t.indexOf("First Touch") === 0) return 1;
+  if (t === "FUP 1") return 2;
+  if (t === "FUP 2") return 3;
+  if (t.indexOf("FUP ") === 0) return 4; // FUP 3+
+  if (t === "Replied" || t === "Stopped") return 4; // closed -- terminal either way
+  return 0; // "Not Contacted" or anything else
+}
+// Inverse of stageFromText, for saving an edited stage back to Supabase.
+// Known simplification: 1 always writes back as Email (can't recover which
+// of Email/LinkedIn it originally was), and 4 collapses FUP3+/Replied to
+// "FUP 3" -- accepted for now per the same lossy mapping stageFromText does.
+const STAGE_TO_TEXT = ["Not Contacted", "First Touch (Email)", "FUP 1", "FUP 2", "FUP 3"];
+function stageToText(n){ return STAGE_TO_TEXT[n] || "Not Contacted"; }
+function tierRankApp(tier){ return (tier || "").trim().toUpperCase() === "ALTA" ? 0 : 1; }
+function daysSince(dateStr){
+  if (!dateStr) return 999;
+  const d = new Date(dateStr + "T00:00:00Z");
+  return isNaN(d.getTime()) ? 999 : Math.round((Date.now() - d.getTime()) / 86400000);
+}
+
+async function loadLeads(){
+  const { data, error } = await sb.from("accounts").select("*, contacts(*, touches(*))");
+  if (error) { console.error("loadLeads error:", error.message); return; }
+  LEADS = (data || []).map(a => ({
+    co: a.account_name,
+    cat: a.company_category,
+    priority: a.priority,
+    // value_chain_map source columns -- inert unless SHOW_SOURCE_FILTER reads
+    // them (see feature flag comment near SHOW_WARM_INTROS). "engine" is the
+    // default for every pre-existing row, which never had a `source` value.
+    source: a.source || "engine",
+    market_segment: a.market_segment || "",
+    tier: a.tier || "",
+    icp_status: a.icp_status || "",
+    signal: {
+      // Classified once here (not re-classified in cardHtml) so every
+      // consumer -- render, fresh(), compareLeads() -- agrees on whether a
+      // row is a real dated news signal vs. a fixed qualification note.
+      type: classifySignal(a.signal_detail).kind,
+      text: a.signal_detail,
+      age: daysSince(a.signal_date),
+      url: a.signal_url,
+    },
+    contacts: (a.contacts || [])
+      .slice()
+      .sort((x, y) => tierRankApp(x.priority_tier) - tierRankApp(y.priority_tier))
+      .map(c => ({
+        id: c.id,
+        last_touch_at: c.last_touch_at,
+        name: c.contact_name,
+        title: c.contact_title,
+        email: c.contact_email,
+        email_status: c.email_status,
+        linkedin: c.linkedin_url,
+        priority_tier: c.priority_tier,
+        team_status: c.team_status,
+        notes: c.notes,
+        stage: stageFromText(c.stage),
+        stage_text: c.stage,
+        touches: (c.touches || []).map(t => ({
+          id: t.id,
+          fup_label: t.fup_label,
+          comment: t.comment,
+          replied: t.replied,
+          created_at: t.created_at,
+          updated_at: t.updated_at,
+        })),
+      })),
+    warm: null,
+    user: "me",
+  }));
+  renderAll();
+}
+
+function findContactById(id){
+  for (const l of LEADS) {
+    const c = l.contacts.find(c => c.id === id);
+    if (c) return c;
+  }
+  return null;
+}
+
+async function saveStage(sel){
+  const contactId = sel.dataset.contactId;
+  const newStage = parseInt(sel.value, 10);
+  const newStageText = stageToText(newStage);
+  const touchedAt = new Date().toISOString();
+  const note = sel.nextElementSibling;
+  const { error } = await sb.from("contacts").update({ stage: newStageText, last_touch_at: touchedAt }).eq("id", contactId);
+  if (error) {
+    if (note) { note.textContent = "Save error"; note.className = "stagesave err"; }
+    return;
+  }
+  const contact = findContactById(contactId);
+  if (contact) {
+    contact.stage = newStage;
+    contact.stage_text = newStageText;
+    contact.last_touch_at = touchedAt;
+  }
+  renderFollowups();
+  renderSections();
+  renderTiles();
+  renderChips();
+  if (note) {
+    note.textContent = "Saved ✓";
+    note.className = "stagesave ok";
+    setTimeout(() => { note.textContent = ""; note.className = "stagesave"; }, 2000);
+  }
+}
+
+function showLogin(msg, ok){
+  el("#loginView").style.display = "flex";
+  const m = el("#loginMsg");
+  m.textContent = msg || "";
+  m.className = ok ? "ok" : "err";
+}
+function hideLogin(){ el("#loginView").style.display = "none"; }
+
+el("#sendBtn").onclick = async () => {
+  const email = el("#loginEmail").value.trim();
+  if (!email) { showLogin("Escribe tu correo.", false); return; }
+  const { error } = await sb.auth.signInWithOtp({
+    email, options: { emailRedirectTo: window.location.origin },
+  });
+  showLogin(error ? error.message : "Revisa tu correo -- te mandamos un Magic Link.", !error);
+};
+
+el("#signoutBtn").onclick = async () => { await sb.auth.signOut(); };
+
+sb.auth.onAuthStateChange((event, session) => {
+  if (session) {
+    el("#sessionEmail").textContent = session.user.email;
+    hideLogin();
+    loadLeads();
+  } else {
+    LEADS = [];
+    showLogin("", true);
+  }
+});
+
+sb.auth.getSession().then(({ data }) => {
+  if (data.session) {
+    el("#sessionEmail").textContent = data.session.user.email;
+    hideLogin();
+    loadLeads();
+  } else {
+    showLogin("", true);
+  }
+});
+</script>
+</body>
+</html>

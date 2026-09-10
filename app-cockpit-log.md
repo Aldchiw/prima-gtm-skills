@@ -372,6 +372,16 @@ SIGUIENTES DEL CANAL (orden acordado): #1 buscador de contactos en My leads → 
 - BUG encontrado y corregido en la misma sesión: la v1 inyectaba el panel al DOM y Supabase re-renderiza al volver de la pestaña (onAuthStateChange -> loadLeads), borrandolo ("aparecia y se quitaba, no dejaba confirmar"). Fix v2: el mini-paso vive en state.liStep y se pinta como parte de la tarjeta (startSequenceHtml -> liStepHtml), asi sobrevive cualquier re-render; window.open una sola vez en el click; li-confirm/li-cancel cableados en renderSections.
 - Commit de75ca9 (v1) + fix v2, autor Aldahir + mini-commit GitHub web para el deploy.
 
+### Sesión 2026-09-08 — CIERRE de sesión (canal cockpit)
+ESTADO: 4 de 5 cambios del canal LISTOS, desplegados y verificados en vivo:
+- #4 bug comentarios de FUP (misruteo + guardar vacío + First Touch LinkedIn invisible) — resuelto.
+- #1 buscador de contacto/empresa en My leads (SHOW_LEAD_SEARCH).
+- #5 FUPs colapsable "You have N pending follow-ups" (COLLAPSE_FOLLOWUPS).
+- #3 mini-paso LinkedIn antes de secuencia (LINKEDIN_STEP), con fix state-based (state.liStep) para que sobreviva el re-render de Supabase.
+FALTA: #2 Closed por CONTACTO (no por empresa; excepción: si es el único contacto de la empresa, toda va a Closed). El más delicado — toca lógica de cierre + posiblemente RLS.
+FLUJO DE TRABAJO (validado esta sesión): Claude (chat/Cowork con puente a la compu) diagnostica y escribe el fix, muestra el diff para auditar; Aldahir corre git en SU terminal: commit a su nombre (sin firma de Claude) + `git pull --rebase --autostash origin main` + push + un mini-commit por GitHub web (docs/index.html) para que Vercel despliegue (Vercel lo exige SIEMPRE). Line endings: escribir LF (git HEAD es LF); Windows los checkout como CRLF. Feature flag para cambios grandes; backup del index.html antes de tocar.
+PROMPT DE ARRANQUE PRÓXIMA SESIÓN: "Canal cockpit prima-gtm-skills (docs/index.html en Vercel + Supabase). Lee app-cockpit-log.md primero. Ya están #4, #1, #5, #3 (desplegados). Falta el #2: Closed por CONTACTO no por empresa (excepción: único contacto -> empresa entera a Closed). Diagnostica y proponme el enfoque en cajita antes de tocar; un paso a la vez."
+
 ---
 
 ## NOTA — este archivo es la fuente de verdad de reglas + estado del cockpit
