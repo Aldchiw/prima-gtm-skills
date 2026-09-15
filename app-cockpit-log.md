@@ -105,6 +105,7 @@ Hoy la migración es snapshot manual. Debe preservar los `stage`/fechas que Alda
 - **Correo real** es solo para el EQUIPO; para Aldahir solo, la sesión persistente basta. Y NO depende obligatoriamente de admins (Resend con dominio/subdominio propio).
 - **Envío de outreach desde la app:** parqueado hasta sign-off de Zadrac (su carril).
 - **Registro de memoria va en `app-cockpit-log.md` (repo), NO en el README.** El README describe el repo; la memoria del proyecto vive aquí. No depender de la memoria del LLM.
+- **Regla de asignación de dueños (Cat1-4):** Cat1+Cat2: existentes 80% Gus / 20% Gaby (determinista idx%5==4 -> Gaby); nuevas 70% Gus / 30% Gaby. El sweep de 100% Gus (2026-09-09) queda SUPERSEDED — no re-correr. Cat3/Cat4 igual.
 
 ---
 
