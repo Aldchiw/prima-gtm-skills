@@ -383,6 +383,13 @@ FALTA: #2 Closed por CONTACTO (no por empresa; excepción: si es el único conta
 FLUJO DE TRABAJO (validado esta sesión): Claude (chat/Cowork con puente a la compu) diagnostica y escribe el fix, muestra el diff para auditar; Aldahir corre git en SU terminal: commit a su nombre (sin firma de Claude) + `git pull --rebase --autostash origin main` + push + un mini-commit por GitHub web (docs/index.html) para que Vercel despliegue (Vercel lo exige SIEMPRE). Line endings: escribir LF (git HEAD es LF); Windows los checkout como CRLF. Feature flag para cambios grandes; backup del index.html antes de tocar.
 PROMPT DE ARRANQUE PRÓXIMA SESIÓN: "Canal cockpit prima-gtm-skills (docs/index.html en Vercel + Supabase). Lee app-cockpit-log.md primero. Ya están #4, #1, #5, #3 (desplegados). Falta el #2: Closed por CONTACTO no por empresa (excepción: único contacto -> empresa entera a Closed). Diagnostica y proponme el enfoque en cajita antes de tocar; un paso a la vez."
 
+### Sesión 2026-09-17 — Canal cockpit: Cambio #2 Closed por CONTACTO (ULTIMO del canal)
+- Antes: myClosedLeads = cuentas con ALGUN contacto cerrado -> cerrar 1 contacto de una empresa de 2 mandaba TODA la empresa a Closed. Ademas la logica estaba inconsistente (myOpenLeads ya usaba accountAllClosed).
+- Fix (front-end, SIN tocar RLS): accountAllClosed ahora cuenta solo contactos REALES (realContactsOf); la vista/tile "Closed" usa accountAllClosed. Resultado: una empresa entra a Closed SOLO cuando TODOS sus contactos reales estan cerrados; cerrar 1 de varios deja la empresa en su vista activa con badge de cerrado en ese contacto; la excepcion "unico contacto -> empresa entera a Closed" sale sola.
+- No se agrego selector para elegir cual contacto cerrar: el confirm de Stopped/Replied ya muestra el NOMBRE, asi que no se cierra al equivocado. Queda como mejora futura si el equipo lo pide.
+- Commit autor Aldahir + mini-commit GitHub web para deploy.
+- CANAL COMPLETO: 5/5 cambios desplegados (#4 bug comentarios, #1 buscador, #5 FUPs colapsable, #3 mini-paso LinkedIn, #2 Closed por contacto).
+
 ---
 
 ## NOTA — este archivo es la fuente de verdad de reglas + estado del cockpit

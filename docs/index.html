@@ -516,10 +516,15 @@ function isClosed(c){
 function accountInSequence(l){
   return realContactsOf(l).some(c => c.stage > 0 && !isClosed(c));
 }
-// True once every contact on the account is closed -- such an account
-// belongs in neither the cold pipeline nor "in sequence" (only in Closed).
+// #2: true once every REAL contact on the account is closed (Replied/
+// Stopped) -- such an account belongs only in Closed. Uses realContactsOf
+// so a nameless placeholder never blocks it, and closing one of several
+// real contacts does NOT drag the whole account to Closed; that only
+// happens when the LAST real contact closes (covers the single-contact
+// case automatically).
 function accountAllClosed(l){
-  return l.contacts.length > 0 && l.contacts.every(c => isClosed(c));
+  const real = realContactsOf(l);
+  return real.length > 0 && real.every(c => isClosed(c));
 }
 function myAllLeads(){
   return LEADS.filter(l => l.user===state.user);
@@ -534,11 +539,13 @@ function myOpenLeads(){
 function myInSequenceLeads(){
   return myAllLeads().filter(l => accountInSequence(l));
 }
-// Accounts with at least one closed (Replied/Stopped) contact -- the
-// "Closed" tile/view. Not mutually exclusive with "in sequence": an account
-// with one closed contact and one still-active contact shows in both.
+// #2: an account is "Closed" only when ALL its real contacts are closed.
+// Closing one contact of a multi-contact account leaves it in its active
+// view (with a "closed" badge on that contact), NOT here -- so cerrar un
+// contacto ya no arrastra a toda la empresa. Single-contact case falls
+// through naturally (its only contact closed -> all closed -> Closed).
 function myClosedLeads(){
-  return myAllLeads().filter(l => l.contacts.some(c => isClosed(c)));
+  return myAllLeads().filter(l => accountAllClosed(l));
 }
 // "Needs contact" tile/view: accounts with zero real (named) contacts --
 // TAM entries the engine hasn't found a verified contact for yet (the ~38
