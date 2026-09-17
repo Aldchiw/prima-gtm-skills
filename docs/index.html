@@ -532,7 +532,9 @@ function myAllLeads(){
 // The "cold" pipeline set: this user's accounts, minus anything already in
 // sequence or fully closed.
 function myOpenLeads(){
-  return myAllLeads().filter(l => !accountInSequence(l) && !accountAllClosed(l));
+  // Exclude needs-contact accounts (zero real contacts) -- those live ONLY
+  // in the "Needs contact" view, not in the cold "My leads" pipeline.
+  return myAllLeads().filter(l => realContactsOf(l).length > 0 && !accountInSequence(l) && !accountAllClosed(l));
 }
 // The mirror set for the "In sequence" tile/view: accounts with at least
 // one contact past stage 0 that isn't closed.

@@ -390,6 +390,9 @@ PROMPT DE ARRANQUE PRÓXIMA SESIÓN: "Canal cockpit prima-gtm-skills (docs/index
 - Commit autor Aldahir + mini-commit GitHub web para deploy.
 - CANAL COMPLETO: 5/5 cambios desplegados (#4 bug comentarios, #1 buscador, #5 FUPs colapsable, #3 mini-paso LinkedIn, #2 Closed por contacto).
 
+### Sesión 2026-09-17 — Fix: cuentas sin contacto real fuera de "My leads"
+- Las cuentas needs-contact (realContactsOf===0, "No contact identified yet", ej. Cleveland-Cliffs) aparecían en el pipeline "My leads" ADEMAS de en la vista "Needs contact". Fix: myOpenLeads ahora exige realContactsOf(l).length > 0, así esas cuentas viven SOLO en "Needs contact" (donde se rellenan). Front-end, sin RLS.
+
 ---
 
 ## NOTA — este archivo es la fuente de verdad de reglas + estado del cockpit
