@@ -432,6 +432,11 @@ const SHOW_LEAD_SEARCH = true;
 // Feature flag: collapse the Followups section into a "You have N pending
 // follow-ups" bar that expands on click (#5). Off -> old always-open list.
 const COLLAPSE_FOLLOWUPS = true;
+
+// #FUP-per-contact: la bandeja de Followups lista UN renglon por CONTACTO
+// vencido (no uno por cuenta/peor-contacto). Disenio de tarjeta sin cambios.
+// false -> vuelve al comportamiento anterior (uno por cuenta).
+const FUP_PER_CONTACT = true;
 // Feature flag: LinkedIn mini-step before starting a sequence when the
 // contact has both a LinkedIn URL and an email (#3). Off -> plain picker.
 const LINKEDIN_STEP = true;
@@ -771,6 +776,25 @@ function followupAccounts(predicate){
   for (const l of LEADS) {
     const worst = worstInFlowContact(l);
     if (worst && predicate(worst.delay)) rows.push({ l, worst });
+  }
+  return rows.sort((a, b) => b.worst.delay - a.worst.delay);
+}
+
+// #FUP-per-contact: un renglon por CONTACTO in-flow vencido (mismo test
+// in-flow que worstInFlowContact, pero conserva cada contacto que califica
+// en vez de solo el peor). Misma forma de fila {c, days, delay}, asi el
+// renderer/cardHtml no necesitan otro cambio. Mas vencido primero.
+function followupContacts(predicate){
+  const rows = [];
+  for (const l of LEADS) {
+    for (const c of realContactsOf(l)) {
+      if (c.stage > 0 && c.last_touch_at && !isClosed(c)) {
+        const days = daysSinceTouch(c.last_touch_at);
+        if (days === null) continue;
+        const delay = days - 7;
+        if (predicate(delay)) rows.push({ l, worst: { c, days, delay } });
+      }
+    }
   }
   return rows.sort((a, b) => b.worst.delay - a.worst.delay);
 }
@@ -1125,7 +1149,7 @@ function bindCloseActions(container){
 }
 
 function renderFollowups(){
-  renderFollowupSection("#followups", followupAccounts(d => d >= 1), "Followups", "",
+  renderFollowupSection("#followups", (FUP_PER_CONTACT ? followupContacts(d => d >= 1) : followupAccounts(d => d >= 1)), "Followups", "",
     "No overdue contacts.", COLLAPSE_FOLLOWUPS);
 }
 
@@ -1242,7 +1266,7 @@ function contactBlock(l, active, followupWorst){
   if(!contacts.length){
     return `<div class="contact contact-empty">No contact identified yet</div>`;
   }
-  const selector = contacts.length>1
+  const selector = (contacts.length>1 && !followupWorst)
     ? `<select class="contactsel" data-co="${escAttr(l.co)}" aria-label="Choose contact at ${escAttr(l.co)}">
          ${contacts.map((c,i)=>`<option value="${i}" ${c===active?"selected":""}>${c.name} — ${stageLabel(c.stage)}</option>`).join("")}
        </select>`
@@ -1575,7 +1599,7 @@ el("#list").parentElement.addEventListener("click", e => {
 // sequence" (that's stage-0-only), it gets FUP text + days + Done instead --
 // in the pipeline's own card, not just in Followups.
 function cardHtml(l, followupWorst){
-  const active = activeContactOf(l);
+  const active = followupWorst ? followupWorst.c : activeContactOf(l);
   const showWarm = SHOW_WARM_INTROS && l.warm;
   const warm = showWarm ? `<div class="warmbar">${peopleIco}<span class="wl">Warm intro</span>${warmText(l.warm)}
     <span class="lvl">${l.warm.level==="contact"?"Direct":"Company"}</span></div>` : "";

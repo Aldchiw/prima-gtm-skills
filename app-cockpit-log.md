@@ -408,6 +408,13 @@ Orden que evita el dolor de git que se vivio el 2026-09-17:
 - Ahora (flag PER_CONTACT_ROWS): la tarjeta de cuenta es contenedor (empresa + senal compartidos) y CADA contacto real es su propia fila con SU barra E1-LI-E2-E3, SU accion (Start sequence / Done+Stopped / badge cerrado) y SU boton Comments. Se elimino el selector. Aplica a pipeline/in-sequence/closed; la bandeja Followups se dejo IGUAL (opcion A).
 - Reusa cableado: .start-seq->showChannelPicker (con mini-paso LinkedIn), .fu-done/.fu-stopped->bindCloseActions, .contact-comment->openTouchModal. markDone ahora hace re-render completo (Done ya vive en el pipeline per-contact). Nueva func contactRowHtml + branch en cardHtml. Sin RLS. Revertible con PER_CONTACT_ROWS=false.
 
+### 2026-09-17 — #FUP-per-contact (bandeja de Followups por contacto)
+- **Qué:** la bandeja de Followups ahora lista **un renglón por CONTACTO vencido**, no uno por cuenta/peor-contacto. Una cuenta con 2 contactos vencidos = 2 tarjetas.
+- **Por qué:** antes sólo se veía el contacto más atrasado de cada cuenta; el resto quedaba invisible en la bandeja.
+- **Cómo:** nueva `followupContacts(predicate)` (un row `{c,days,delay}` por contacto in-flow vencido) usada por `renderFollowups()` tras flag `FUP_PER_CONTACT=true`. Además: en tarjetas de FUP el cuerpo muestra el contacto del FUP (`active = followupWorst.c`, arregla mismatch badge/cuerpo) y se oculta el selector de contacto (`contacts.length>1 && !followupWorst`).
+- **NO se tocó:** diseño de tarjeta, pipeline, In sequence, Closed, buscador, barra colapsable. Reversión: `FUP_PER_CONTACT=false`.
+- **Nota:** el rediseño previo de tarjeta por contacto (`PER_CONTACT_ROWS`) quedó en **false** (revertido, no gustó — fuentes grandes / info apretada).
+
 ---
 
 ## NOTA — este archivo es la fuente de verdad de reglas + estado del cockpit
