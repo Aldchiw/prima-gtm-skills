@@ -154,6 +154,16 @@
   .li-confirm:hover{background:color-mix(in srgb, var(--link) 85%, black)}
   .li-cancel{font-family:var(--sans);font-size:12px;font-weight:600;color:var(--ink-2);
     background:transparent;border:1px solid var(--border);border-radius:8px;padding:6px 12px;cursor:pointer}
+  .cbody-pc{padding:2px}
+  .crows{margin-top:12px}
+  .crow{border-top:1px solid var(--border);padding:12px 0 2px}
+  .crow:first-child{border-top:none;padding-top:2px}
+  .crow-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+  .crow-who{font-size:14px}
+  .contact-comment{font-family:var(--sans);font-size:11.5px;font-weight:600;color:var(--link);background:transparent;border:none;cursor:pointer;padding:0}
+  .contact-comment:hover{text-decoration:underline}
+  .crow-seq{margin:8px 0;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .crow-foot{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
   .fu-section{margin-bottom:28px;background:var(--red-soft);border-radius:14px;padding:16px 16px 4px}
   .fu-badge{display:flex;align-items:center;gap:8px;margin-top:5px;flex-wrap:wrap}
   .fu-stagereal{font-family:var(--mono);font-size:11px;color:var(--ink-2)}
@@ -425,6 +435,10 @@ const COLLAPSE_FOLLOWUPS = true;
 // Feature flag: LinkedIn mini-step before starting a sequence when the
 // contact has both a LinkedIn URL and an email (#3). Off -> plain picker.
 const LINKEDIN_STEP = true;
+// #1: render each real contact on an account as its OWN row (own cadence,
+// own Start/Done/Stopped, own Comments) instead of one active contact + a
+// selector. Pipeline/in-sequence/closed only; Followups keeps single-worst.
+const PER_CONTACT_ROWS = true;
 
 /* DATA:START — generado por scripts/generate-cockpit.js, no editar a mano */
 const CATS = {
@@ -872,9 +886,10 @@ async function markDone(btn){
   contact.stage_text = next;
   contact.last_touch_at = touchedAt;
   if (note) { note.textContent = "Saved ✓"; note.className = "fu-donenote ok"; }
-  // Brief pause so "Saved ✓" is actually visible before the re-render
-  // moves/removes this card (its delay just reset).
-  setTimeout(() => { renderFollowups(); }, 800);
+  // Brief pause so "Saved ✓" is actually visible before the re-render.
+  // Full re-render (not just Followups) because Done now also lives in the
+  // per-contact pipeline card, which must reflect the advanced stage.
+  setTimeout(() => { renderFollowups(); renderSections(); renderTiles(); renderChips(); }, 800);
 }
 
 // Same safe-save pattern as markDone(), but for the two terminal actions:
@@ -1178,6 +1193,43 @@ function stageSelectHtml(active){
 function startSequenceHtml(active){
   if (LINKEDIN_STEP && state.liStep === active.id) return liStepHtml(active);
   return `<span class="startwrap" data-contact-id="${escAttr(active.id)}"><button type="button" class="start-seq">Start sequence</button></span>`;
+}
+
+// #1: one real contact rendered as its own row -- own links, own cadence bar,
+// own action (Start sequence / Done+Stopped / closed badge) and own Comments
+// button. Reuses existing wiring: .start-seq -> showChannelPicker,
+// .fu-done/.fu-stopped -> bindCloseActions, .contact-comment -> openTouchModal
+// (wired in renderSections). Used only by the per-contact card layout.
+function contactRowHtml(l, c){
+  const links = [];
+  if (c.email && c.email.indexOf("@") !== -1) {
+    const unv = (SHOW_SOURCE_FILTER && c.email_status && c.email_status !== "VERIFIED")
+      ? `<span class="team-status" title="Email status: ${escAttr(c.email_status)}">unverified</span>` : "";
+    links.push(`<a href="mailto:${c.email}"${unv ? ' style="color:var(--ink-3)"' : ''}>${c.email}</a>${unv}`);
+  }
+  const li = normalizeUrl(c.linkedin);
+  if (li) links.push(`<a href="${li}" target="_blank">LinkedIn</a>`);
+  let action;
+  if (isClosed(c)) {
+    const cls = c.stage_text === "Replied" ? "fu-replied-tag" : "fu-stopped-tag";
+    action = `<span class="fu-tag ${cls}">${escAttr(c.stage_text)}</span>`;
+  } else if (c.stage === 0) {
+    action = startSequenceHtml(c);
+  } else {
+    const days = daysSinceTouch(c.last_touch_at);
+    const daysTag = (days !== null) ? `<span class="fu-tag fu-ok">${days} day${days===1?"":"s"} since touch</span>` : "";
+    action = `${daysTag}${doneButtonHtml({ c })}`;
+  }
+  const commentBtn = `<button type="button" class="contact-comment" data-contact-id="${escAttr(c.id)}" data-account="${escAttr(l.co)}">Comments</button>`;
+  return `<div class="crow">
+    <div class="crow-top">
+      <div class="crow-who"><b>${c.name}</b> \u00b7 ${c.title || "\u2014"}</div>
+      ${commentBtn}
+    </div>
+    ${links.length ? `<div class="contact-links">${links.join("")}</div>` : ""}
+    <div class="crow-seq">${cadence(c.stage)}</div>
+    <div class="crow-foot">${action}</div>
+  </div>`;
 }
 
 // `followupWorst` truthy = a followup/FUP-on-time card (keeps the old
@@ -1565,6 +1617,19 @@ function cardHtml(l, followupWorst){
         return `<span class="badge segment" title="value_chain_map">${seg}${t ? " · " + t : ""}</span>`;
       })()
     : "";
+  if (PER_CONTACT_ROWS && !followupWorst) {
+    const _contacts = realContactsOf(l);
+    const _rows = _contacts.length
+      ? _contacts.map(c => contactRowHtml(l, c)).join("")
+      : `<div class="contact contact-empty">No contact identified yet</div>`;
+    return `<div class="card" role="listitem" data-account="${escAttr(l.co)}">${warm}
+    <div class="cbody-pc">
+      <div class="co">${l.co}<span class="badge cat-${l.cat}" title="${CATS[l.cat].full}"><span class="cd" aria-hidden="true"></span>${l.cat}</span>${segmentBadge}</div>
+      <div class="srow"><div class="rlabel">Signal</div>${sig}</div>
+      <div class="crows">${_rows}</div>
+    </div>
+    </div>`;
+  }
   return `<div class="${cardClass}" role="listitem"${cardAttrs}>${warm}
     <div class="cbody">
       <div>
@@ -1696,6 +1761,9 @@ function renderSections(){
   });
   el("#list").querySelectorAll(".li-cancel").forEach(b=>{
     b.onclick = () => { state.liStep = null; renderSections(); };
+  });
+  el("#list").querySelectorAll(".contact-comment").forEach(b=>{
+    b.onclick = () => { const c = findContactById(b.dataset.contactId); if (c) openTouchModal(c, b.dataset.account); };
   });
   // Pipeline/"In sequence" cards get a Done/Replied/Stopped footer whenever
   // an account has an in-flow contact (see cardHtml -> inSequenceFooterHtml)

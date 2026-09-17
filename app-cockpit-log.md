@@ -393,6 +393,21 @@ PROMPT DE ARRANQUE PRÓXIMA SESIÓN: "Canal cockpit prima-gtm-skills (docs/index
 ### Sesión 2026-09-17 — Fix: cuentas sin contacto real fuera de "My leads"
 - Las cuentas needs-contact (realContactsOf===0, "No contact identified yet", ej. Cleveland-Cliffs) aparecían en el pipeline "My leads" ADEMAS de en la vista "Needs contact". Fix: myOpenLeads ahora exige realContactsOf(l).length > 0, así esas cuentas viven SOLO en "Needs contact" (donde se rellenan). Front-end, sin RLS.
 
+### DEPLOY FLOW del cockpit (recordatorio — leer antes de subir cambios)
+Orden que evita el dolor de git que se vivio el 2026-09-17:
+1. Editar docs/index.html en LF (git HEAD es LF; Windows lo deja como CRLF, ignorar el warning "LF will be replaced by CRLF").
+2. Commit a nombre de Aldahir, SIN firma de Claude: git -c user.name="Aldahir Chiw" -c user.email="aldahir.chiw@prima.ai" commit -m "...".
+3. Subir en UNA SOLA linea (evita que PowerShell pegue 2 comandos juntos y minimiza la carrera con el remoto):
+   git pull --rebase --autostash origin main; git push origin main
+   Si sale "rejected", repetir esa MISMA linea, SIN abrir GitHub entre intentos.
+4. SOLO cuando el push diga "-> main": UN mini-commit por GitHub web (docs/index.html, un espacio, Commit changes) -> dispara Vercel. NUNCA antes del push (si no, la carrera se reinicia).
+5. Verificar: ((iwr "https://prima-gtm-skills.vercel.app/" -UseBasicParsing).Content) -match "<marcador unico del cambio>" -> True.
+
+### Sesión 2026-09-17 — Cambio #1 (rediseño): filas por contacto en la tarjeta
+- Antes: tarjeta por cuenta con UN contacto activo + selector para cambiar -> header/barra/botones ambiguos (no se sabia a que contacto aplicaban); con 2 contactos en secuencias distintas (ej. ProLift: Dawn not started / Zac FUP 3/4) no se veian las dos a la vez.
+- Ahora (flag PER_CONTACT_ROWS): la tarjeta de cuenta es contenedor (empresa + senal compartidos) y CADA contacto real es su propia fila con SU barra E1-LI-E2-E3, SU accion (Start sequence / Done+Stopped / badge cerrado) y SU boton Comments. Se elimino el selector. Aplica a pipeline/in-sequence/closed; la bandeja Followups se dejo IGUAL (opcion A).
+- Reusa cableado: .start-seq->showChannelPicker (con mini-paso LinkedIn), .fu-done/.fu-stopped->bindCloseActions, .contact-comment->openTouchModal. markDone ahora hace re-render completo (Done ya vive en el pipeline per-contact). Nueva func contactRowHtml + branch en cardHtml. Sin RLS. Revertible con PER_CONTACT_ROWS=false.
+
 ---
 
 ## NOTA — este archivo es la fuente de verdad de reglas + estado del cockpit
