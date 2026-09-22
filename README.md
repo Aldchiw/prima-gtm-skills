@@ -107,44 +107,67 @@ drafts_e1.md                                → material de trabajo del sprint a
 
 ## 6. Cockpit SDR — app de outreach en vivo
 
-Además del motor de skills, este repo aloja el **Outreach Cockpit**: una app web donde el equipo ve y edita su pipeline de outreach en tiempo real, sin tocar el Google Sheet.
+Además del motor de skills, este repo aloja el **Outreach Cockpit**: una app web donde el equipo SDR ve y opera su pipeline de outreach en tiempo real, sin tocar el Google Sheet directamente.
 
 **URL:** `https://prima-gtm-skills.vercel.app`
-**Código:** `docs/index.html` — app de página única (HTML + CSS + JS inline, sin build)
-**Hosting:** Vercel Hobby (gratis, auto-deploy desde `main`)
-**Backend:** Supabase (PostgreSQL + Auth + RLS + Edge Functions)
+**Codigo:** `docs/index.html` — app de pagina unica (HTML + CSS + JS inline, sin build)
+**Hosting:** Vercel Hobby (auto-deploy desde `main`, proyecto en la cuenta de Alda)
+**Backend:** Supabase (PostgreSQL + Auth + RLS + Edge Functions), proyecto `axknjzbiteuwrjpbuows`
 
-### Qué hay hoy
+### Como funciona
+
+**Auth y acceso**
 
 - Login con Magic Link (correos `@prima.ai`)
-- Cada usuario ve **solo sus cuentas** (RLS por correo)
-- Pipeline agrupado por categoría con tiles de estado (My leads / Fresh signals / In sequence / Closed)
-- Stage por contacto: editable y guardable en vivo (Not Contacted → First Touch → FUP 1-4 → Replied/Stopped)
-- Bandeja de followups: cuentas con timer vencido (>7 días sin toque)
-- Comentarios por contacto (touch modal)
-- Búsqueda de leads por empresa o nombre de contacto
-- Sync horario Google Sheet (Zadrac SDR) → Supabase vía Edge Function + cron
+- Cada usuario ve solo sus cuentas asignadas (RLS por `assigned_user_id`)
+- Ivan y Alda tienen acceso admin: ven toda la data independientemente de asignacion
+
+**Pipeline**
+
+- Cuentas agrupadas por categoria con tiles de estado: My leads / Fresh signals / In sequence / Closed
+- Stage por contacto, editable y guardable en vivo: Not Contacted → First Touch (Email) → FUP 1-4 → Replied / Stopped
+- Bandeja de followups: cuentas con timer vencido (mas de 7 dias sin toque)
+- Comentarios por contacto via touch modal
+- Busqueda por empresa o nombre de contacto
+
+**Start Sequence**
+
+Al abrir "Start sequence" en un contacto se eligen los canales:
+- Email: muestra el draft sincronizado desde el Sheet (asunto + cuerpo). El boton "Aprobar → SEND" escribe `SEND` en la columna `status` del Sheet via la Edge Function `approve-draft` y actualiza Supabase.
+- LinkedIn: abre perfil en nueva pestana para mensaje manual.
+
+**Sync Sheet → Supabase**
+
+La Edge Function `sync-sdr-sheet` corre cada hora via cron. Lee el Sheet de Zadrac SDR y:
+- Upsertea touches de correos enviados (SENT/MANUAL) a la tabla `touches`
+- Upsertea asunto, cuerpo, status y followups a la tabla `email_drafts` (match por correo del contacto)
+- Actualiza `contacts.stage` automaticamente segun lo que haya en el Sheet (respondio → Replied, FUP 4 → FUP 4, etc.)
 
 ### Tablas en Supabase
 
-| Tabla | Qué guarda |
+| Tabla | Que guarda |
 |---|---|
 | `accounts` | 160 cuentas, una fila por empresa |
 | `contacts` | 275+ contactos ligados a cuentas |
 | `touches` | Historial de toques por contacto (comentarios, replied, fechas) |
 | `users` | Roster del equipo (4 usuarios) |
+| `email_drafts` | Draft por contacto sincronizado desde Sheet: asunto, cuerpo, status, followups 1-4, thread_id, respondio |
 
-### Lo que hay hoy (actualizado 2026-09-22)
+### Edge Functions
 
-- ✅ **Tanda 1:** Login Magic Link, pipeline por categoría, tiles, stage por contacto, followups, comentarios, búsqueda, sync horario Sheet → Supabase
-- ✅ **Tanda 2 (parcial):** Start Sequence con checkboxes Email/LinkedIn; LinkedIn abre nueva pestaña
-- ✅ **Tanda 3:** Tabla `email_drafts` en Supabase; sync de asunto/cuerpo/status/followups + stage inferido desde Sheet; Edge Function `approve-draft` (escribe `SEND` en Sheet); bloque de draft en cada card con botón "Aprobar → SEND"; auto-expand draft al dar Start sequence con Email
+| Funcion | Que hace |
+|---|---|
+| `sync-sdr-sheet` | Lectura horaria del Sheet → upsert touches + drafts + stage en Supabase |
+| `approve-draft` | Recibe `contact_id`, escribe `SEND` en la celda correcta del Sheet, actualiza `email_drafts.status` |
 
 ### Pendientes
 
-- **Tanda 2:** fix visual de Closed por contacto
-- **Tanda 3:** editar asunto/cuerpo desde el cockpit antes de aprobar; sync de `respondio`/`thread_id` de vuelta al cockpit para mostrar replies; lógica de secuencia LinkedIn (sin draft en Sheet)
-- **Otro:** Auth por Google OAuth de Prima (necesita a Mike); actualizar `app-cockpit-schema.sql` con schema actual (tabla `email_drafts`, Edge Functions)
+- Fix visual de Closed por contacto (el estado funciona en data, falta la UI)
+- Editar asunto/cuerpo desde el cockpit antes de aprobar (hoy solo se puede ver)
+- Sync de `respondio` y `thread_id` de vuelta al cockpit para mostrar replies en la UI
+- Logica de secuencia LinkedIn (el Sheet no tiene drafts para LinkedIn, habria que definirla aparte)
+- Auth por Google OAuth de Prima (hoy es Magic Link; requiere configuracion con Mike)
+- Actualizar `app-cockpit-schema.sql` para reflejar el schema actual (tabla `email_drafts`, Edge Functions)
 
 ## 7. Estado actual y pendientes conocidos
 
