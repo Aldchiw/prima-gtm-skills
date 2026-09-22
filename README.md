@@ -107,7 +107,42 @@ drafts_e1.md                                → material de trabajo del sprint a
 - **No comitear ni pushear sin autorización explícita.** Convención estándar en todo el repo —
   ninguna skill ni corrida comitea/pushea por su cuenta; el usuario lo pide aparte cuando está listo.
 
-## 6. Estado actual y pendientes conocidos
+## 6. Cockpit SDR — app de outreach en vivo
+
+Además del motor de skills, este repo aloja el **Outreach Cockpit**: una app web donde el equipo ve y edita su pipeline de outreach en tiempo real, sin tocar el Google Sheet.
+
+**URL:** `https://prima-gtm-skills.vercel.app`
+**Código:** `docs/index.html` — app de página única (HTML + CSS + JS inline, sin build)
+**Hosting:** Vercel Hobby (gratis, auto-deploy desde `main`)
+**Backend:** Supabase (PostgreSQL + Auth + RLS + Edge Functions)
+
+### Qué hay hoy
+
+- Login con Magic Link (correos `@prima.ai`)
+- Cada usuario ve **solo sus cuentas** (RLS por correo)
+- Pipeline agrupado por categoría con tiles de estado (My leads / Fresh signals / In sequence / Closed)
+- Stage por contacto: editable y guardable en vivo (Not Contacted → First Touch → FUP 1-4 → Replied/Stopped)
+- Bandeja de followups: cuentas con timer vencido (>7 días sin toque)
+- Comentarios por contacto (touch modal)
+- Búsqueda de leads por empresa o nombre de contacto
+- Sync horario Google Sheet (Zadrac SDR) → Supabase vía Edge Function + cron
+
+### Tablas en Supabase
+
+| Tabla | Qué guarda |
+|---|---|
+| `accounts` | 160 cuentas, una fila por empresa |
+| `contacts` | 275+ contactos ligados a cuentas |
+| `touches` | Historial de toques por contacto (comentarios, replied, fechas) |
+| `users` | Roster del equipo (4 usuarios) |
+
+### Pendientes próximas tandas
+
+- **Tanda 2:** Start Sequence con opción Email/LinkedIn, LinkedIn button, draft de correo inline (no modal), fix de comentarios en refresh, Closed por contacto
+- **Tanda 3:** Sync de borradores y status desde Sheet → Supabase, write-back SEND desde cockpit → Sheet, sección de aprobación de correos
+- **Otro:** Auth por Google OAuth de Prima (necesita a Mike), actualizar `app-cockpit-schema.sql` con schema actual completo
+
+## 7. Estado actual y pendientes conocidos
 
 - **Tier 0 roto** (ver arriba) — bloquea el descubrimiento rápido de `prima-generate-leads`
   hasta que se re-testee el schema correcto de AI Ark.
@@ -143,5 +178,4 @@ drafts_e1.md                                → material de trabajo del sprint a
   confundirlo con `templates/index.md`.
 
 ---
-*Documentado el 2026-07-28, basado en lectura directa del repo (CLAUDE.md, los 9 SKILL.md,
-templates/index.md, SESION_LOG.md y estructura de carpetas).*
+*Documentado originalmente el 2026-07-28. Actualizado el 2026-09-22: agregada sección del Cockpit SDR (sección 6), numeradas las secciones siguientes.*

@@ -426,7 +426,7 @@ const SHOW_WARM_INTROS = false;
 // as it did before this feature (loadLeads still reads the 4 new columns
 // either way, since that alone is inert/harmless, but nothing else new does
 // anything when this is off).
-const SHOW_SOURCE_FILTER = true;
+const SHOW_SOURCE_FILTER = false;
 // Feature flag: contact/company search over My leads. Searches across
 // pipeline/in-sequence/closed at once, ignoring the active view bucket.
 const SHOW_LEAD_SEARCH = true;
@@ -636,6 +636,8 @@ function renderUsers(){
 }
 function renderChips(){
   const mine = currentBaseLeads();
+  const presentCats = new Set(mine.map(l => l.cat).filter(Boolean));
+  if (presentCats.size <= 1) { el("#catchips").innerHTML = ""; return; }
   const chips = [{k:"all",name:"All"}].concat(
     Object.keys(CATS).map(k=>({k,name:CATS[k].name})));
   el("#catchips").innerHTML = chips.map(c=>{
@@ -1642,6 +1644,7 @@ function cardHtml(l, followupWorst){
         return `<span class="badge segment" title="value_chain_map">${seg}${t ? " · " + t : ""}</span>`;
       })()
     : "";
+
   if (PER_CONTACT_ROWS && !followupWorst) {
     const _contacts = realContactsOf(l);
     const _rows = _contacts.length
