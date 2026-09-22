@@ -120,7 +120,6 @@ Además del motor de skills, este repo aloja el **Outreach Cockpit**: una app we
 
 - Login con Magic Link (correos `@prima.ai`)
 - Cada usuario ve solo sus cuentas asignadas (RLS por `assigned_user_id`)
-- Ivan y Alda tienen acceso admin: ven toda la data independientemente de asignacion
 
 **Pipeline**
 
