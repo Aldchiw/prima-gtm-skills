@@ -147,6 +147,29 @@
   .startpick-note.err{color:var(--red-text)}
   .pick-label{font-size:11.5px;color:var(--ink-2);display:inline-flex;align-items:center;gap:5px;cursor:pointer;user-select:none}
   .pick-label input[type=checkbox]{accent-color:var(--ink);width:13px;height:13px;cursor:pointer}
+  /* Draft block */
+  .cdraft{border-top:1px solid var(--border);padding:10px 20px}
+  .cdraft-head{display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none}
+  .cdraft-status{font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:999px;background:var(--bg);color:var(--ink-3);border:1px solid var(--border)}
+  .cdraft-status.pending{background:#FEF3C7;color:#92400E;border-color:#FDE68A}
+  .cdraft-status.sent{background:#D1FAE5;color:#065F46;border-color:#A7F3D0}
+  .cdraft-status.send{background:#DBEAFE;color:#1E40AF;border-color:#BFDBFE}
+  .cdraft-asunto{font-size:12px;color:var(--ink-2);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cdraft-toggle{font-size:11px;color:var(--link);background:none;border:none;cursor:pointer;padding:0;flex:none}
+  .cdraft-body{display:none;margin-top:10px;display:flex;flex-direction:column;gap:8px}
+  .cdraft-body.open{display:flex}
+  .cdraft-field label{font-size:10.5px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px;display:block}
+  .cdraft-textarea{width:100%;font-family:var(--sans);font-size:12.5px;color:var(--ink);background:var(--bg);
+    border:1px solid var(--border);border-radius:7px;padding:8px 10px;resize:vertical;min-height:60px;line-height:1.5}
+  .cdraft-textarea:focus{outline:none;border-color:var(--border-2)}
+  .cdraft-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .cdraft-approve{font-family:var(--sans);font-size:12.5px;font-weight:600;padding:7px 16px;border-radius:7px;
+    background:var(--ink);color:#fff;border:none;cursor:pointer;transition:.12s}
+  .cdraft-approve:hover{opacity:.85}
+  .cdraft-approve:disabled{opacity:.45;cursor:default}
+  .cdraft-note{font-size:11px;font-weight:600}
+  .cdraft-note.ok{color:var(--good)}
+  .cdraft-note.err{color:var(--red-text)}
   .li-step{display:flex;flex-direction:column;gap:8px;padding:8px 0}
   .li-step-note{font-size:12px;color:var(--ink-2);font-weight:500}
   .li-step-email{font-family:var(--sans);font-size:12.5px;color:var(--ink-2);background:var(--bg);
@@ -1609,6 +1632,75 @@ el("#list").parentElement.addEventListener("click", e => {
 // pass followupWorst in. Result: an in-sequence account never gets "Start
 // sequence" (that's stage-0-only), it gets FUP text + days + Done instead --
 // in the pipeline's own card, not just in Followups.
+function draftStatusLabel(status){
+  if (!status) return "";
+  const s = status.toUpperCase();
+  if (s === "PENDING") return `<span class="cdraft-status pending">PENDING</span>`;
+  if (s === "SENT")    return `<span class="cdraft-status sent">SENT</span>`;
+  if (s === "SEND")    return `<span class="cdraft-status send">SEND →</span>`;
+  if (s === "SKIP")    return `<span class="cdraft-status">SKIP</span>`;
+  return `<span class="cdraft-status">${escAttr(status)}</span>`;
+}
+
+function draftBlockHtml(contact){
+  const d = DRAFTS[contact.id];
+  if (!d || !d.asunto) return "";
+  const canApprove = d.status && d.status.toUpperCase() === "PENDING";
+  const approveBtn = canApprove
+    ? `<button type="button" class="cdraft-approve" data-contact-id="${escAttr(contact.id)}">Aprobar → SEND</button>`
+    : "";
+  return `<div class="cdraft" data-draft-contact="${escAttr(contact.id)}">
+    <div class="cdraft-head" onclick="this.nextElementSibling.classList.toggle('open')">
+      ${draftStatusLabel(d.status)}
+      <span class="cdraft-asunto">${escAttr(d.asunto)}</span>
+      <button type="button" class="cdraft-toggle">Ver</button>
+    </div>
+    <div class="cdraft-body">
+      <div class="cdraft-field"><label>Asunto</label>
+        <input class="cdraft-textarea" style="min-height:unset;padding:6px 10px" value="${escAttr(d.asunto)}" data-field="asunto" data-contact-id="${escAttr(contact.id)}">
+      </div>
+      <div class="cdraft-field"><label>Cuerpo</label>
+        <textarea class="cdraft-textarea" data-field="cuerpo" data-contact-id="${escAttr(contact.id)}">${escAttr(d.cuerpo||"")}</textarea>
+      </div>
+      <div class="cdraft-actions">
+        ${approveBtn}
+        <span class="cdraft-note" data-draft-note="${escAttr(contact.id)}"></span>
+      </div>
+    </div>
+  </div>`;
+}
+
+async function approveDraft(contactId, btn){
+  const note = document.querySelector(`.cdraft-note[data-draft-note="${contactId}"]`);
+  btn.disabled = true;
+  if (note) { note.textContent = ""; note.className = "cdraft-note"; }
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/approve-draft`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SUPABASE_ANON_KEY}` },
+      body: JSON.stringify({ contact_id: contactId }),
+    });
+    const j = await res.json();
+    if (!j.ok) throw new Error(j.error || "Error desconocido");
+    if (DRAFTS[contactId]) DRAFTS[contactId].status = "SEND";
+    if (note) { note.textContent = "Aprobado ✓"; note.className = "cdraft-note ok"; }
+    btn.remove();
+    const statusEl = btn.closest(".cdraft")?.querySelector(".cdraft-status");
+    if (statusEl) { statusEl.textContent = "SEND →"; statusEl.className = "cdraft-status send"; }
+  } catch(e) {
+    btn.disabled = false;
+    if (note) { note.textContent = e.message; note.className = "cdraft-note err"; }
+  }
+}
+
+// Wire approve buttons via delegation on the list container
+document.addEventListener("click", e => {
+  const btn = e.target.closest(".cdraft-approve");
+  if (!btn) return;
+  const contactId = btn.dataset.contactId;
+  if (contactId) approveDraft(contactId, btn);
+});
+
 function cardHtml(l, followupWorst){
   const active = followupWorst ? followupWorst.c : activeContactOf(l);
   const showWarm = SHOW_WARM_INTROS && l.warm;
@@ -1666,6 +1758,7 @@ function cardHtml(l, followupWorst){
     </div>
     </div>`;
   }
+  const draftBlock = active ? draftBlockHtml(active) : "";
   return `<div class="${cardClass}" role="listitem"${cardAttrs}>${warm}
     <div class="cbody">
       <div>
@@ -1678,6 +1771,7 @@ function cardHtml(l, followupWorst){
       <div class="right">${cadence(active?active.stage:0)}</div>
     </div>
     <div class="cfoot">${footer}</div>
+    ${draftBlock}
     </div>`;
 }
 
@@ -1837,9 +1931,17 @@ function daysSince(dateStr){
   return isNaN(d.getTime()) ? 999 : Math.round((Date.now() - d.getTime()) / 86400000);
 }
 
+let DRAFTS = {}; // contact_id → draft row
+
 async function loadLeads(){
-  const { data, error } = await sb.from("accounts").select("*, contacts(*, touches(*))");
-  if (error) { console.error("loadLeads error:", error.message); return; }
+  const [accountsRes, draftsRes] = await Promise.all([
+    sb.from("accounts").select("*, contacts(*, touches(*))"),
+    sb.from("email_drafts").select("*"),
+  ]);
+  if (accountsRes.error) { console.error("loadLeads error:", accountsRes.error.message); return; }
+  DRAFTS = {};
+  for (const d of (draftsRes.data || [])) DRAFTS[d.contact_id] = d;
+  const data = accountsRes.data;
   LEADS = (data || []).map(a => ({
     co: a.account_name,
     cat: a.company_category,
