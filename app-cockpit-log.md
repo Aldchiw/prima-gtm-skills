@@ -415,6 +415,49 @@ Orden que evita el dolor de git que se vivio el 2026-09-17:
 - **NO se tocó:** diseño de tarjeta, pipeline, In sequence, Closed, buscador, barra colapsable. Reversión: `FUP_PER_CONTACT=false`.
 - **Nota:** el rediseño previo de tarjeta por contacto (`PER_CONTACT_ROWS`) quedó en **false** (revertido, no gustó — fuentes grandes / info apretada).
 
+### 2026-09-22 — AUTOMATIZACION Sheet -> cockpit (LIVE) + capa de proteccion
+
+**Qué quedó vivo:** sincronización automática del status de outreach desde el Google Sheet "SDR Feedback" hacia Supabase, **cada hora**, sin pasos manuales. Flujo: CSV master (asignación) -> Zadrac mueve al Sheet -> cron horario -> Edge Function lee el Sheet -> RPC `sync_sheet_touches` aplica con guardas -> contacts actualizado.
+
+**Fuente de datos (Sheet):**
+- Archivo: "SDR Feedback", dueño ivan.vazquez@prima.ai, compartido con el equipo y con la cuenta de servicio.
+- Sheet ID: `1rH-KprLuxAZydwqyRX4lU_lLKX09154F9Nyj6VDG8is` · tab gid: `1226985717`.
+- Columnas usadas: `correo_destino` (llave), `status` (E1), `fecha_enviado`. (Los `followup_*`, `respondio`, `estado` existen pero AÚN NO se mapean — ver Pendientes.)
+
+**Mapeo aplicado (E1 solamente por ahora):** `status = SENT` -> stage `First Touch (Email)` + `last_touch_at = fecha_enviado`. PENDING/SKIP/MANUAL no tocan nada.
+
+**Capa de protección (invariantes, NO romper):**
+- **Forward-only:** sólo avanza el stage (comparación nativa del enum); nunca retrocede; nunca toca `Replied`/`Stopped` ni un stage puesto a mano más avanzado (protege el LinkedIn manual).
+- **Owner-scope:** sólo contactos cuyas cuentas tienen `assigned_user_id = Aldahir Chiw`. Los de otros dueños se saltan (multi-usuario pendiente).
+- **Sólo `stage` + `last_touch_at`.** Jamás toca comentarios/notas/team_status/linkedin_url.
+- **Match sólo por email exacto** (lower/trim). Sin match = se salta, nunca se crea ni se inventa (el cockpit es espejo del CSV; los faltantes se arreglan en el origen).
+- **Circuit-breaker:** si una corrida intentara cambiar > 50 filas, aborta sin escribir (`p_max_changes`).
+- **Auditoría:** cada cambio deja fila en `import_audit_log` (contact_id, correo, field, old_value, new_value, source `sheet-sync:<run_id>`).
+
+**Objetos creados en Supabase:**
+- Función: `sync_sheet_touches(p_rows jsonb, p_max_changes int default 50)` — núcleo idempotente (staging temp + auditoría + 2 updates forward-only). Reutilizable.
+- Tabla `import_audit_log` (RLS on, sin políticas = sólo admin/SQL editor).
+- Tabla `sheet_import_staging` (auxiliar, RLS on).
+- Respaldo del import manual inicial: `contacts_backup_20260922` (copia íntegra de contacts, RLS on).
+- Edge Function `sync-sdr-sheet` (Deno): lee el Sheet con cuenta de servicio (JWT RS256 via jose), parsea SENT, llama al RPC. Secrets: `GOOGLE_SA_EMAIL`, `GOOGLE_SA_PRIVATE_KEY`. URL: `https://axknjzbiteuwrjpbuows.supabase.co/functions/v1/sync-sdr-sheet`.
+- Cron `sync-sdr-sheet-hourly` (pg_cron + pg_net), schedule `0 * * * *`, dispara la Edge Function con la anon key (pública) en el header; la escritura la hace la función con service_role internamente.
+
+**Google Cloud:** proyecto `prima-leads-sheet`, Google Sheets API enabled, cuenta de servicio `cockpit-sheet-reader@prima-leads-sheet.iam.gserviceaccount.com` (llave JSON en poder de Aldahir; compartida como lector/editor en el Sheet).
+
+**Import manual inicial (antes del cron), aplicado el 2026-09-22:** 13 contactos Not Contacted -> First Touch (Email); 8 ya en First Touch (Email) con fecha corregida (relleno falso 28-ago -> fecha real del Sheet); Giuseppe Fiorella (AB Energy) protegido en First Touch (LinkedIn). Resumen auditoría: stage=13, last_touch_at=21.
+
+**Cómo operarlo / troubleshooting:**
+- Correr a demanda: POST a la URL de la Edge Function con header `Authorization: Bearer <anon key>`.
+- Ver qué hizo: `select * from import_audit_log order by run_at desc;`
+- Ver corridas del cron: `select * from cron.job_run_details order by start_time desc limit 20;`
+- Pausar el cron: `select cron.unschedule('sync-sdr-sheet-hourly');`
+- Rollback del import inicial: `update contacts c set stage=b.stage, last_touch_at=b.last_touch_at from contacts_backup_20260922 b where b.id=c.id and (c.stage is distinct from b.stage or c.last_touch_at is distinct from b.last_touch_at);`
+
+**Pendientes / próximos pasos:**
+1. Mapear followups del Sheet (`followup_1..4_*`) a `FUP 1..4`, y `respondio`/`tipo_respuesta` a `Replied`; `estado` cerrado -> `Stopped`. (Hoy sólo E1/SENT.)
+2. Ampliar owner-scope cuando el cockpit sea multi-usuario (hoy sólo Aldahir; los sends de Gustavo/Gaby/Manuel se saltan).
+3. Revisar el circuit-breaker (50) con volumen real.
+
 ---
 
 ## NOTA — este archivo es la fuente de verdad de reglas + estado del cockpit
