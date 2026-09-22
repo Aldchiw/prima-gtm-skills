@@ -136,7 +136,7 @@ Además del motor de skills, este repo aloja el **Outreach Cockpit**: una app we
 
 ### Pendientes próximas tandas
 
-- **Tanda 2 (parcial):** ✅ Start Sequence con checkboxes Email/LinkedIn (pusheado 2026-09-22), ✅ LinkedIn button abre pestaña nueva — pendiente: draft de correo inline (necesita tabla `email_drafts`), fix visual de Closed por contacto
+- **Tanda 2 (parcial):** Start Sequence con checkboxes Email/LinkedIn (pusheado 2026-09-22), LinkedIn button abre pestaña nueva — pendiente: draft de correo inline (necesita tabla `email_drafts`), fix visual de Closed por contacto
 
 - **Tanda 3:** Sync de borradores y status desde Sheet → Supabase, write-back SEND desde cockpit → Sheet, sección de aprobación de correos
 - **Otro:** Auth por Google OAuth de Prima (necesita a Mike), actualizar `app-cockpit-schema.sql` con schema actual completo
