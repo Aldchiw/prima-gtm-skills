@@ -1,7 +1,5 @@
 # Prima GTM Skills — Motor de outbound + Outreach Cockpit
 
-> Documenta el estado real del repo al 2026-09-22. Escrito para alguien que se suma al proyecto
-> y no conoce el contexto de las sesiones anteriores.
 
 ## 1. Qué es esto
 
