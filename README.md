@@ -138,12 +138,12 @@ Además del motor de skills, este repo aloja el **Outreach Cockpit**: una app we
 
 - ✅ **Tanda 1:** Login Magic Link, pipeline por categoría, tiles, stage por contacto, followups, comentarios, búsqueda, sync horario Sheet → Supabase
 - ✅ **Tanda 2 (parcial):** Start Sequence con checkboxes Email/LinkedIn; LinkedIn abre nueva pestaña
-- ✅ **Tanda 3 (parcial):** Tabla `email_drafts` en Supabase; sync de asunto/cuerpo/status/followups desde Sheet; Edge Function `approve-draft` (escribe `SEND` en Sheet); bloque de draft en cada card con botón "Aprobar → SEND"
+- ✅ **Tanda 3:** Tabla `email_drafts` en Supabase; sync de asunto/cuerpo/status/followups + stage inferido desde Sheet; Edge Function `approve-draft` (escribe `SEND` en Sheet); bloque de draft en cada card con botón "Aprobar → SEND"; auto-expand draft al dar Start sequence con Email
 
 ### Pendientes
 
 - **Tanda 2:** fix visual de Closed por contacto
-- **Tanda 3:** editar asunto/cuerpo desde el cockpit antes de aprobar; sync de `respondio`/`thread_id` de vuelta al cockpit para mostrar replies
+- **Tanda 3:** editar asunto/cuerpo desde el cockpit antes de aprobar; sync de `respondio`/`thread_id` de vuelta al cockpit para mostrar replies; lógica de secuencia LinkedIn (sin draft en Sheet)
 - **Otro:** Auth por Google OAuth de Prima (necesita a Mike); actualizar `app-cockpit-schema.sql` con schema actual (tabla `email_drafts`, Edge Functions)
 
 ## 7. Estado actual y pendientes conocidos

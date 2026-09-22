@@ -1036,7 +1036,14 @@ async function startFromPicker(wrap, contact){
   contact.stage_text = stageText;
   contact.last_touch_at = touchedAt;
   if (note) { note.textContent = "Saved ✓"; note.className = "startpick-note ok"; }
-  setTimeout(() => { renderFollowups(); renderSections(); renderTiles(); renderChips(); }, 800);
+  setTimeout(() => {
+    renderFollowups(); renderSections(); renderTiles(); renderChips();
+    // Auto-expand draft block for this contact if one exists
+    if (emailChecked && DRAFTS[contact.id]) {
+      const draftEl = document.querySelector(`.cdraft[data-draft-contact="${contact.id}"] .cdraft-body`);
+      if (draftEl) draftEl.classList.add("open");
+    }
+  }, 800);
 }
 
 // Same safe-save pattern as the rest: write to Supabase first, only touch

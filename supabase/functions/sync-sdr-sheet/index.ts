@@ -90,17 +90,32 @@ function parseRows(values: string[][]) {
     followup_3_cuerpo: string; followup_3_fecha: string;
     followup_4_cuerpo: string; followup_4_fecha: string;
     sheet_row_index: number;
+    inferred_stage: string;
   }[] = [];
 
   for (let r = 1; r < values.length; r++) {
     const row = values[r];
     const correo = (row[iEmail] || "").trim().toLowerCase();
-    const status = (row[iStatus] || "").trim();
+    const status = (row[iStatus] || "").trim().toUpperCase();
     if (!correo.includes("@")) continue;
 
-    // Touch sync (existing — only SENT rows)
+    // Touch sync (existing — only SENT/MANUAL rows)
     const fecha = iFecha >= 0 ? (row[iFecha] || "").trim().slice(0, 10) : "";
-    if (status === "SENT" && fecha) touchRows.push({ correo, fecha });
+    if ((status === "SENT" || status === "MANUAL") && fecha) touchRows.push({ correo, fecha });
+
+    // Infer stage from Sheet columns (highest wins)
+    const respondio  = iResp  >= 0 ? (row[iResp]  || "").trim().toUpperCase() === "TRUE" : false;
+    const fup4fecha  = iFup4F >= 0 ? (row[iFup4F] || "").trim() : "";
+    const fup3fecha  = iFup3F >= 0 ? (row[iFup3F] || "").trim() : "";
+    const fup2fecha  = iFup2F >= 0 ? (row[iFup2F] || "").trim() : "";
+    const fup1fecha  = iFup1F >= 0 ? (row[iFup1F] || "").trim() : "";
+    let inferred_stage = "";
+    if (respondio)                                    inferred_stage = "Replied";
+    else if (fup4fecha)                               inferred_stage = "FUP 4";
+    else if (fup3fecha)                               inferred_stage = "FUP 3";
+    else if (fup2fecha)                               inferred_stage = "FUP 2";
+    else if (fup1fecha)                               inferred_stage = "FUP 1";
+    else if (status === "SENT" || status === "MANUAL") inferred_stage = "First Touch (Email)";
 
     // Draft sync — all rows that have asunto (even PENDING)
     const asunto = iAsunto >= 0 ? (row[iAsunto] || "").trim() : "";
@@ -109,7 +124,7 @@ function parseRows(values: string[][]) {
       correo,
       asunto,
       cuerpo:            iCuerpo >= 0 ? (row[iCuerpo] || "").trim()  : "",
-      status,
+      status: (row[iStatus] || "").trim(),
       thread_id:         iThread >= 0 ? (row[iThread] || "").trim()  : "",
       respondio:         iResp   >= 0 ? (row[iResp]   || "").trim().toUpperCase() === "TRUE" : false,
       fecha_resp:        iFResp  >= 0 ? (row[iFResp]  || "").trim()  : "",
@@ -122,6 +137,7 @@ function parseRows(values: string[][]) {
       followup_4_cuerpo: iFup4C  >= 0 ? (row[iFup4C]  || "").trim()  : "",
       followup_4_fecha:  iFup4F  >= 0 ? (row[iFup4F]  || "").trim()  : "",
       sheet_row_index: r + 1, // 1-indexed for Sheets API
+      inferred_stage,
     });
   }
 
@@ -184,6 +200,19 @@ Deno.serve(async () => {
           .upsert(upserts, { onConflict: "contact_email" });
         if (draftError) throw draftError;
         draftUpserted = upserts.length;
+      }
+
+      // Stage sync: update contacts.stage based on Sheet data
+      const stageUpdates = draftRows
+        .filter((d) => d.inferred_stage && emailToId[d.correo])
+        .map((d) => ({ id: emailToId[d.correo], stage: d.inferred_stage }));
+
+      for (const u of stageUpdates) {
+        await supabase
+          .from("contacts")
+          .update({ stage: u.stage, updated_at: new Date().toISOString() })
+          .eq("id", u.id)
+          .neq("stage", u.stage); // only update if stage changed
       }
     }
 
