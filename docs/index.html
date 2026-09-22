@@ -145,6 +145,8 @@
   .startpick-note{font-size:11px;font-weight:600}
   .startpick-note.ok{color:var(--good)}
   .startpick-note.err{color:var(--red-text)}
+  .pick-label{font-size:11.5px;color:var(--ink-2);display:inline-flex;align-items:center;gap:5px;cursor:pointer;user-select:none}
+  .pick-label input[type=checkbox]{accent-color:var(--ink);width:13px;height:13px;cursor:pointer}
   .li-step{display:flex;flex-direction:column;gap:8px;padding:8px 0}
   .li-step-note{font-size:12px;color:var(--ink-2);font-weight:500}
   .li-step-email{font-family:var(--sans);font-size:12.5px;color:var(--ink-2);background:var(--bg);
@@ -966,46 +968,53 @@ async function markStopped(btn){
   setTimeout(() => { renderFollowups(); renderSections(); renderTiles(); renderChips(); }, 800);
 }
 
-// Expands a pipeline card's "Start sequence" button into an inline
-// Email/LinkedIn channel picker, in place.
+// Expands "Start sequence" into a checkbox picker: Email and/or LinkedIn.
+// If LinkedIn is checked, opens the profile in a new tab on Start.
+// Channel saved to Supabase: Email if checked (even alongside LinkedIn),
+// LinkedIn-only if only LinkedIn is checked.
 function showChannelPicker(btn){
   const wrap = btn.parentElement;
   const contactId = wrap.dataset.contactId;
   const contact = findContactById(contactId);
-  // #3: when the contact has BOTH a LinkedIn URL and an email, run the
-  // LinkedIn mini-step (open their profile + a paused email box + a confirm)
-  // instead of the plain picker -- nudges the LinkedIn action before marking.
-  if (LINKEDIN_STEP && contact && normalizeUrl(contact.linkedin) && contact.email) {
-    // Store the step in state and re-render (NOT a DOM injection) so it
-    // SURVIVES the re-render Supabase fires when you return from the
-    // LinkedIn tab (onAuthStateChange -> loadLeads -> renderAll).
-    const li = normalizeUrl(contact.linkedin);
-    if (li) window.open(li, "_blank", "noopener");
-    state.liStep = contactId;
-    renderSections();
-    return;
-  }
-  wrap.innerHTML = `<span class="startpick-label">Channel:</span>
-    <button type="button" class="start-channel" data-contact-id="${escAttr(contactId)}" data-channel="Email">Email</button>
-    <button type="button" class="start-channel" data-contact-id="${escAttr(contactId)}" data-channel="LinkedIn">LinkedIn</button>`;
-  wrap.querySelectorAll(".start-channel").forEach(b => { b.onclick = () => startSequence(b); });
+  const hasEmail = contact && contact.email && contact.email.indexOf("@") !== -1;
+  const hasLI = contact && !!normalizeUrl(contact.linkedin);
+  const emailBox = hasEmail
+    ? `<label class="pick-label"><input type="checkbox" class="pick-email" checked> Email</label>` : "";
+  const liBox = hasLI
+    ? `<label class="pick-label"><input type="checkbox" class="pick-li"> LinkedIn</label>` : "";
+  wrap.innerHTML = `${emailBox}${liBox}
+    <button type="button" class="start-seq pick-start" data-contact-id="${escAttr(contactId)}">Start</button>
+    <span class="startpick-note"></span>`;
+  wrap.querySelector(".pick-start").onclick = () => startFromPicker(wrap, contact);
 }
 
-// #3: LinkedIn mini-step. Opens the contact's LinkedIn profile in a new tab
-// (the Start-sequence click is a real user gesture, so it isn't popup-
-// blocked), shows a PAUSED email box (placeholder, disabled -- real sending
-// is a later phase), and a confirm button that reuses startSequence() to
-// mark First Touch (LinkedIn). Cancel just re-renders back to the card.
-function liStepHtml(active){
-  return `<span class="startwrap" data-contact-id="${escAttr(active.id)}"><div class="li-step">
-    <div class="li-step-note">LinkedIn profile opened \u2014 connect / message there first.</div>
-    <textarea class="li-step-email" placeholder="Email \u2014 sending coming soon" disabled></textarea>
-    <div class="li-step-row">
-      <button type="button" class="start-channel li-confirm" data-contact-id="${escAttr(active.id)}" data-channel="LinkedIn">Done on LinkedIn \u2192 Start sequence</button>
-      <button type="button" class="li-cancel">Cancel</button>
-      <span class="startpick-note"></span>
-    </div>
-  </div></span>`;
+async function startFromPicker(wrap, contact){
+  const emailChecked = wrap.querySelector(".pick-email")?.checked ?? false;
+  const liChecked   = wrap.querySelector(".pick-li")?.checked   ?? false;
+  const note = wrap.querySelector(".startpick-note");
+  if (!emailChecked && !liChecked) {
+    if (note) { note.textContent = "Selecciona al menos uno"; note.className = "startpick-note err"; }
+    return;
+  }
+  if (liChecked) {
+    const li = normalizeUrl(contact.linkedin);
+    if (li) window.open(li, "_blank", "noopener");
+  }
+  const channel = emailChecked ? "Email" : "LinkedIn";
+  const stageText = channel === "LinkedIn" ? "First Touch (LinkedIn)" : "First Touch (Email)";
+  const touchedAt = new Date().toISOString();
+  wrap.querySelectorAll("button").forEach(b => { b.disabled = true; });
+  const { error } = await sb.from("contacts").update({ stage: stageText, last_touch_at: touchedAt }).eq("id", contact.id);
+  if (error) {
+    wrap.querySelectorAll("button").forEach(b => { b.disabled = false; });
+    if (note) { note.textContent = "Save error"; note.className = "startpick-note err"; }
+    return;
+  }
+  contact.stage = stageFromText(stageText);
+  contact.stage_text = stageText;
+  contact.last_touch_at = touchedAt;
+  if (note) { note.textContent = "Saved ✓"; note.className = "startpick-note ok"; }
+  setTimeout(() => { renderFollowups(); renderSections(); renderTiles(); renderChips(); }, 800);
 }
 
 // Same safe-save pattern as the rest: write to Supabase first, only touch
@@ -1218,7 +1227,6 @@ function stageSelectHtml(active){
 // Pipeline-only, stage-0 contacts only: a single button that expands into
 // an inline Email/LinkedIn channel picker (see showChannelPicker/startSequence).
 function startSequenceHtml(active){
-  if (LINKEDIN_STEP && state.liStep === active.id) return liStepHtml(active);
   return `<span class="startwrap" data-contact-id="${escAttr(active.id)}"><button type="button" class="start-seq">Start sequence</button></span>`;
 }
 
