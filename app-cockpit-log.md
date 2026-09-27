@@ -458,6 +458,53 @@ Orden que evita el dolor de git que se vivio el 2026-09-17:
 2. Ampliar owner-scope cuando el cockpit sea multi-usuario (hoy sólo Aldahir; los sends de Gustavo/Gaby/Manuel se saltan).
 3. Revisar el circuit-breaker (50) con volumen real.
 
+## 2026-09-22 — Zadrac (Iván): checkboxes Email/LinkedIn + bloque de borrador + approve-draft (13 commits, traídos vía pull el 2026-09-27)
+
+Estos cambios los hizo Zadrac (`IVzzVll` en git) directo en GitHub/su propio checkout, no en esta
+sesión — llegaron al repo local recién el 2026-09-27 vía `git pull --ff-only` (ver
+`docs/registro-cambios.md` para el detalle completo commit por commit). Se documentan aquí porque
+tocan `docs/index.html` y el backend del cockpit.
+
+- **"Start sequence" pasó de botones a casillas.** Antes: dos botones Email/LinkedIn, y si el
+  contacto tenía ambos se abría un mini-paso especial de LinkedIn (perfil + caja de correo
+  bloqueada + confirmar). Ese mini-paso se eliminó por completo. Ahora: casillas de selección
+  (Email y/o LinkedIn) + botón "Start". Si se marca LinkedIn, abre el perfil en pestaña nueva. Si
+  se marca Email (aunque también LinkedIn), el canal guardado es "Email". Sin ninguna marcada,
+  avisa "Selecciona al menos uno".
+- **Bloque de borrador de correo por contacto (nuevo).** Cada contacto puede mostrar el borrador
+  que vive en el Sheet: etiqueta de estado con color (PENDING amarillo / SEND azul / SENT verde /
+  SKIP gris), asunto, y al desplegar, asunto + cuerpo completos editables en el DOM (todavía no
+  hay guardado de la edición — ver pendiente abajo). Si está en PENDING aparece
+  "Aprobar → SEND". Al iniciar secuencia por Email, el borrador se abre solo. Fix de CSS: una
+  regla duplicada hacía que el cuerpo del borrador se viera siempre; corregido.
+- **Limpieza de interfaz.** Se escondieron los controles de ordenar; se apagó el filtro de fuente
+  (`SHOW_SOURCE_FILTER = false`); las chips de categoría solo aparecen si hay más de una categoría
+  presente.
+- **Edge Function nueva: `approve-draft`.** Recibe `contact_id`, busca el borrador, si ya está
+  `SENT` lo rechaza, si no escribe `SEND` en la celda `status` correcta del Sheet (usa
+  `sheet_row_index` guardado por el sync) y actualiza `email_drafts.status` en Supabase.
+  **Escribe de verdad en el Google Sheet** — probar con un contacto de prueba antes de usarlo con
+  datos reales.
+- **`sync-sdr-sheet` ampliada.** Pasó de pedir permiso de solo-lectura al Sheet a lectura+escritura
+  (necesario para lo de arriba). Ahora también trae asunto/cuerpo/status/thread_id/respondio/los 4
+  followups de cada fila (incluidas las PENDING) a la tabla nueva `email_drafts`, y deduce sola el
+  `stage` del contacto a partir de esas columnas (Replied si respondió; si no, el followup más
+  alto con fecha; si no, "First Touch (Email)" si SENT o MANUAL). El touch-sync viejo (por
+  `SENT`/`fecha_enviado`) sigue igual, y ahora también cuenta `MANUAL` como toque.
+- **Tabla nueva en Supabase: `email_drafts`.** Un renglón por contacto — asunto, cuerpo, status,
+  thread_id, respondio, fecha_resp, followup_1..4 (cuerpo+fecha), sheet_row_index, synced_at.
+- **README actualizado** con una sección completa del Cockpit (URL Vercel, auth, tablas, Edge
+  Functions, pendientes).
+
+**Pendientes que Zadrac dejó anotados en el README (no verificados en esta sesión):**
+1. Fix visual de Closed por contacto.
+2. Editar asunto/cuerpo desde el cockpit antes de aprobar (hoy solo se puede ver/editar en el DOM,
+   no hay botón de guardar la edición).
+3. Sync de `respondio`/`thread_id` de vuelta al cockpit para mostrar replies en la UI.
+4. Lógica de secuencia LinkedIn (el Sheet no tiene drafts para LinkedIn).
+5. Auth por Google OAuth de Prima (hoy Magic Link).
+6. Actualizar `app-cockpit-schema.sql` para reflejar `email_drafts` + las Edge Functions nuevas.
+
 ---
 
 ## NOTA — este archivo es la fuente de verdad de reglas + estado del cockpit

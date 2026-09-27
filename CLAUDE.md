@@ -79,6 +79,9 @@ de cuentas existentes. Los 4 CSVs originales quedan como fuentes históricas.
 - When a skill's behavior seems to need to change, check the Ejecutable Maestro v2 doc and the Notion
   "Data Centers GTM" page first — this repo's skills should stay a thin execution layer over those, not
   grow independent logic that duplicates or contradicts them.
+- Cada vez que se traigan cambios de otra persona (`pull`), registrar una entrada en
+  `docs/registro-cambios.md` con fecha, autor, commits y archivos, y si tocó la app (`docs/index.html`
+  o `supabase/`), también en `app-cockpit-log.md`.
 
 ## Cost control
 
