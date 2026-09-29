@@ -2013,6 +2013,18 @@ async function loadLeads(){
   if (accountsRes.error) { console.error("loadLeads error:", accountsRes.error.message); return; }
   DRAFTS = {};
   for (const d of (draftsRes.data || [])) DRAFTS[d.contact_id] = d;
+  // Patch stage for contacts whose draft is SENT/MANUAL but Supabase stage
+  // hasn't been updated yet by the hourly sync.
+  for (const a of (accountsRes.data || [])) {
+    for (const c of (a.contacts || [])) {
+      if (!c.stage || c.stage === "Not Contacted") {
+        const d = DRAFTS[c.id];
+        if (d && ["SENT","MANUAL"].includes((d.status || "").toUpperCase())) {
+          c.stage = "First Touch (Email)";
+        }
+      }
+    }
+  }
   const data = accountsRes.data;
   LEADS = (data || []).map(a => ({
     co: a.account_name,
