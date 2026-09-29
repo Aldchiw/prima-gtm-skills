@@ -109,64 +109,80 @@ drafts_e1.md                                → material de trabajo del sprint a
 
 Además del motor de skills, este repo aloja el **Outreach Cockpit**: una app web donde el equipo SDR ve y opera su pipeline de outreach en tiempo real, sin tocar el Google Sheet directamente.
 
-**URL:** `https://prima-gtm-skills.vercel.app`
+**URL:** `https://aldchiw.github.io/prima-gtm-skills/`
 **Codigo:** `docs/index.html` — app de pagina unica (HTML + CSS + JS inline, sin build)
-**Hosting:** Vercel Hobby (auto-deploy desde `main`, proyecto en la cuenta de Alda)
+**Hosting:** GitHub Pages (auto-deploy desde `main`, carpeta `/docs`)
 **Backend:** Supabase (PostgreSQL + Auth + RLS + Edge Functions), proyecto `axknjzbiteuwrjpbuows`
 
-### Como funciona
-
-**Auth y acceso**
+### Auth y acceso
 
 - Login con Magic Link (correos `@prima.ai`)
-- Cada usuario ve solo sus cuentas asignadas (RLS por `assigned_user_id`)
+- RLS por `assigned_user_id` — cada usuario ve solo sus cuentas asignadas
+- Admin override: `ivan.vazquez@prima.ai` bypasea RLS via politica separada en `accounts`, `contacts`, `email_drafts` — ve toda la data independientemente de asignacion
+- Frontend: `ADMIN_EMAILS = ["ivan.vazquez@prima.ai"]` controla visibilidad de controles adicionales (link "needs a contact")
 
-**Pipeline**
+### Pipeline
 
-- Cuentas agrupadas por categoria con tiles de estado: My leads / Fresh signals / In sequence / Closed
-- Stage por contacto, editable y guardable en vivo: Not Contacted → First Touch (Email) → FUP 1-4 → Replied / Stopped
-- Bandeja de followups: cuentas con timer vencido (mas de 7 dias sin toque)
-- Comentarios por contacto via touch modal
-- Busqueda por empresa o nombre de contacto
+- Tiles de estado: My leads / Fresh signals / In sequence / Closed
+- Link secundario "X accounts need a contact": visible solo para admin, o para usuarios normales solo si alguna cuenta sin contacto tiene email o LinkedIn accionable
+- Stage por contacto: Not Contacted → First Touch (Email|LinkedIn|Email + LinkedIn) → FUP 1-4 → Replied / Stopped
+- Badge verde "Replied" en tarjeta cuando `email_drafts.respondio = true`
+- Badge gris "Replied"/"Stopped" cuando el stage del contacto esta cerrado
 
-**Start Sequence**
+### Start Sequence
 
-Al abrir "Start sequence" en un contacto se eligen los canales:
-- Email: muestra el draft sincronizado desde el Sheet (asunto + cuerpo). El boton "Aprobar → SEND" escribe `SEND` en la columna `status` del Sheet via la Edge Function `approve-draft` y actualiza Supabase.
-- LinkedIn: abre perfil en nueva pestana para mensaje manual.
+Al hacer clic en "Start sequence" aparece un picker de canales:
+- **Email**: lee el draft editado (asunto/cuerpo) del bloque de draft, llama a `approve-draft` para escribir `SEND` en el Sheet y actualiza `email_drafts.status` en Supabase, guarda stage `First Touch (Email)`
+- **LinkedIn**: abre el perfil en nueva pestana, guarda stage `First Touch (LinkedIn)`
+- **Ambos**: guarda stage `First Touch (Email + LinkedIn)` — un solo touch, un solo timer de followup
 
-**Sync Sheet → Supabase**
+### Bandeja de followups
 
-La Edge Function `sync-sdr-sheet` corre cada hora via cron. Lee el Sheet de Zadrac SDR y:
-- Upsertea touches de correos enviados (SENT/MANUAL) a la tabla `touches`
-- Upsertea asunto, cuerpo, status y followups a la tabla `email_drafts` (match por correo del contacto)
-- Actualiza `contacts.stage` automaticamente segun lo que haya en el Sheet (respondio → Replied, FUP 4 → FUP 4, etc.)
+Timer fijo de 7 dias desde `last_touch_at`. Un renglon por contacto (no por cuenta).
+
+Contactos incluidos en la bandeja:
+- `stage > 0` con `last_touch_at` registrado
+- Stage "First Touch (LinkedIn)" aunque `last_touch_at` sea null
+- Draft con `status = "MANUAL"` aunque el stage sea "Not Contacted"
+- Fallback: si no hay ninguna fecha, se trata como 30 dias overdue
+
+### Bloque de draft / reply
+
+- Si `respondio = false`: muestra asunto + cuerpo editables. Al hacer Start sequence con Email, los valores editados se escriben al Sheet antes de marcar SEND.
+- Si `respondio = true`: oculta el draft y muestra un bloque verde con `estado` (Interesado/OOO/etc.) y `tipo_respuesta` del Sheet.
+
+### Sync Sheet → Supabase
+
+Edge Function `sync-sdr-sheet`, cron horario. Lee el tab con `gid=1226985717` del Sheet `1rH-KprLuxAZydwqyRX4lU_lLKX09154F9Nyj6VDG8is`:
+
+- Upsertea touches de filas SENT/MANUAL a `touches` via `sync_sheet_touches` RPC
+- Upsertea a `email_drafts` (match por `contact_email`): asunto, cuerpo, status, thread_id, respondio, fecha_resp, tipo_respuesta, estado, followups 1-4, sheet_row_index
+- Infiere y actualiza `contacts.stage` desde el Sheet: respondio → Replied, fup4fecha → FUP 4, etc.
 
 ### Tablas en Supabase
 
-| Tabla | Que guarda |
+| Tabla | Columnas clave |
 |---|---|
-| `accounts` | 160 cuentas, una fila por empresa |
-| `contacts` | 275+ contactos ligados a cuentas |
-| `touches` | Historial de toques por contacto (comentarios, replied, fechas) |
-| `users` | Roster del equipo (4 usuarios) |
-| `email_drafts` | Draft por contacto sincronizado desde Sheet: asunto, cuerpo, status, followups 1-4, thread_id, respondio |
+| `accounts` | account_name, company_category, assigned_user_id, signal_detail, signal_date, signal_url, priority |
+| `contacts` | contact_name, contact_email, linkedin_url, stage, last_touch_at, account_id |
+| `touches` | contact_id, fup_label, comment, replied, created_at, updated_at |
+| `users` | id, email, name, color |
+| `email_drafts` | contact_id, contact_email, asunto, cuerpo, status, thread_id, respondio, fecha_resp, tipo_respuesta, estado, followup_1-4_cuerpo/fecha, sheet_row_index |
 
 ### Edge Functions
 
-| Funcion | Que hace |
-|---|---|
-| `sync-sdr-sheet` | Lectura horaria del Sheet → upsert touches + drafts + stage en Supabase |
-| `approve-draft` | Recibe `contact_id`, escribe `SEND` en la celda correcta del Sheet, actualiza `email_drafts.status` |
+| Funcion | Trigger | Que hace |
+|---|---|---|
+| `sync-sdr-sheet` | Cron horario | Lee Sheet → upsert touches + email_drafts + contacts.stage |
+| `approve-draft` | POST desde cockpit | Recibe `contact_id` + `asunto` + `cuerpo` opcionales; escribe valores al Sheet via Sheets API batchUpdate, luego escribe `SEND` en columna status, actualiza `email_drafts` en Supabase |
 
-### Pendientes
+Ambas funciones usan una Service Account de Google (env vars `GOOGLE_SA_EMAIL` + `GOOGLE_SA_PRIVATE_KEY`) para autenticarse contra Sheets API via JWT/OAuth2.
 
-- Fix visual de Closed por contacto (el estado funciona en data, falta la UI)
-- Editar asunto/cuerpo desde el cockpit antes de aprobar (hoy solo se puede ver)
-- Sync de `respondio` y `thread_id` de vuelta al cockpit para mostrar replies en la UI
-- Logica de secuencia LinkedIn (el Sheet no tiene drafts para LinkedIn, habria que definirla aparte)
-- Auth por Google OAuth de Prima (hoy es Magic Link; requiere configuracion con Mike)
-- Actualizar `app-cockpit-schema.sql` para reflejar el schema actual (tabla `email_drafts`, Edge Functions)
+### Pendientes de implementacion
+
+- `contacts.stage` no se actualiza en tiempo real desde el cockpit cuando el SDR hace Done/Replied — se sobreescribe en el siguiente sync horario si el Sheet tiene un valor distinto. Falta definir prioridad: cockpit vs Sheet como fuente de verdad.
+- Auth por JWT de Google Workspace en lugar de Magic Link — requiere configurar un OAuth client ID en el proyecto de Supabase.
+- `app-cockpit-schema.sql` desactualizado — no refleja `email_drafts`, politicas RLS actuales, ni las dos Edge Functions.
 
 ## 7. Estado actual y pendientes conocidos
 
