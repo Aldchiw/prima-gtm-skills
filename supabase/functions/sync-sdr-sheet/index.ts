@@ -70,6 +70,8 @@ function parseRows(values: string[][]) {
   const iThread  = col(header, "thread_id");
   const iResp    = col(header, "respondio");
   const iFResp   = col(header, "fecha_resp");
+  const iTipoR   = col(header, "tipo_respuesta");
+  const iEstado  = col(header, "estado");
   const iFup1C   = col(header, "followup_1_cuerpo");
   const iFup1F   = col(header, "followup_1");
   const iFup2C   = col(header, "followup_2_cuerpo");
@@ -85,6 +87,7 @@ function parseRows(values: string[][]) {
   const draftRows: {
     correo: string; asunto: string; cuerpo: string; status: string;
     thread_id: string; respondio: boolean; fecha_resp: string;
+    tipo_respuesta: string; estado: string;
     followup_1_cuerpo: string; followup_1_fecha: string;
     followup_2_cuerpo: string; followup_2_fecha: string;
     followup_3_cuerpo: string; followup_3_fecha: string;
@@ -128,6 +131,8 @@ function parseRows(values: string[][]) {
       thread_id:         iThread >= 0 ? (row[iThread] || "").trim()  : "",
       respondio:         iResp   >= 0 ? (row[iResp]   || "").trim().toUpperCase() === "TRUE" : false,
       fecha_resp:        iFResp  >= 0 ? (row[iFResp]  || "").trim()  : "",
+      tipo_respuesta:    iTipoR  >= 0 ? (row[iTipoR]  || "").trim()  : "",
+      estado:            iEstado >= 0 ? (row[iEstado] || "").trim()  : "",
       followup_1_cuerpo: iFup1C  >= 0 ? (row[iFup1C]  || "").trim()  : "",
       followup_1_fecha:  iFup1F  >= 0 ? (row[iFup1F]  || "").trim()  : "",
       followup_2_cuerpo: iFup2C  >= 0 ? (row[iFup2C]  || "").trim()  : "",
@@ -182,6 +187,8 @@ Deno.serve(async () => {
           thread_id:         d.thread_id || null,
           respondio:         d.respondio,
           fecha_resp:        d.fecha_resp || null,
+          tipo_respuesta:    d.tipo_respuesta || null,
+          estado:            d.estado || null,
           followup_1_cuerpo: d.followup_1_cuerpo || null,
           followup_1_fecha:  d.followup_1_fecha  || null,
           followup_2_cuerpo: d.followup_2_cuerpo || null,

@@ -1710,6 +1710,18 @@ function draftStatusLabel(status){
 function draftBlockHtml(contact){
   const d = DRAFTS[contact.id];
   if (!d || !d.asunto) return "";
+  // Once replied, hide the SDR draft — the conversation continues outside the bot
+  if (d.respondio) {
+    const tipo = d.tipo_respuesta || "";
+    const estado = d.estado || "";
+    return `<div class="cdraft" style="background:rgba(209,250,229,.25)">
+      <div class="cdraft-head" style="cursor:default">
+        <span class="replied-badge">Replied</span>
+        ${estado ? `<span class="cdraft-asunto" style="font-weight:600">${escAttr(estado)}</span>` : ""}
+        ${tipo ? `<span class="cdraft-asunto" style="color:var(--ink-3)">${escAttr(tipo)}</span>` : ""}
+      </div>
+    </div>`;
+  }
   return `<div class="cdraft" data-draft-contact="${escAttr(contact.id)}">
     <div class="cdraft-head" onclick="this.nextElementSibling.classList.toggle('open')">
       ${draftStatusLabel(d.status)}
