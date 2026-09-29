@@ -73,13 +73,17 @@ function parseRows(values: string[][]) {
   const iTipoR   = col(header, "tipo_respuesta");
   const iEstado  = col(header, "estado");
   const iFup1C   = col(header, "followup_1_cuerpo");
-  const iFup1F   = col(header, "followup_1");
+  const iFup1F   = col(header, "followup_1_enviado");
+  const iFup1S   = col(header, "followup_1_status");
   const iFup2C   = col(header, "followup_2_cuerpo");
-  const iFup2F   = col(header, "followup_2");
+  const iFup2F   = col(header, "followup_2_enviado");
+  const iFup2S   = col(header, "followup_2_status");
   const iFup3C   = col(header, "followup_3_cuerpo");
-  const iFup3F   = col(header, "followup_3");
+  const iFup3F   = col(header, "followup_3_enviado");
+  const iFup3S   = col(header, "followup_3_status");
   const iFup4C   = col(header, "followup_4_cuerpo");
-  const iFup4F   = col(header, "followup_4");
+  const iFup4F   = col(header, "followup_4_enviado");
+  const iFup4S   = col(header, "followup_4_status");
 
   if (iEmail < 0 || iStatus < 0) throw new Error("Faltan columnas esperadas: correo_destino, status");
 
@@ -88,10 +92,10 @@ function parseRows(values: string[][]) {
     correo: string; asunto: string; cuerpo: string; status: string;
     thread_id: string; respondio: boolean; fecha_resp: string;
     tipo_respuesta: string; estado: string;
-    followup_1_cuerpo: string; followup_1_fecha: string;
-    followup_2_cuerpo: string; followup_2_fecha: string;
-    followup_3_cuerpo: string; followup_3_fecha: string;
-    followup_4_cuerpo: string; followup_4_fecha: string;
+    followup_1_cuerpo: string; followup_1_fecha: string; followup_1_status: string;
+    followup_2_cuerpo: string; followup_2_fecha: string; followup_2_status: string;
+    followup_3_cuerpo: string; followup_3_fecha: string; followup_3_status: string;
+    followup_4_cuerpo: string; followup_4_fecha: string; followup_4_status: string;
     sheet_row_index: number;
     inferred_stage: string;
   }[] = [];
@@ -133,14 +137,18 @@ function parseRows(values: string[][]) {
       fecha_resp:        iFResp  >= 0 ? (row[iFResp]  || "").trim()  : "",
       tipo_respuesta:    iTipoR  >= 0 ? (row[iTipoR]  || "").trim()  : "",
       estado:            iEstado >= 0 ? (row[iEstado] || "").trim()  : "",
-      followup_1_cuerpo: iFup1C  >= 0 ? (row[iFup1C]  || "").trim()  : "",
-      followup_1_fecha:  iFup1F  >= 0 ? (row[iFup1F]  || "").trim()  : "",
-      followup_2_cuerpo: iFup2C  >= 0 ? (row[iFup2C]  || "").trim()  : "",
-      followup_2_fecha:  iFup2F  >= 0 ? (row[iFup2F]  || "").trim()  : "",
-      followup_3_cuerpo: iFup3C  >= 0 ? (row[iFup3C]  || "").trim()  : "",
-      followup_3_fecha:  iFup3F  >= 0 ? (row[iFup3F]  || "").trim()  : "",
-      followup_4_cuerpo: iFup4C  >= 0 ? (row[iFup4C]  || "").trim()  : "",
-      followup_4_fecha:  iFup4F  >= 0 ? (row[iFup4F]  || "").trim()  : "",
+      followup_1_cuerpo:  iFup1C >= 0 ? (row[iFup1C] || "").trim() : "",
+      followup_1_fecha:   iFup1F >= 0 ? (row[iFup1F] || "").trim() : "",
+      followup_1_status:  iFup1S >= 0 ? (row[iFup1S] || "").trim() : "",
+      followup_2_cuerpo:  iFup2C >= 0 ? (row[iFup2C] || "").trim() : "",
+      followup_2_fecha:   iFup2F >= 0 ? (row[iFup2F] || "").trim() : "",
+      followup_2_status:  iFup2S >= 0 ? (row[iFup2S] || "").trim() : "",
+      followup_3_cuerpo:  iFup3C >= 0 ? (row[iFup3C] || "").trim() : "",
+      followup_3_fecha:   iFup3F >= 0 ? (row[iFup3F] || "").trim() : "",
+      followup_3_status:  iFup3S >= 0 ? (row[iFup3S] || "").trim() : "",
+      followup_4_cuerpo:  iFup4C >= 0 ? (row[iFup4C] || "").trim() : "",
+      followup_4_fecha:   iFup4F >= 0 ? (row[iFup4F] || "").trim() : "",
+      followup_4_status:  iFup4S >= 0 ? (row[iFup4S] || "").trim() : "",
       sheet_row_index: r + 1, // 1-indexed for Sheets API
       inferred_stage,
     });
@@ -189,14 +197,18 @@ Deno.serve(async () => {
           fecha_resp:        d.fecha_resp || null,
           tipo_respuesta:    d.tipo_respuesta || null,
           estado:            d.estado || null,
-          followup_1_cuerpo: d.followup_1_cuerpo || null,
-          followup_1_fecha:  d.followup_1_fecha  || null,
-          followup_2_cuerpo: d.followup_2_cuerpo || null,
-          followup_2_fecha:  d.followup_2_fecha  || null,
-          followup_3_cuerpo: d.followup_3_cuerpo || null,
-          followup_3_fecha:  d.followup_3_fecha  || null,
-          followup_4_cuerpo: d.followup_4_cuerpo || null,
-          followup_4_fecha:  d.followup_4_fecha  || null,
+          followup_1_cuerpo:  d.followup_1_cuerpo  || null,
+          followup_1_fecha:   d.followup_1_fecha   || null,
+          followup_1_status:  d.followup_1_status  || null,
+          followup_2_cuerpo:  d.followup_2_cuerpo  || null,
+          followup_2_fecha:   d.followup_2_fecha   || null,
+          followup_2_status:  d.followup_2_status  || null,
+          followup_3_cuerpo:  d.followup_3_cuerpo  || null,
+          followup_3_fecha:   d.followup_3_fecha   || null,
+          followup_3_status:  d.followup_3_status  || null,
+          followup_4_cuerpo:  d.followup_4_cuerpo  || null,
+          followup_4_fecha:   d.followup_4_fecha   || null,
+          followup_4_status:  d.followup_4_status  || null,
           sheet_row_index:   d.sheet_row_index,
           synced_at:         new Date().toISOString(),
         }));

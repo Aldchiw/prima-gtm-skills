@@ -1707,18 +1707,21 @@ function draftStatusLabel(status){
   return `<span class="cdraft-status">${escAttr(status)}</span>`;
 }
 
-// Returns {cuerpo, fup_index} for the current stage of the contact.
-// fup_index=0 means the original email; 1-4 means followup N.
+// Returns {cuerpo, asunto, fup_index} for the active followup draft.
+// Detects by followup_N_status === "PENDING" (bot-generated, not yet approved).
+// fup_index=0 means the original email.
 function activeDraftContent(contact, d) {
-  const st = contact.stage_text || "";
-  const fupMap = {
-    "FUP 1": { cuerpo: d.followup_1_cuerpo, idx: 1 },
-    "FUP 2": { cuerpo: d.followup_2_cuerpo, idx: 2 },
-    "FUP 3": { cuerpo: d.followup_3_cuerpo, idx: 3 },
-    "FUP 4": { cuerpo: d.followup_4_cuerpo, idx: 4 },
-  };
-  const fup = fupMap[st];
-  if (fup && fup.cuerpo) return { cuerpo: fup.cuerpo, asunto: d.asunto, fup_index: fup.idx };
+  const fups = [
+    { cuerpo: d.followup_1_cuerpo, status: d.followup_1_status, idx: 1 },
+    { cuerpo: d.followup_2_cuerpo, status: d.followup_2_status, idx: 2 },
+    { cuerpo: d.followup_3_cuerpo, status: d.followup_3_status, idx: 3 },
+    { cuerpo: d.followup_4_cuerpo, status: d.followup_4_status, idx: 4 },
+  ];
+  for (const f of fups) {
+    if (f.cuerpo && (f.status || "").toUpperCase() === "PENDING") {
+      return { cuerpo: f.cuerpo, asunto: `Re: ${d.asunto}`, fup_index: f.idx };
+    }
+  }
   return { cuerpo: d.cuerpo || "", asunto: d.asunto, fup_index: 0 };
 }
 
