@@ -1049,8 +1049,8 @@ async function startFromPicker(wrap, contact){
     const li = normalizeUrl(contact.linkedin);
     if (li) window.open(li, "_blank", "noopener");
   }
-  const channel = emailChecked ? "Email" : "LinkedIn";
-  const stageText = channel === "LinkedIn" ? "First Touch (LinkedIn)" : "First Touch (Email)";
+  const channel = (emailChecked && liChecked) ? "Email + LinkedIn" : (emailChecked ? "Email" : "LinkedIn");
+  const stageText = `First Touch (${channel})`;
   const touchedAt = new Date().toISOString();
   wrap.querySelectorAll("button").forEach(b => { b.disabled = true; });
   const { error } = await sb.from("contacts").update({ stage: stageText, last_touch_at: touchedAt }).eq("id", contact.id);
