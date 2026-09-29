@@ -1832,7 +1832,7 @@ function draftBlockHtml(contact){
   }
   const { cuerpo, asunto, fup_index } = activeDraftContent(contact, d);
   const fupLabel = fup_index > 0 ? `FUP ${fup_index}` : "";
-  const approveBtn = (d.status || "").toUpperCase() !== "SENT"
+  const approveBtn = (fup_index > 0 || (d.status || "").toUpperCase() !== "SENT")
     ? `<button type="button" class="cdraft-approve" data-contact-id="${escAttr(contact.id)}" data-fup-index="${fup_index}">Aprobar → SEND${fupLabel ? ` (${fupLabel})` : ""}</button>`
     : "";
   return `<div class="cdraft" data-draft-contact="${escAttr(contact.id)}">
