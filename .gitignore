@@ -15,3 +15,6 @@ __pycache__/
 desktop.ini
 
 google-key.json
+
+# Supabase CLI temp files
+supabase/.temp/
