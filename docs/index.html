@@ -1313,11 +1313,11 @@ function renderNotifBell(){
       ? ((c.stage_text || "").toLowerCase().includes("linkedin") ? "LinkedIn" : "Manual")
       : "Email";
     return `<div class="nitem" data-notif-co="${escAttr(co)}" data-notif-name="${escAttr(name)}">
-      <span class="nitem-co">${escHtml(co)}</span>
+      <span class="nitem-co">${escAttr(co)}</span>
       <span class="nitem-detail">
         <span class="nitem-delay">${d} dia${d===1?"":"s"} vencido</span>
         <span class="nitem-channel">${channel}</span>
-        ${name ? `<span>${escHtml(name)}</span>` : ""}
+        ${name ? `<span>${escAttr(name)}</span>` : ""}
       </span>
     </div>`;
   }).join("");
