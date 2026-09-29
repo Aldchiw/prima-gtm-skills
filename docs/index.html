@@ -773,6 +773,15 @@ function daysSinceTouch(iso){
 // by followupAccounts() (Followups section) and cardHtml() (pipeline/"In
 // sequence" cards) so both agree on which contact drives an account's
 // badge/footer. Returns null if the account has no in-flow contact at all.
+// A contact is "in flow" for followup purposes even if its stage is still
+// "Not Contacted" when it was reached via LinkedIn or has a MANUAL draft —
+// those channels live outside the Sheet and their first touch was already done.
+function isManualOrLinkedIn(c){
+  const draft = DRAFTS[c.id];
+  if (draft && (draft.status || "").toUpperCase() === "MANUAL") return true;
+  if ((c.stage_text || "").toLowerCase().includes("linkedin")) return true;
+  return false;
+}
 // Effective touch date for a contact: last_touch_at, or most recent touch
 // created_at, or null (MANUAL/LinkedIn contacts may have no recorded date).
 function effectiveTouchDate(c){
@@ -786,9 +795,8 @@ function effectiveTouchDate(c){
 function worstInFlowContact(l){
   let worst = null;
   for (const c of realContactsOf(l)) {
-    if (c.stage > 0 && !isClosed(c)) {
+    if ((c.stage > 0 || isManualOrLinkedIn(c)) && !isClosed(c)) {
       const iso = effectiveTouchDate(c);
-      // No recorded date → treat as 30 days overdue so MANUAL/LinkedIn always surface
       const days = iso ? daysSinceTouch(iso) : 30;
       if (days === null) continue;
       const delay = days - 7;
@@ -833,7 +841,7 @@ function followupContacts(predicate){
   const rows = [];
   for (const l of LEADS) {
     for (const c of realContactsOf(l)) {
-      if (c.stage > 0 && !isClosed(c)) {
+      if ((c.stage > 0 || isManualOrLinkedIn(c)) && !isClosed(c)) {
         const iso = effectiveTouchDate(c);
         const days = iso ? daysSinceTouch(iso) : 30;
         if (days === null) continue;
