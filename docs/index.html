@@ -1707,6 +1707,21 @@ function draftStatusLabel(status){
   return `<span class="cdraft-status">${escAttr(status)}</span>`;
 }
 
+// Returns {cuerpo, fup_index} for the current stage of the contact.
+// fup_index=0 means the original email; 1-4 means followup N.
+function activeDraftContent(contact, d) {
+  const st = contact.stage_text || "";
+  const fupMap = {
+    "FUP 1": { cuerpo: d.followup_1_cuerpo, idx: 1 },
+    "FUP 2": { cuerpo: d.followup_2_cuerpo, idx: 2 },
+    "FUP 3": { cuerpo: d.followup_3_cuerpo, idx: 3 },
+    "FUP 4": { cuerpo: d.followup_4_cuerpo, idx: 4 },
+  };
+  const fup = fupMap[st];
+  if (fup && fup.cuerpo) return { cuerpo: fup.cuerpo, asunto: d.asunto, fup_index: fup.idx };
+  return { cuerpo: d.cuerpo || "", asunto: d.asunto, fup_index: 0 };
+}
+
 function draftBlockHtml(contact){
   const d = DRAFTS[contact.id];
   if (!d || !d.asunto) return "";
@@ -1722,20 +1737,27 @@ function draftBlockHtml(contact){
       </div>
     </div>`;
   }
+  const { cuerpo, asunto, fup_index } = activeDraftContent(contact, d);
+  const fupLabel = fup_index > 0 ? `FUP ${fup_index}` : "";
+  const approveBtn = (d.status || "").toUpperCase() !== "SENT"
+    ? `<button type="button" class="cdraft-approve" data-contact-id="${escAttr(contact.id)}" data-fup-index="${fup_index}">Aprobar → SEND${fupLabel ? ` (${fupLabel})` : ""}</button>`
+    : "";
   return `<div class="cdraft" data-draft-contact="${escAttr(contact.id)}">
     <div class="cdraft-head" onclick="this.nextElementSibling.classList.toggle('open')">
       ${draftStatusLabel(d.status)}
-      <span class="cdraft-asunto">${escAttr(d.asunto)}</span>
+      ${fupLabel ? `<span class="cdraft-status" style="background:#EDE9FE;color:#5B21B6;border-color:#C4B5FD">${fupLabel}</span>` : ""}
+      <span class="cdraft-asunto">${escAttr(asunto)}</span>
       <button type="button" class="cdraft-toggle">Ver</button>
     </div>
     <div class="cdraft-body">
       <div class="cdraft-field"><label>Asunto</label>
-        <input class="cdraft-textarea" style="min-height:unset;padding:6px 10px" value="${escAttr(d.asunto)}" data-field="asunto" data-contact-id="${escAttr(contact.id)}">
+        <input class="cdraft-textarea" style="min-height:unset;padding:6px 10px" value="${escAttr(asunto)}" data-field="asunto" data-contact-id="${escAttr(contact.id)}">
       </div>
       <div class="cdraft-field"><label>Cuerpo</label>
-        <textarea class="cdraft-textarea" data-field="cuerpo" data-contact-id="${escAttr(contact.id)}">${escAttr(d.cuerpo||"")}</textarea>
+        <textarea class="cdraft-textarea" data-field="cuerpo" data-contact-id="${escAttr(contact.id)}">${escAttr(cuerpo)}</textarea>
       </div>
       <div class="cdraft-actions">
+        ${approveBtn}
         <span class="cdraft-note" data-draft-note="${escAttr(contact.id)}"></span>
       </div>
     </div>
@@ -1743,21 +1765,29 @@ function draftBlockHtml(contact){
 }
 
 async function approveDraft(contactId, btn){
+  const fupIndex = parseInt(btn.dataset.fupIndex || "0", 10);
   const note = document.querySelector(`.cdraft-note[data-draft-note="${contactId}"]`);
   btn.disabled = true;
   if (note) { note.textContent = ""; note.className = "cdraft-note"; }
+  const draftEl = document.querySelector(`.cdraft[data-draft-contact="${contactId}"]`);
+  const asunto = draftEl?.querySelector(`input[data-field="asunto"]`)?.value;
+  const cuerpo = draftEl?.querySelector(`textarea[data-field="cuerpo"]`)?.value;
   try {
+    const body = { contact_id: contactId };
+    if (fupIndex > 0) body.fup_index = fupIndex;
+    if (asunto) body.asunto = asunto;
+    if (cuerpo) body.cuerpo = cuerpo;
     const res = await fetch(`${SUPABASE_URL}/functions/v1/approve-draft`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SUPABASE_ANON_KEY}` },
-      body: JSON.stringify({ contact_id: contactId }),
+      body: JSON.stringify(body),
     });
     const j = await res.json();
     if (!j.ok) throw new Error(j.error || "Error desconocido");
     if (DRAFTS[contactId]) DRAFTS[contactId].status = "SEND";
     if (note) { note.textContent = "Aprobado ✓"; note.className = "cdraft-note ok"; }
     btn.remove();
-    const statusEl = btn.closest(".cdraft")?.querySelector(".cdraft-status");
+    const statusEl = btn.closest(".cdraft")?.querySelector(".cdraft-status:first-child");
     if (statusEl) { statusEl.textContent = "SEND →"; statusEl.className = "cdraft-status send"; }
   } catch(e) {
     btn.disabled = false;

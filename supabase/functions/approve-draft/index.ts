@@ -84,8 +84,9 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { contact_id, asunto, cuerpo } = await req.json();
+    const { contact_id, asunto, cuerpo, fup_index } = await req.json();
     if (!contact_id) throw new Error("contact_id requerido");
+    const fupNum = fup_index ? parseInt(fup_index, 10) : 0; // 0 = email principal, 1-4 = followup
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -105,13 +106,15 @@ Deno.serve(async (req) => {
     const token = await getGoogleToken();
     const title = await getSheetTitle(token);
 
+    // Read header once — used for asunto/cuerpo edits and status column lookup
+    const headerRes = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(title)}!1:1`,
+      { headers: { Authorization: `Bearer ${token}` } });
+    const headerVal = await headerRes.json();
+    const header: string[] = (headerVal.values?.[0] || []).map((h: string) => h.trim());
+
     // If edited asunto/cuerpo provided, write them to Sheet first
     if (asunto || cuerpo) {
-      const headerRes = await fetch(
-        `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(title)}!1:1`,
-        { headers: { Authorization: `Bearer ${token}` } });
-      const headerVal = await headerRes.json();
-      const header: string[] = (headerVal.values?.[0] || []).map((h: string) => h.trim());
       const updates: { range: string; values: string[][] }[] = [];
       if (asunto) {
         const col = header.indexOf("asunto");
@@ -134,9 +137,11 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Write SEND to status column
-    const statusCol = await getStatusColIndex(token, title);
-    const cell = `${title}!${colLetter(statusCol)}${draft.sheet_row_index}`;
+    // Determine which Sheet column to write SEND to
+    const statusColName = fupNum > 0 ? `followup_${fupNum}_status` : "status";
+    const statusColIdx = header.indexOf(statusColName);
+    if (statusColIdx < 0) throw new Error(`Columna '${statusColName}' no encontrada en el header`);
+    const cell = `${title}!${colLetter(statusColIdx)}${draft.sheet_row_index}`;
 
     const writeRes = await fetch(
       `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(cell)}?valueInputOption=RAW`,
