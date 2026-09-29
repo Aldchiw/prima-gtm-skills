@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { contact_id } = await req.json();
+    const { contact_id, asunto, cuerpo } = await req.json();
     if (!contact_id) throw new Error("contact_id requerido");
 
     const supabase = createClient(
@@ -102,9 +102,39 @@ Deno.serve(async (req) => {
     if (draft.status === "SENT") throw new Error("Este correo ya fue enviado");
     if (!draft.sheet_row_index) throw new Error("sheet_row_index no disponible — re-sync primero");
 
-    // Write SEND to Sheet
     const token = await getGoogleToken();
     const title = await getSheetTitle(token);
+
+    // If edited asunto/cuerpo provided, write them to Sheet first
+    if (asunto || cuerpo) {
+      const headerRes = await fetch(
+        `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(title)}!1:1`,
+        { headers: { Authorization: `Bearer ${token}` } });
+      const headerVal = await headerRes.json();
+      const header: string[] = (headerVal.values?.[0] || []).map((h: string) => h.trim());
+      const updates: { range: string; values: string[][] }[] = [];
+      if (asunto) {
+        const col = header.indexOf("asunto");
+        if (col >= 0) updates.push({ range: `${title}!${colLetter(col)}${draft.sheet_row_index}`, values: [[asunto]] });
+      }
+      if (cuerpo) {
+        const col = header.indexOf("cuerpo");
+        if (col >= 0) updates.push({ range: `${title}!${colLetter(col)}${draft.sheet_row_index}`, values: [[cuerpo]] });
+      }
+      if (updates.length) {
+        const batchRes = await fetch(
+          `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values:batchUpdate`,
+          {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ valueInputOption: "RAW", data: updates }),
+          });
+        const batchData = await batchRes.json();
+        if (batchData.error) throw new Error("Sheets batch write error: " + JSON.stringify(batchData.error));
+      }
+    }
+
+    // Write SEND to status column
     const statusCol = await getStatusColIndex(token, title);
     const cell = `${title}!${colLetter(statusCol)}${draft.sheet_row_index}`;
 
@@ -119,9 +149,12 @@ Deno.serve(async (req) => {
     if (writeData.error) throw new Error("Sheets write error: " + JSON.stringify(writeData.error));
 
     // Update Supabase
+    const supabaseUpdate: Record<string, string> = { status: "SEND", updated_at: new Date().toISOString() };
+    if (asunto) supabaseUpdate.asunto = asunto;
+    if (cuerpo) supabaseUpdate.cuerpo = cuerpo;
     const { error: updateErr } = await supabase
       .from("email_drafts")
-      .update({ status: "SEND", updated_at: new Date().toISOString() })
+      .update(supabaseUpdate)
       .eq("id", draft.id);
     if (updateErr) throw updateErr;
 

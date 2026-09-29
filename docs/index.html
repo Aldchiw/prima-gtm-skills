@@ -1037,13 +1037,40 @@ async function startFromPicker(wrap, contact){
   contact.stage_text = stageText;
   contact.last_touch_at = touchedAt;
   if (note) { note.textContent = "Saved ✓"; note.className = "startpick-note ok"; }
+
+  if (emailChecked && DRAFTS[contact.id]) {
+    const d = DRAFTS[contact.id];
+    if (d.status && d.status.toUpperCase() === "PENDING") {
+      // Read edited values from inputs if the draft block is rendered
+      const draftEl = document.querySelector(`.cdraft[data-draft-contact="${contact.id}"]`);
+      const asunto = draftEl?.querySelector(`input[data-field="asunto"]`)?.value ?? d.asunto;
+      const cuerpo = draftEl?.querySelector(`textarea[data-field="cuerpo"]`)?.value ?? d.cuerpo;
+      const draftNote = document.querySelector(`.cdraft-note[data-draft-note="${contact.id}"]`);
+      try {
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/approve-draft`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SUPABASE_ANON_KEY}` },
+          body: JSON.stringify({ contact_id: contact.id, asunto, cuerpo }),
+        });
+        const j = await res.json();
+        if (!j.ok) throw new Error(j.error || "Error al aprobar draft");
+        d.asunto = asunto;
+        d.cuerpo = cuerpo;
+        d.status = "SEND";
+        if (draftNote) { draftNote.textContent = "Enviado a SEND ✓"; draftNote.className = "cdraft-note ok"; }
+      } catch(e) {
+        if (draftNote) { draftNote.textContent = e.message; draftNote.className = "cdraft-note err"; }
+      }
+    }
+    // Auto-expand draft block
+    setTimeout(() => {
+      const draftBody = document.querySelector(`.cdraft[data-draft-contact="${contact.id}"] .cdraft-body`);
+      if (draftBody) draftBody.classList.add("open");
+    }, 850);
+  }
+
   setTimeout(() => {
     renderFollowups(); renderSections(); renderTiles(); renderChips();
-    // Auto-expand draft block for this contact if one exists
-    if (emailChecked && DRAFTS[contact.id]) {
-      const draftEl = document.querySelector(`.cdraft[data-draft-contact="${contact.id}"] .cdraft-body`);
-      if (draftEl) draftEl.classList.add("open");
-    }
   }, 800);
 }
 
@@ -1652,10 +1679,6 @@ function draftStatusLabel(status){
 function draftBlockHtml(contact){
   const d = DRAFTS[contact.id];
   if (!d || !d.asunto) return "";
-  const canApprove = d.status && d.status.toUpperCase() === "PENDING";
-  const approveBtn = canApprove
-    ? `<button type="button" class="cdraft-approve" data-contact-id="${escAttr(contact.id)}">Aprobar → SEND</button>`
-    : "";
   return `<div class="cdraft" data-draft-contact="${escAttr(contact.id)}">
     <div class="cdraft-head" onclick="this.nextElementSibling.classList.toggle('open')">
       ${draftStatusLabel(d.status)}
@@ -1670,7 +1693,6 @@ function draftBlockHtml(contact){
         <textarea class="cdraft-textarea" data-field="cuerpo" data-contact-id="${escAttr(contact.id)}">${escAttr(d.cuerpo||"")}</textarea>
       </div>
       <div class="cdraft-actions">
-        ${approveBtn}
         <span class="cdraft-note" data-draft-note="${escAttr(contact.id)}"></span>
       </div>
     </div>
