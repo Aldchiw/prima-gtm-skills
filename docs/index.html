@@ -778,11 +778,11 @@ function daysSinceTouch(iso){
 // sequence" cards) so both agree on which contact drives an account's
 // badge/footer. Returns null if the account has no in-flow contact at all.
 // A contact is "in flow" for followup purposes even if its stage is still
-// "Not Contacted" when it was reached via LinkedIn or has a MANUAL draft —
-// those channels live outside the Sheet and their first touch was already done.
+// "Not Contacted" when it was reached via LinkedIn, has a MANUAL draft, or
+// has a SENT draft (email already went out but stage sync hasn't caught up yet).
 function isManualOrLinkedIn(c){
   const draft = DRAFTS[c.id];
-  if (draft && (draft.status || "").toUpperCase() === "MANUAL") return true;
+  if (draft && ["MANUAL","SENT"].includes((draft.status || "").toUpperCase())) return true;
   if ((c.stage_text || "").toLowerCase().includes("linkedin")) return true;
   return false;
 }
