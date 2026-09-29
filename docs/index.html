@@ -773,11 +773,23 @@ function daysSinceTouch(iso){
 // by followupAccounts() (Followups section) and cardHtml() (pipeline/"In
 // sequence" cards) so both agree on which contact drives an account's
 // badge/footer. Returns null if the account has no in-flow contact at all.
+// Effective touch date for a contact: last_touch_at, or most recent touch
+// created_at, or null (MANUAL/LinkedIn contacts may have no recorded date).
+function effectiveTouchDate(c){
+  if (c.last_touch_at) return c.last_touch_at;
+  if (c.touches && c.touches.length) {
+    const sorted = c.touches.slice().sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    return sorted[0].created_at || null;
+  }
+  return null;
+}
 function worstInFlowContact(l){
   let worst = null;
   for (const c of realContactsOf(l)) {
-    if (c.stage > 0 && c.last_touch_at && !isClosed(c)) {
-      const days = daysSinceTouch(c.last_touch_at);
+    if (c.stage > 0 && !isClosed(c)) {
+      const iso = effectiveTouchDate(c);
+      // No recorded date → treat as 30 days overdue so MANUAL/LinkedIn always surface
+      const days = iso ? daysSinceTouch(iso) : 30;
       if (days === null) continue;
       const delay = days - 7;
       if (!worst || delay > worst.delay) worst = { c, days, delay };
@@ -821,8 +833,9 @@ function followupContacts(predicate){
   const rows = [];
   for (const l of LEADS) {
     for (const c of realContactsOf(l)) {
-      if (c.stage > 0 && c.last_touch_at && !isClosed(c)) {
-        const days = daysSinceTouch(c.last_touch_at);
+      if (c.stage > 0 && !isClosed(c)) {
+        const iso = effectiveTouchDate(c);
+        const days = iso ? daysSinceTouch(iso) : 30;
         if (days === null) continue;
         const delay = days - 7;
         if (predicate(delay)) rows.push({ l, worst: { c, days, delay } });
