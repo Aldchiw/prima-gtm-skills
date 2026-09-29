@@ -349,6 +349,32 @@
   @media (prefers-reduced-motion: reduce){
     *{transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}
   }
+
+  /* Notification bell */
+  .nbell-wrap{position:relative}
+  .nbell{background:none;border:1px solid var(--border);border-radius:8px;padding:5px 8px;cursor:pointer;
+    display:flex;align-items:center;gap:0;font-family:var(--sans);color:var(--ink-2);transition:.12s;line-height:1}
+  .nbell:hover{border-color:var(--border-2);color:var(--ink)}
+  .nbell svg{display:block;flex:none}
+  .nbadge{background:var(--red);color:#fff;font-size:9px;font-weight:700;
+    min-width:14px;height:14px;border-radius:999px;display:flex;align-items:center;justify-content:center;
+    padding:0 3px;margin-left:4px;font-variant-numeric:tabular-nums;line-height:1}
+  .nbadge.hidden{display:none}
+  .npanel{position:absolute;right:0;top:calc(100% + 8px);width:300px;max-height:360px;overflow-y:auto;
+    background:var(--surface);border:1px solid var(--border);border-radius:12px;
+    box-shadow:0 4px 20px rgba(26,26,26,.10);z-index:100;display:none}
+  .npanel.open{display:block}
+  .npanel-head{padding:12px 14px 8px;font-size:11px;font-weight:600;color:var(--ink-3);
+    letter-spacing:.04em;text-transform:uppercase;border-bottom:1px solid var(--border)}
+  .npanel-empty{padding:14px;font-size:13px;color:var(--ink-3);text-align:center}
+  .nitem{display:flex;flex-direction:column;gap:3px;padding:10px 14px;border-bottom:1px solid var(--border);
+    cursor:pointer;transition:.1s}
+  .nitem:last-child{border-bottom:none}
+  .nitem:hover{background:var(--bg)}
+  .nitem-co{font-size:13px;font-weight:600;color:var(--ink)}
+  .nitem-detail{font-size:11.5px;color:var(--ink-3);display:flex;gap:8px}
+  .nitem-delay{color:var(--red-text);font-weight:600}
+  .nitem-channel{font-weight:500}
 </style>
 </head>
 <body>
@@ -391,6 +417,19 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
     </div>
     <div class="userbar">
       <span class="ulabel" id="sessionEmail"></span>
+      <div class="nbell-wrap" id="nbellWrap">
+        <button type="button" class="nbell" id="nbellBtn" aria-label="Notificaciones">
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M7.5 1.5a4.5 4.5 0 0 0-4.5 4.5v2.25L1.5 10.5h12L12 8.25V6A4.5 4.5 0 0 0 7.5 1.5Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+            <path d="M6 10.5a1.5 1.5 0 0 0 3 0" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+          </svg>
+          <span class="nbadge hidden" id="nbadge"></span>
+        </button>
+        <div class="npanel" id="npanel">
+          <div class="npanel-head">Seguimientos pendientes</div>
+          <div id="npanel-body"></div>
+        </div>
+      </div>
       <button type="button" id="signoutBtn">Sign out</button>
     </div>
   </div>
@@ -971,7 +1010,7 @@ async function markDone(btn){
   // Brief pause so "Saved ✓" is actually visible before the re-render.
   // Full re-render (not just Followups) because Done now also lives in the
   // per-contact pipeline card, which must reflect the advanced stage.
-  setTimeout(() => { renderFollowups(); renderSections(); renderTiles(); renderChips(); }, 800);
+  setTimeout(() => { renderFollowups(); renderNotifBell(); renderSections(); renderTiles(); renderChips(); }, 800);
 }
 
 // Same safe-save pattern as markDone(), but for the two terminal actions:
@@ -998,7 +1037,7 @@ async function markReplied(btn){
   contact.stage = stageFromText("Replied");
   contact.stage_text = "Replied";
   if (note) { note.textContent = "Saved ✓"; note.className = "fu-donenote ok"; }
-  setTimeout(() => { renderFollowups(); renderSections(); renderTiles(); renderChips(); }, 800);
+  setTimeout(() => { renderFollowups(); renderNotifBell(); renderSections(); renderTiles(); renderChips(); }, 800);
 }
 
 async function markStopped(btn){
@@ -1018,7 +1057,7 @@ async function markStopped(btn){
   contact.stage = stageFromText("Stopped");
   contact.stage_text = "Stopped";
   if (note) { note.textContent = "Saved ✓"; note.className = "fu-donenote ok"; }
-  setTimeout(() => { renderFollowups(); renderSections(); renderTiles(); renderChips(); }, 800);
+  setTimeout(() => { renderFollowups(); renderNotifBell(); renderSections(); renderTiles(); renderChips(); }, 800);
 }
 
 // Expands "Start sequence" into a checkbox picker: Email and/or LinkedIn.
@@ -1250,6 +1289,51 @@ function bindCloseActions(container){
 function renderFollowups(){
   renderFollowupSection("#followups", (FUP_PER_CONTACT ? followupContacts(d => d >= 1) : followupAccounts(d => d >= 1)), "Followups", "",
     "No overdue contacts.", COLLAPSE_FOLLOWUPS);
+}
+
+function renderNotifBell(){
+  const rows = followupContacts(d => d >= 1);
+  const badge = el("#nbadge");
+  const body  = el("#npanel-body");
+  if (!badge || !body) return;
+  if (rows.length === 0) {
+    badge.textContent = "";
+    badge.classList.add("hidden");
+    body.innerHTML = '<div class="npanel-empty">Sin seguimientos vencidos</div>';
+    return;
+  }
+  badge.textContent = rows.length > 99 ? "99+" : String(rows.length);
+  badge.classList.remove("hidden");
+  body.innerHTML = rows.slice(0, 30).map(r => {
+    const c = r.worst.c;
+    const co = (r.l.co || "").trim();
+    const name = (c.contact_name || "").trim();
+    const d = r.worst.delay;
+    const channel = isManualOrLinkedIn(c)
+      ? ((c.stage_text || "").toLowerCase().includes("linkedin") ? "LinkedIn" : "Manual")
+      : "Email";
+    return `<div class="nitem" data-notif-co="${escAttr(co)}" data-notif-name="${escAttr(name)}">
+      <span class="nitem-co">${escHtml(co)}</span>
+      <span class="nitem-detail">
+        <span class="nitem-delay">${d} dia${d===1?"":"s"} vencido</span>
+        <span class="nitem-channel">${channel}</span>
+        ${name ? `<span>${escHtml(name)}</span>` : ""}
+      </span>
+    </div>`;
+  }).join("");
+  body.querySelectorAll(".nitem").forEach(item => {
+    item.addEventListener("click", () => {
+      const co = item.dataset.notifCo;
+      el("#npanel").classList.remove("open");
+      // Try to find the card in followups first, then anywhere
+      const card = document.querySelector(`.card[data-account="${CSS.escape(co)}"]`);
+      if (card) {
+        card.scrollIntoView({ behavior: "smooth", block: "center" });
+        card.style.outline = "2px solid var(--red)";
+        setTimeout(() => { card.style.outline = ""; }, 1800);
+      }
+    });
+  });
 }
 
 function cadence(stage){
@@ -2007,7 +2091,7 @@ function renderSections(){
   // adding Replied/Stopped.
   bindCloseActions(el("#list"));
 }
-function renderAll(){ renderFollowups(); renderSourceChips(); renderChips(); renderSort(); renderTiles(); renderSections(); }
+function renderAll(){ renderFollowups(); renderNotifBell(); renderSourceChips(); renderChips(); renderSort(); renderTiles(); renderSections(); }
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Sheet/CSV stage was always text ("Not Contacted", "First Touch (Email)",
@@ -2164,6 +2248,15 @@ el("#sendBtn").onclick = async () => {
 };
 
 el("#signoutBtn").onclick = async () => { await sb.auth.signOut(); };
+
+el("#nbellBtn").onclick = (e) => {
+  e.stopPropagation();
+  el("#npanel").classList.toggle("open");
+};
+document.addEventListener("click", (e) => {
+  const wrap = el("#nbellWrap");
+  if (wrap && !wrap.contains(e.target)) el("#npanel").classList.remove("open");
+});
 
 // #1 search box: live-filter My leads by contact/company. Lives in static
 // markup so renderAll() never re-creates it (keeps focus + typed text).
