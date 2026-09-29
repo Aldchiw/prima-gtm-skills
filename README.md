@@ -206,14 +206,10 @@ Ambas funciones usan una Service Account de Google (env vars `GOOGLE_SA_EMAIL` +
 - **Override manual de scope autorizado para 18 cuentas P1** (decisión de negocio de Aldahir,
   2026-07-28) — destraba el draft pero no cambia el `scope_tier` real ni el gate para corridas
   futuras.
-- **Frontera "Backup power/generators" (Power vs Cooling) sin resolver** — pendiente de validar
-  con Gaby, según `reference/prima-catalog.md` sección B.2. No bloquea el uso diario.
+- **Frontera "Backup power/generators" (Power vs Cooling) sin resolver** — la clasificacion correcta esta documentada en `reference/prima-catalog.md` seccion B.2 pero no se aplica automaticamente. No bloquea el uso diario.
 - **La exclusión "cliente existente" no tiene fuente de verdad en vivo** — solo se puede aplicar
   cuando un humano marca la cuenta a mano (caso confirmado: Antora Energy).
-- **Lista de providers en `prima-committee`/`prima-email-waterfall` SKILL.md sigue sin validar
-  contra el catálogo real de Deepline** (ContactOut/Lusha/RocketReach/etc. son placeholders) —
-  `prima-generate-leads` ya usa las llamadas reales validadas, pero los archivos de esas dos
-  skills no se han reconciliado todavía [ver `SPRINT2_GABY_REVIEW.md`].
+- **Lista de providers en `prima-committee`/`prima-email-waterfall` SKILL.md sin reconciliar** — ContactOut/Lusha/RocketReach estan como placeholders; `prima-generate-leads` ya usa las llamadas reales validadas pero los SKILL.md de esas dos skills no se han actualizado para reflejarlas.
 - **`templates.md` quedó huérfano en la raíz de `prima-draft`.** Existe en
   `.claude/skills/prima-draft/templates.md` (suelto, junto a `SKILL.md`, no dentro de la carpeta
   `templates/`) — pendiente decidir si se mueve dentro de `templates/` o se borra, para no
