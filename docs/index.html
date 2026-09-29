@@ -486,6 +486,9 @@ const USERS = [
 ];
 let LEADS = [];
 /* DATA:END */
+const ADMIN_EMAILS = ["ivan.vazquez@prima.ai"];
+let CURRENT_USER_EMAIL = "";
+function isAdmin(){ return ADMIN_EMAILS.includes(CURRENT_USER_EMAIL); }
 const STEPS = ["E1","LI","E2","E3"];
 const SORTS = [
   {k:"warm", label:"Warm intro first"},
@@ -735,11 +738,14 @@ function renderTiles(){
     else if(k==="closed"){ state.view = state.view==="closed" ? "pipeline" : "closed"; state.warmOnly=false; }
     renderAll();
   });
-  // Discreet secondary access to the "Needs contact" view -- demoted from a
-  // 5th tile (crowded the row) to a plain link under it. Hidden entirely at
-  // N===0, since there's nothing to review.
-  el("#needscontact-link").innerHTML = mineNeedsContact.length
-    ? `<button type="button" class="seq-open needscontact-link ${needsContactActive?'on':''}">${mineNeedsContact.length} account${mineNeedsContact.length===1?"":"s"} need a contact <span class="arrow">→</span></button>`
+  // Discreet secondary access to the "Needs contact" view. Hidden at N===0.
+  // For non-admins: also hidden when none of those accounts have an email or
+  // LinkedIn -- no actionable data for them to act on.
+  const actionableNeedsContact = isAdmin()
+    ? mineNeedsContact
+    : mineNeedsContact.filter(l => l.contacts.some(c => c.email || c.linkedin));
+  el("#needscontact-link").innerHTML = actionableNeedsContact.length
+    ? `<button type="button" class="seq-open needscontact-link ${needsContactActive?'on':''}">${actionableNeedsContact.length} account${actionableNeedsContact.length===1?"":"s"} need a contact <span class="arrow">→</span></button>`
     : "";
   const ncBtn = el("#needscontact-link").querySelector(".needscontact-link");
   if (ncBtn) ncBtn.onclick = () => {
@@ -2083,10 +2089,12 @@ el("#leadsearch").oninput = (e) => { state.q = e.target.value.trim(); renderAll(
 
 sb.auth.onAuthStateChange((event, session) => {
   if (session) {
+    CURRENT_USER_EMAIL = session.user.email || "";
     el("#sessionEmail").textContent = session.user.email;
     hideLogin();
     loadLeads();
   } else {
+    CURRENT_USER_EMAIL = "";
     LEADS = [];
     showLogin("", true);
   }
@@ -2094,6 +2102,7 @@ sb.auth.onAuthStateChange((event, session) => {
 
 sb.auth.getSession().then(({ data }) => {
   if (data.session) {
+    CURRENT_USER_EMAIL = data.session.user.email || "";
     el("#sessionEmail").textContent = data.session.user.email;
     hideLogin();
     loadLeads();
