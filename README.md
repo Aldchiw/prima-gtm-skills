@@ -112,14 +112,14 @@ Además del motor de skills, este repo aloja el **Outreach Cockpit**: una app we
 **URL:** `https://aldchiw.github.io/prima-gtm-skills/`
 **Codigo:** `docs/index.html` — app de pagina unica (HTML + CSS + JS inline, sin build)
 **Hosting:** GitHub Pages (auto-deploy desde `main`, carpeta `/docs`)
-**Backend:** Supabase (PostgreSQL + Auth + RLS + Edge Functions), proyecto `axknjzbiteuwrjpbuows`
+**Backend:** Supabase (PostgreSQL + Auth + RLS + Edge Functions)
 
 ### Auth y acceso
 
 - Login con Magic Link (correos `@prima.ai`)
 - RLS por `assigned_user_id` — cada usuario ve solo sus cuentas asignadas
-- Admin override: `ivan.vazquez@prima.ai` bypasea RLS via politica separada en `accounts`, `contacts`, `email_drafts` — ve toda la data independientemente de asignacion
-- Frontend: `ADMIN_EMAILS = ["ivan.vazquez@prima.ai"]` controla visibilidad de controles adicionales (link "needs a contact")
+- Admin override: un usuario designado bypasea RLS via politica separada en `accounts`, `contacts`, `email_drafts` — ve toda la data independientemente de asignacion
+- Frontend: constante `ADMIN_EMAILS` (definida en `docs/index.html`) controla visibilidad de controles adicionales (link "needs a contact")
 
 ### Pipeline
 
@@ -153,7 +153,7 @@ Contactos incluidos en la bandeja:
 
 ### Sync Sheet → Supabase
 
-Edge Function `sync-sdr-sheet`, cron horario. Lee el tab con `gid=1226985717` del Sheet `1rH-KprLuxAZydwqyRX4lU_lLKX09154F9Nyj6VDG8is`:
+Edge Function `sync-sdr-sheet`, cron horario. Lee el tab del Sheet de Zadrac SDR (configurado via variables de entorno en la Edge Function):
 
 - Upsertea touches de filas SENT/MANUAL a `touches` via `sync_sheet_touches` RPC
 - Upsertea a `email_drafts` (match por `contact_email`): asunto, cuerpo, status, thread_id, respondio, fecha_resp, tipo_respuesta, estado, followups 1-4, sheet_row_index
