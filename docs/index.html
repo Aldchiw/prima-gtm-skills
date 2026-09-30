@@ -350,6 +350,24 @@
     *{transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}
   }
 
+  /* LinkedIn message block */
+  .li-msgs{border-top:1px solid var(--border);padding:14px 18px;display:flex;flex-direction:column;gap:12px}
+  .li-msgs-head{font-size:11px;font-weight:600;color:var(--ink-3);letter-spacing:.04em;text-transform:uppercase;
+    display:flex;align-items:center;gap:8px}
+  .li-msgs-head svg{flex:none;opacity:.7}
+  .li-msg-block{display:flex;flex-direction:column;gap:6px}
+  .li-msg-label{font-size:11px;font-weight:600;color:var(--ink-2)}
+  .li-msg-text{font-size:13px;color:var(--ink);background:var(--bg);border:1px solid var(--border);
+    border-radius:8px;padding:10px 12px;white-space:pre-wrap;line-height:1.5}
+  .li-msg-chars{font-size:10.5px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+  .li-msg-chars.over{color:var(--red-text);font-weight:600}
+  .li-copy{font-family:var(--sans);font-size:12px;font-weight:500;padding:5px 12px;border-radius:6px;
+    border:1px solid var(--border);background:var(--surface);color:var(--ink-2);cursor:pointer;
+    align-self:flex-start;transition:.12s}
+  .li-copy:hover{border-color:var(--border-2);color:var(--ink)}
+  .li-copy.copied{background:var(--good);color:#fff;border-color:var(--good)}
+  .li-msgs-loading{font-size:13px;color:var(--ink-3);padding:4px 0}
+
   /* Notification bell */
   .nbell-wrap{position:relative}
   .nbell{background:none;border:1px solid var(--border);border-radius:8px;padding:5px 8px;cursor:pointer;
@@ -1080,6 +1098,34 @@ function showChannelPicker(btn){
   wrap.querySelector(".pick-start").onclick = () => startFromPicker(wrap, contact);
 }
 
+async function generateLinkedInMsgs(contact){
+  // Find the lead to get the signal
+  const lead = LEADS.find(l => realContactsOf(l).some(c => c.id === contact.id));
+  const signal = (lead && lead.signal && lead.signal.type === "news") ? lead.signal.text : "";
+  const signal_url = (lead && lead.signal) ? lead.signal.url : "";
+  LI_MSGS[contact.id] = { loading: true };
+  renderSections(); renderFollowups();
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/generate-linkedin-msgs`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SUPABASE_ANON_KEY}` },
+      body: JSON.stringify({
+        contact_name: contact.name || contact.contact_name,
+        title: contact.title,
+        company: lead ? lead.co : "",
+        signal,
+        signal_url,
+      }),
+    });
+    const j = await res.json();
+    if (!j.ok) throw new Error(j.error || "Error al generar mensajes");
+    LI_MSGS[contact.id] = { connect_note: j.connect_note, dm_msg: j.dm_msg };
+  } catch(e) {
+    LI_MSGS[contact.id] = { error: e.message };
+  }
+  renderSections(); renderFollowups();
+}
+
 async function startFromPicker(wrap, contact){
   const emailChecked = wrap.querySelector(".pick-email")?.checked ?? false;
   const liChecked   = wrap.querySelector(".pick-li")?.checked   ?? false;
@@ -1091,6 +1137,8 @@ async function startFromPicker(wrap, contact){
   if (liChecked) {
     const li = normalizeUrl(contact.linkedin);
     if (li) window.open(li, "_blank", "noopener");
+    // Kick off LinkedIn message generation (async, shows loading state)
+    generateLinkedInMsgs(contact);
   }
   const channel = (emailChecked && liChecked) ? "Email + LinkedIn" : (emailChecked ? "Email" : "LinkedIn");
   const stageText = `First Touch (${channel})`;
@@ -1896,6 +1944,55 @@ document.addEventListener("click", e => {
   if (contactId) approveDraft(contactId, btn);
 });
 
+// Wire LinkedIn copy buttons
+document.addEventListener("click", e => {
+  const btn = e.target.closest(".li-copy");
+  if (!btn) return;
+  const targetId = btn.dataset.copyTarget;
+  const textEl = document.getElementById(targetId);
+  if (!textEl) return;
+  navigator.clipboard.writeText(textEl.textContent).then(() => {
+    btn.textContent = "Copiado ✓";
+    btn.classList.add("copied");
+    setTimeout(() => { btn.textContent = "Copiar"; btn.classList.remove("copied"); }, 1800);
+  });
+});
+
+const liIco = `<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 0 1-2.063-2.065 2.064 2.064 0 1 1 2.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>`;
+
+function liMsgBlockHtml(contact){
+  const m = LI_MSGS[contact.id];
+  if (!m) return "";
+  if (m.loading) {
+    return `<div class="li-msgs">
+      <div class="li-msgs-head">${liIco} LinkedIn</div>
+      <div class="li-msgs-loading">Generando mensajes...</div>
+    </div>`;
+  }
+  if (m.error) {
+    return `<div class="li-msgs">
+      <div class="li-msgs-head">${liIco} LinkedIn</div>
+      <div class="li-msgs-loading" style="color:var(--red-text)">${escAttr(m.error)}</div>
+    </div>`;
+  }
+  const charCount = (m.connect_note || "").length;
+  const charClass = charCount > 300 ? "li-msg-chars over" : "li-msg-chars";
+  return `<div class="li-msgs" data-li-contact="${escAttr(contact.id)}">
+    <div class="li-msgs-head">${liIco} LinkedIn — mensajes sugeridos</div>
+    <div class="li-msg-block">
+      <div class="li-msg-label">1. Nota de connection request</div>
+      <div class="li-msg-text" id="li-cn-${escAttr(contact.id)}">${escAttr(m.connect_note || "")}</div>
+      <div class="${charClass}">${charCount}/300 caracteres</div>
+      <button type="button" class="li-copy" data-copy-target="li-cn-${escAttr(contact.id)}">Copiar</button>
+    </div>
+    <div class="li-msg-block">
+      <div class="li-msg-label">2. DM post-conexión</div>
+      <div class="li-msg-text" id="li-dm-${escAttr(contact.id)}">${escAttr(m.dm_msg || "")}</div>
+      <button type="button" class="li-copy" data-copy-target="li-dm-${escAttr(contact.id)}">Copiar</button>
+    </div>
+  </div>`;
+}
+
 function cardHtml(l, followupWorst){
   const active = followupWorst ? followupWorst.c : activeContactOf(l);
   const showWarm = SHOW_WARM_INTROS && l.warm;
@@ -1954,6 +2051,7 @@ function cardHtml(l, followupWorst){
     </div>`;
   }
   const draftBlock = active ? draftBlockHtml(active) : "";
+  const liBlock = active ? liMsgBlockHtml(active) : "";
   return `<div class="${cardClass}" role="listitem"${cardAttrs}>${warm}
     <div class="cbody">
       <div>
@@ -1967,6 +2065,7 @@ function cardHtml(l, followupWorst){
     </div>
     <div class="cfoot">${footer}</div>
     ${draftBlock}
+    ${liBlock}
     </div>`;
 }
 
@@ -2127,6 +2226,7 @@ function daysSince(dateStr){
 }
 
 let DRAFTS = {}; // contact_id → draft row
+const LI_MSGS = {}; // contact_id → { connect_note, dm_msg, loading }
 
 async function loadLeads(){
   const [accountsRes, draftsRes] = await Promise.all([
