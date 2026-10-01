@@ -1,5 +1,3 @@
-import Anthropic from "https://esm.sh/@anthropic-ai/sdk@0.27";
-
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, {
@@ -45,15 +43,21 @@ MENSAJE 2 — DM post-conexión (una vez aceptado):
 Responde ÚNICAMENTE con JSON válido, sin texto adicional ni markdown:
 {"connect_note": "...", "dm_msg": "..."}`;
 
-    const client = new Anthropic({ apiKey: Deno.env.get("ANTHROPIC_API_KEY")! });
-    const msg = await client.messages.create({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 700,
-      messages: [{ role: "user", content: prompt }],
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${Deno.env.get("OPENAI_API_KEY")}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        max_tokens: 700,
+        messages: [{ role: "user", content: prompt }],
+      }),
     });
-
-    const raw = msg.content[0].type === "text" ? msg.content[0].text.trim() : "";
-    // Strip markdown code fences if model wrapped in ```json
+    const json = await res.json();
+    if (json.error) throw new Error(json.error.message);
+    const raw = (json.choices?.[0]?.message?.content || "").trim();
     const cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
     const result = JSON.parse(cleaned);
 
