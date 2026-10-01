@@ -1,3 +1,24 @@
+## 2026-10-01 — Lote Bisnow de Gaby a producción + rotación de llaves (Supabase y Google)
+- **Lote Bisnow de Gaby:** 46 contactos en leads_master (402 filas, md5 a9294817...) y en Supabase (8 cuentas nuevas, 46 contactos insertados). Todas las cuentas del ejercicio son de Gaby, incluida Vertiv (override de Aldahir sobre el owner existente). Lambda se queda con Gustavo. Los respaldos (contactos RESPALDO) llevan BACKUP_HOLD. Backups: output/backup_supabase_prebisnow_20261001_062236/ y output/backup_vertiv_20261001_150416.csv.
+- **Supabase:** las llaves legacy JWT se deshabilitaron el 29-sep; el engine usa la secret key nueva prima_gtm_engine (en .env, ignorado por git).
+- **Google:** la llave vieja de prima-leads-bot (private_key_id 88aa74...) quedó deshabilitada por Google con razón "Exposed"; llave nueva instalada en google-key.json (ignorado por git). sync-sheet.js corrido con la llave nueva: 403 filas escritas (con header), 356 filas de team_status/notes conservadas.
+- **Rastreo de la filtración:** el archivo JSON de la service account (llave vieja) estuvo en el historial del repo público: commit 19a15ba (2026-08-13 22:33, mensaje "google-key.json") lo agregó con otro nombre de archivo y 3203c88 (5 min después) lo borró; sigue en el historial de origin/main. No está en los archivos actuales. La llave ya está deshabilitada, pero el historial público sigue conteniendo el archivo.
+- **Repo público:** decisión de Aldahir mantenerlo así. Nota: el historial público también contiene CSVs de leads y respaldos de Supabase (ver auditoría de exposición del 2026-10-01) y GitHub Pages sirve docs/.
+- **Pendientes:** avisar a Zadrac; recargar Deepline; ampliar G1/G2/G3 / signal-first; aplicar el gate staged; commit con OK.
+- **Referencia:** el detalle completo vive en el Project (MIGRACION-MAESTRA y cierre-enrich-contactos-2026-09-29).
+
+## 2026-09-15 — Cat3 cerrado + reglas nuevas + Gaby contact-fill (staging)
+- Cat3 muerto contra Notion (0/14). Nacen GATE #0 + company_type + econ log +
+  icp-complement overlay + regla "research solo en terminal". Ver
+  finding-cat3-tam-mislabeled.md y MIGRACION-MAESTRA §6/§8.
+- Gaby contact-fill corrido (committee, GRATIS, $0): output/gaby_committee_fill_staging.csv
+  (+8 contactos, 15->23). PARQUEADO, sin merge, sin sync. Al mergear resolver catches de
+  tier (PRINCIPAL vs FALLBACK en RunPod/TeraWulf/WhiteFiber; candidatos Groq/Keel).
+- leads_master.csv y account_roster.csv con cambios PREEXISTENTES sin comitear — entender
+  antes de comitear, no a ciegas.
+- SIGUIENTE: subir # de CUENTAS de Gaby via muestra Cat4 gateada (protocolo de muestra,
+  techo $2, gate #0, committee, 4-way). Sourcing solo en terminal.
+
 ## 2026-09-14 — Regla de dueños Cat1/Cat2 actualizada + Gaby restaurada
 Regla nueva: existentes 80/20 Gus/Gaby (determinista idx%5==4->Gaby), nuevas 70/30. Supersede el
 100% Gus del 2026-09-09 (NO re-correr sweeps de 100% Gus). 8 cuentas a Gaby: Bitfarms/Keel,
