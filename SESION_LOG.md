@@ -7,6 +7,11 @@
 - **Pendientes:** avisar a Zadrac; recargar Deepline; ampliar G1/G2/G3 / signal-first; aplicar el gate staged; commit con OK.
 - **Referencia:** el detalle completo vive en el Project (MIGRACION-MAESTRA y cierre-enrich-contactos-2026-09-29).
 
+- **Próxima fase — Enriquecimiento parte 3:**
+  - **A) Ampliar el ICP con nuevas categorías** en `reference/icp-complement.md` (overlay aditivo; Notion gana en conflicto). Prueba de oro para una categoría nueva: fab-buyer de fabricación metálica bajo pedido + contexto DC/power/energía + compra en EE.UU. + sin hard-exclude + mapeo por negocio real (sin default a Cat4). Ciclo: propuesta con data → sign-off de Gaby → codificar la ficha → muestra de 10-20 → experimento P2/P3 → medir interested reply rate → promover o matar.
+  - **B) Segundo engine "de pedidos"** (idea con Zadrac, en definición): leads que pide el equipo (eventos, imágenes, listas) sin gate de ICP, separado del engine principal sin romper su estructura. Prototipo = lote Bisnow. Conserva el waterfall, el techo de gasto y los guardrails de envío; la medición va aparte.
+  - **Detalle completo** en el Project: MIGRACION-MAESTRA §8-bis.
+
 ## 2026-09-15 — Cat3 cerrado + reglas nuevas + Gaby contact-fill (staging)
 - Cat3 muerto contra Notion (0/14). Nacen GATE #0 + company_type + econ log +
   icp-complement overlay + regla "research solo en terminal". Ver
