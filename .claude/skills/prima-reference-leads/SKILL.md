@@ -19,11 +19,7 @@ jala leads de estas empresas que pide Gaby: Empresa A, Empresa B, Empresa C
 procesa estas referencias: [lista]
 ```
 
-Parsea la lista de empresas del mensaje. Si una entrada es un dominio en lugar de nombre, úsalo directamente. Si no puedes parsear al menos una empresa, pregunta una vez por la lista antes de continuar.
-
-Siempre pregunta (una vez, al inicio):
-- **¿Quién lo pidió?** — para anotarlo en `signal_summary` como contexto ("Solicitado por Gaby")
-- **¿Tienen dominio o LinkedIn conocido?** — si el usuario ya los tiene, úsalos directamente; ahorra una búsqueda en Step 1
+Parsea la lista de empresas del mensaje. Si una entrada es un dominio en lugar de nombre, úsalo directamente. Si no puedes parsear al menos una empresa, pregunta una vez por la lista antes de continuar. No hagas preguntas adicionales — arranca directo.
 
 ## Lo que esta skill NO hace
 
