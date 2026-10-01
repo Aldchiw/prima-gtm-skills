@@ -505,6 +505,41 @@ tocan `docs/index.html` y el backend del cockpit.
 5. Auth por Google OAuth de Prima (hoy Magic Link).
 6. Actualizar `app-cockpit-schema.sql` para reflejar `email_drafts` + las Edge Functions nuevas.
 
+## 2026-09-29/30 — Zadrac (Iván): followups en cockpit, campanita, mensajes LinkedIn, publishable key (21 commits de Zadrac + 2 de Aldahir, traídos vía pull el 2026-10-01)
+
+Estos cambios los hizo Zadrac (`IVzzVll` en git) en su propio checkout, no en esta sesión; llegaron
+al repo local el 2026-10-01 con `git pull --rebase --autostash` (limpio, sin conflictos). El detalle
+commit por commit está en `docs/registro-cambios.md`. Se documentan aquí porque tocan
+`docs/index.html` y el backend del cockpit (`supabase/functions/`).
+
+- **Bandeja de followups más completa.** Incluye contactos MANUAL/LinkedIn y contactos con draft
+  SENT aunque su stage siga en Not Contacted; el followup activo se detecta por
+  `followup_N_status = PENDING` y no por el stage del contacto. Los followups se pueden **ver y
+  aprobar desde el cockpit**, y el botón Aprobar aparece aunque el email original ya esté SENT.
+- **Stage combinado "Email+LinkedIn"** para el first touch, e inferencia en frontend del First Touch
+  para contactos SENT/MANUAL que siguen con stage Not Contacted.
+- **Badges y contexto de respuesta.** Badges de "replied" y "closed contact" en las tarjetas; si el
+  contacto ya respondió, la tarjeta muestra el contexto de la respuesta en vez del borrador.
+- **Campanita de notificaciones** en el header con seguimientos vencidos; al hacer clic abre la
+  bandeja de followups antes de llevar a la tarjeta (incluye un fix de `escHtml` → `escAttr`).
+- **Start sequence envía el draft editado.** El botón lee asunto/cuerpo editados y llama a
+  `approve-draft`; la edge function escribe esos cambios en el Sheet antes de poner SEND. Tiene
+  relación con el pendiente 2 de la lista anterior (editar asunto/cuerpo antes de aprobar).
+- **Bloque de mensajes LinkedIn.** Edge function nueva `generate-linkedin-msgs`: al iniciar la
+  secuencia genera con Claude los mensajes de LinkedIn del contacto (nombre, título, empresa y la
+  señal verificada si hay) y el cockpit los muestra.
+- **Permisos.** El link de "needs-contact" solo se muestra al admin (hoy solo Iván).
+- **Seguridad.** El cockpit migró a la **publishable key** de Supabase y se invalidó la anon key
+  legacy (`fbed028`). Nota del engine: las llaves legacy JWT de Supabase se deshabilitaron el 29-sep;
+  el engine usa una secret key nueva (en `.env`, ignorado por git). Este log no incluye llaves.
+- **Otros archivos:** `sync-sdr-sheet` (edge function) con +67 líneas, `README.md` con la sección del
+  cockpit SDR reescrita y sin datos sensibles, y `.gitignore` ahora ignora `supabase/.temp/`.
+- **Cambios de Aldahir en el mismo rango:** `97d6eff` (DOCTYPE en `index.html`, 2026-09-28) y
+  `e089b47` (edición de `index.html` en GitHub web, 2026-09-29).
+
+**No verificado en esta sesión:** no se corrió el cockpit ni se probó ninguna de estas funciones;
+este resumen sale de los mensajes de commit, del resumen de cambios por archivo (`git diff --stat`) y de una lectura parcial de la edge function nueva; no se revisaron todos los diffs línea por línea.
+
 ---
 
 ## NOTA — este archivo es la fuente de verdad de reglas + estado del cockpit

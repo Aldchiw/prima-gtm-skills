@@ -11,6 +11,85 @@ mismo Zadrac, es el nombre del proyecto/equipo SDR que él lleva.
 
 ---
 
+## 2026-10-01 — pull de 23 commits (21 de Zadrac, 2 de Aldahir)
+
+Se corrió `git pull --rebase --autostash` (sin force). Resultado: **limpio, sin conflictos**
+(`54ee122..b77cc29` en `origin/main`). El único commit local propio (el cierre de `SESION_LOG.md`,
+`dd8893f`) se re-aplicó encima y quedó como `de3fef4`. Los 4 archivos modificados sin commitear
+(`prima-icp-check/SKILL.md`, `output/account_roster.csv`, `output/leads_master.backup-owner.csv`,
+`output/leads_master.csv`) quedaron **idénticos** (mismo md5) antes y después del pull; cero
+archivos en común con lo que trajo el remoto.
+
+Nota de conteo: al intentar el push había 22 commits remotos; antes del pull Zadrac subió uno más
+(`b77cc29`, 2026-09-30), por eso el total es 23.
+
+### 1. Commits que llegaron (del más viejo al más nuevo)
+
+| # | Hash | Autor | Fecha y hora | Mensaje |
+|---|---|---|---|---|
+| 1 | `97d6eff` | Aldchiw (Aldahir) | 2026-09-28 16:21 | Add DOCTYPE declaration to index.html |
+| 2 | `9cb6ea1` | IVzzVll (Zadrac) | 2026-09-29 13:55 | start sequence envia draft editado a SEND (el botón start lee inputs y llama approve-draft con asunto/cuerpo editados; la edge function escribe los cambios en el sheet antes de poner SEND) |
+| 3 | `e089b47` | Aldchiw (Aldahir) | 2026-09-29 15:27 | Update index.html |
+| 4 | `a98ce8f` | IVzzVll (Zadrac) | 2026-09-29 15:40 | Hide needs-contact link for non-admin users; only Ivan is admin |
+| 5 | `a3576e5` | IVzzVll (Zadrac) | 2026-09-29 15:45 | Show MANUAL/LinkedIn contacts in followup bandeja |
+| 6 | `8a42456` | IVzzVll (Zadrac) | 2026-09-29 15:51 | Include MANUAL/LinkedIn contacts in followup bandeja regardless of stage |
+| 7 | `c8a1074` | IVzzVll (Zadrac) | 2026-09-29 15:54 | Combined Email+LinkedIn first touch stage |
+| 8 | `c9916a5` | IVzzVll (Zadrac) | 2026-09-29 15:59 | Add replied badge and closed contact badge to cards |
+| 9 | `d59f4a0` | IVzzVll (Zadrac) | 2026-09-29 16:08 | Show reply context instead of draft when contact has replied |
+| 10 | `2b62a91` | IVzzVll (Zadrac) | 2026-09-29 16:09 | Show reply context instead of draft when contact has replied |
+| 11 | `82621e9` | IVzzVll (Zadrac) | 2026-09-29 16:22 | docs: rewrite README section cockpit SDR con estado tecnico actual |
+| 12 | `c070873` | IVzzVll (Zadrac) | 2026-09-29 16:23 | docs: quitar referencias a personas de pendientes del README |
+| 13 | `3c27c0b` | IVzzVll (Zadrac) | 2026-09-29 16:26 | docs: remover datos sensibles del README |
+| 14 | `fbed028` | IVzzVll (Zadrac) | 2026-09-29 16:30 | security: migrar a publishable key de Supabase, invalidar legacy anon key |
+| 15 | `d83ba8d` | IVzzVll (Zadrac) | 2026-09-29 16:41 | fix: incluir contactos con draft SENT en followup aunque stage sea Not Contacted |
+| 16 | `b3bab77` | IVzzVll (Zadrac) | 2026-09-29 16:45 | fix: inferir First Touch para contactos SENT/MANUAL con stage Not Contacted en frontend |
+| 17 | `74b5340` | IVzzVll (Zadrac) | 2026-09-29 16:52 | feat: mostrar y aprobar followups desde el cockpit por stage del contacto |
+| 18 | `57e1112` | IVzzVll (Zadrac) | 2026-09-29 17:24 | fix: detectar followup activo por followup_N_status PENDING, no por stage del contacto |
+| 19 | `d46fd69` | IVzzVll (Zadrac) | 2026-09-29 17:41 | feat: notification bell con seguimientos vencidos en el header |
+| 20 | `f6ea139` | IVzzVll (Zadrac) | 2026-09-29 17:44 | fix: reemplazar escHtml (no existe) por escAttr en renderNotifBell |
+| 21 | `8486320` | IVzzVll (Zadrac) | 2026-09-29 17:46 | fix: notif bell abre bandeja de followups antes de scrollear al card |
+| 22 | `54ee122` | IVzzVll (Zadrac) | 2026-09-29 17:48 | fix: mostrar boton Aprobar para FUPs aunque el email original ya este SENT |
+| 23 | `b77cc29` | IVzzVll (Zadrac) | 2026-09-30 12:32 | feat: bloque de mensajes LinkedIn generados por Claude al iniciar secuencia |
+
+Totales por autor: **21 de IVzzVll (Zadrac)** y **2 de Aldchiw (Aldahir)**.
+
+### 2. Archivos que cambiaron (6 archivos, +560 / −106)
+
+| Archivo | Cambio |
+|---|---|
+| `docs/index.html` | +377 (el cockpit: bandeja de followups, badges, campanita, bloque LinkedIn) |
+| `README.md` | +57 / −45 (sección cockpit SDR reescrita; sin datos sensibles) |
+| `supabase/functions/approve-draft/index.ts` | +48 (envío del draft editado) |
+| `supabase/functions/sync-sdr-sheet/index.ts` | +67 (sync con el Sheet de Zadrac SDR) |
+| `supabase/functions/generate-linkedin-msgs/index.ts` | **archivo nuevo**, +69 (edge function nueva) |
+| `.gitignore` | +3 (ignora `supabase/.temp/`) |
+
+### 3. Qué hizo cada cambio (resumen)
+
+- **Cockpit (`docs/index.html`):** la bandeja de followups ahora incluye contactos MANUAL/LinkedIn y
+  contactos con draft SENT aunque su stage siga en Not Contacted; se puede ver y **aprobar
+  followups desde el cockpit**; el followup activo se detecta por `followup_N_status = PENDING` y no
+  por el stage; el botón Aprobar aparece aunque el email original ya esté SENT. Nuevo stage
+  combinado "Email+LinkedIn" para el first touch, badges de "replied" y "closed", y si el contacto
+  ya respondió se muestra el contexto de la respuesta en vez del borrador. Campanita en el header
+  con seguimientos vencidos. El link de needs-contact solo lo ve el admin (hoy solo Iván).
+- **Start sequence:** el botón ahora manda el draft **editado** (asunto/cuerpo) a SEND; la edge
+  function `approve-draft` escribe esos cambios en el Sheet antes de poner SEND.
+- **LinkedIn:** edge function nueva `generate-linkedin-msgs`, que genera con Claude los mensajes de
+  LinkedIn de un contacto al iniciar la secuencia (usa nombre, título, empresa y la señal verificada
+  si existe); el cockpit muestra el bloque de mensajes.
+- **Seguridad:** `fbed028` migró el cockpit a la publishable key de Supabase e invalidó la anon key
+  legacy; `3c27c0b` quitó datos sensibles del README. `.gitignore` ahora ignora `supabase/.temp/`.
+- **README:** sección del cockpit SDR reescrita con el estado técnico actual; se quitaron
+  referencias a personas en los pendientes.
+- **Aldahir:** `97d6eff` (agrega DOCTYPE a `index.html`) y `e089b47` (edición de `index.html`
+  hecha en GitHub web).
+
+Este es solo un resumen; no incluye llaves ni identificadores de proyecto. El detalle técnico de lo
+que tocó la app está en `app-cockpit-log.md` (entrada "2026-09-29/30 — Zadrac").
+
+---
+
 ## 2026-09-27 — pull de 13 commits de Zadrac (Iván)
 
 Se corrió `git fetch origin`, se revisó qué traía `origin/main` que no estaba en local, se hizo
