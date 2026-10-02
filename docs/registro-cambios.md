@@ -11,6 +11,25 @@ mismo Zadrac, es el nombre del proyecto/equipo SDR que él lleva.
 
 ---
 
+## 2026-10-02 — cambios propios sobre lo de Zadrac (commit `4d84fe1`)
+
+Sin pull: son correcciones de Aldahir (vía Claude) a los hallazgos del 2026-10-01 (tarde). Zadrac
+quedó avisado por Slack de los puntos 1, 2, 3 y 5; el 4 (duplicados) se define con él.
+
+| Archivo | Cambio |
+|---|---|
+| `.claude/skills/prima-reference-leads/SKILL.md` | Esquema real del master (24 columnas), respaldo + OK, muestra 10-20 y tope de gasto, regla provisional de duplicados, no corre syncs sola |
+| `scripts/ingest-value-chain.js` | `VALID_COMPANY_CATEGORIES` incluye `Reference` |
+| `docs/index.html` | `(CATS[l.cat]\|\|{full:l.cat}).full` en 3 lugares: una categoría desconocida ya no truena la tarjeta |
+
+Fuera del commit: las 7 cuentas Bisnow pasaron de UNKNOWN a Reference en `output/leads_master.csv`
+(respaldo `leads_master.bak-20261002-1701-preReference.csv`) y se corrió `sync-sheet.js`.
+Estado de hallazgos 2026-10-01 (tarde): 🔴 esquema ✅, 🔴 freno ✅, 🟠 Reference en pipeline ✅,
+🟠 Bisnow ✅, 🟡 muestra/tope ✅, 🟡 OpenAI: llave cargada en Supabase (pendiente `res.ok`),
+duplicados: provisional.
+
+---
+
 ## 2026-10-01 (tarde) — pull de 4 commits (4 de Zadrac)
 
 Aldahir corrió `git pull --rebase --autostash` en PowerShell (sin force). Resultado: **fast-forward
