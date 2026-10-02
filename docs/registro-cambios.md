@@ -11,6 +11,65 @@ mismo Zadrac, es el nombre del proyecto/equipo SDR que él lleva.
 
 ---
 
+## 2026-10-01 (tarde) — pull de 4 commits (4 de Zadrac)
+
+Aldahir corrió `git pull --rebase --autostash` en PowerShell (sin force). Resultado: **fast-forward
+limpio, sin conflictos** (`eec3edd..3fcc8ff`). El primer intento falló por un `.git/index.lock` viejo
+que dejó una sesión de Claude; se borró (no había proceso git corriendo) y se reintentó. Los 4
+archivos modificados sin commitear (`prima-icp-check/SKILL.md`, `output/account_roster.csv`,
+`output/leads_master.backup-owner.csv`, `output/leads_master.csv`) quedaron **idénticos** (mismo md5)
+antes y después del pull; cero archivos en común con lo que trajo el remoto.
+
+### 1. Commits que llegaron (del más viejo al más nuevo)
+
+| # | Hash | Autor | Fecha y hora | Mensaje |
+|---|---|---|---|---|
+| 1 | `2979b4f` | IVzzVll (Zadrac) | 2026-10-01 14:07 | fix: cambiar SDK de Anthropic a OpenAI (gpt-4o-mini) en generate-linkedin-msgs |
+| 2 | `f8d422a` | IVzzVll (Zadrac) | 2026-10-01 15:49 | feat: agregar categoria Reference a filtros y chips de la app |
+| 3 | `fb52f63` | IVzzVll (Zadrac) | 2026-10-01 16:04 | feat: add prima-reference-leads skill |
+| 4 | `3fcc8ff` | IVzzVll (Zadrac) | 2026-10-01 16:05 | fix: remove unnecessary upfront questions from prima-reference-leads |
+
+### 2. Archivos que cambiaron (3 archivos, +137 / −12)
+
+| Archivo | Cambio |
+|---|---|
+| `.claude/skills/prima-reference-leads/SKILL.md` | **archivo nuevo**, +120 (skill nueva) |
+| `docs/index.html` | +3 / −2 (categoría Reference en chips/filtros) |
+| `supabase/functions/generate-linkedin-msgs/index.ts` | +13 / −11 (Anthropic → OpenAI) |
+
+### 3. Qué hizo cada cambio (resumen)
+
+- **`prima-reference-leads` (skill nueva):** procesa listas de empresas que pide alguien del equipo
+  (Gaby, Aldahir, etc.) fuera del ICP formal. Salta icp-check y scope-score; corre signal-scan →
+  committee → email-waterfall y escribe `company_category = Reference` en `leads_master.csv` (merge,
+  sin reset; preserva stage y contact_count). Pausa de costo antes de Deepline Tier 2. Es, en la
+  práctica, el "engine B de pedidos" que estaba en definición (SESION_LOG 2026-10-01).
+- **App (`docs/index.html`):** nueva categoría `Reference` (gris, var `--stale`) en `CATS` y en los chips.
+- **`generate-linkedin-msgs`:** cambia el SDK de Anthropic (claude-haiku-4-5) por `fetch` directo a
+  OpenAI `gpt-4o-mini`; lee el secreto `OPENAI_API_KEY`. El prompt no cambió.
+
+### 4. Hallazgos de la revisión (pendientes, NO corregidos todavía)
+
+- 🔴 **Esquema de `prima-reference-leads` no coincide con `leads_master.csv`.** Usa columnas de
+  `leads_final.csv` (`signal_summary`, `signal_source_url`, `best_channel`) que el master no tiene,
+  y no llena columnas que sí tiene (`domain`, `assigned_owner`, `signal_source`, `signal_detail`,
+  `signal_url`, `sub_segment`, `vertical_owner`, `excluded`, `source_files`…). Riesgo: romper el
+  master y los syncs (`sync-sheet.js`, `sync-supabase.js`).
+- 🔴 **Escribe al master sin freno:** sin respaldo previo ni OK explícito (regla: la terminal se
+  para antes de tocar el master).
+- 🟠 **`Reference` no existe en el resto del pipeline:** `ingest-value-chain.js` solo acepta
+  Cat1–Cat4 (salta esas filas); `generate-cockpit.js` las deja `unassigned`; la skill no asigna
+  `assigned_owner` (regla Bisnow: el dueño es quien pidió el lote).
+- 🟠 **Inconsistencia con el prototipo Bisnow:** sus 46 contactos están como 33 `UNKNOWN`, 5 `Cat1` y
+  5 `Cat4` (Gaby) y 3 `Cat1` (Gustavo), no como `Reference`. Falta decidir si se re-etiquetan.
+- 🟡 Sin muestra de 10–20 ni techo de gasto explícito más allá de Deepline Tier 2.
+- 🟡 **OpenAI:** decisión de proveedor (los datos de contactos ahora van a OpenAI); requiere
+  `OPENAI_API_KEY` cargado en Supabase; el código no revisa `res.ok` antes de leer el JSON. Los
+  mensajes de LinkedIn siguen sin pasar por guardrail-audit.
+- ✅ Chip `Reference` en la app: limpio, sin choques.
+
+---
+
 ## 2026-10-01 — pull de 23 commits (21 de Zadrac, 2 de Aldahir)
 
 Se corrió `git pull --rebase --autostash` (sin force). Resultado: **limpio, sin conflictos**
