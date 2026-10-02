@@ -116,7 +116,8 @@ const CONTACT_INSERT_COLUMNS = ['contact_name', 'contact_title', 'linkedin_url',
 // slip into a brand-new row would still be a REGLA DE ORO violation).
 const PROTECTED_CONTACT_COLUMNS_ALWAYS = ['id', 'account_id', 'last_touch_at', 'team_status', 'notes', 'created_at'];
 
-const VALID_COMPANY_CATEGORIES = ['Cat1', 'Cat2', 'Cat3', 'Cat4'];
+// Reference = leads pedidos por el equipo (eventos/listas), sin gate de ICP. Ver prima-reference-leads.
+const VALID_COMPANY_CATEGORIES = ['Cat1', 'Cat2', 'Cat3', 'Cat4', 'Reference'];
 
 // --------------------------- CSV parsing (reused verbatim) ---------------------------
 function parseCSV(text) {

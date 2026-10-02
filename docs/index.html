@@ -2045,7 +2045,7 @@ function cardHtml(l, followupWorst){
       : `<div class="contact contact-empty">No contact identified yet</div>`;
     return `<div class="card" role="listitem" data-account="${escAttr(l.co)}">${warm}
     <div class="cbody-pc">
-      <div class="co">${l.co}<span class="badge cat-${l.cat}" title="${CATS[l.cat].full}"><span class="cd" aria-hidden="true"></span>${l.cat}</span>${segmentBadge}</div>
+      <div class="co">${l.co}<span class="badge cat-${l.cat}" title="${(CATS[l.cat]||{full:l.cat}).full}"><span class="cd" aria-hidden="true"></span>${l.cat}</span>${segmentBadge}</div>
       <div class="srow"><div class="rlabel">Signal</div>${sig}</div>
       <div class="crows">${_rows}</div>
     </div>
@@ -2056,7 +2056,7 @@ function cardHtml(l, followupWorst){
   return `<div class="${cardClass}" role="listitem"${cardAttrs}>${warm}
     <div class="cbody">
       <div>
-        <div class="co">${l.co}<span class="badge cat-${l.cat}" title="${CATS[l.cat].full}"><span class="cd" aria-hidden="true"></span>${l.cat}</span>${segmentBadge}</div>
+        <div class="co">${l.co}<span class="badge cat-${l.cat}" title="${(CATS[l.cat]||{full:l.cat}).full}"><span class="cd" aria-hidden="true"></span>${l.cat}</span>${segmentBadge}</div>
         ${badge}
         ${closedBadge}
         ${contactBlock(l, active, followupWorst)}
@@ -2098,7 +2098,7 @@ function newsCardHtml(l){
   return `<div class="card news-card" role="listitem">
     <div class="cbody">
       <div>
-        <div class="co">${l.co}<span class="badge cat-${l.cat}" title="${CATS[l.cat].full}"><span class="cd" aria-hidden="true"></span>${l.cat}</span></div>
+        <div class="co">${l.co}<span class="badge cat-${l.cat}" title="${(CATS[l.cat]||{full:l.cat}).full}"><span class="cd" aria-hidden="true"></span>${l.cat}</span></div>
         <div class="news-card-text">${l.signal.text}</div>
         <div class="srow"><div class="signal">
           <span class="sdot" style="background:${fresh(l.signal)?'var(--good)':'var(--stale)'}"></span>
