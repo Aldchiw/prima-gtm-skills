@@ -82,6 +82,9 @@ de cuentas existentes. Los 4 CSVs originales quedan como fuentes históricas.
 - Cada vez que se traigan cambios de otra persona (`pull`), registrar una entrada en
   `docs/registro-cambios.md` con fecha, autor, commits y archivos, y si tocó la app (`docs/index.html`
   o `supabase/`), también en `app-cockpit-log.md`.
+- Antes de proponer cualquier cambio de diseño o de estructura/lógica de la app (`docs/index.html`,
+  `supabase/`, CSS, colores, categorías en `CATS`), leer `DESIGN.md` y el código afectado, explicar a
+  Aldahir cómo funciona hoy y qué impacto tendría el cambio, y esperar su OK antes de editar.
 
 ## Cost control
 
