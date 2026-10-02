@@ -1,6 +1,6 @@
 ---
 name: prima-icp-check
-description: Classifies Data Centers accounts (Power & Electrical, Energy Storage) against Prima's ICP — sub-segment (4A/4B/4C/4D for Cat4; N/A-Cat1/N/A-Cat2/N/A-Cat3 for the other in-scope categories, or G1/G2/G3 for the adjacent-groups overlay), priority (P1/P2/P3, or read from Notion's curated Prima Priority for Cat1/2/3), vertical owner (Aldahir vs Manu vs UNKNOWN), an explicit `company_type`, and exclusions. Category 1 (AI Infrastructure Operators) and Category 2 (Crypto Miners Pivoting to AI) are in scope alongside Cat3/Cat4, gated on Notion's "Equipment Procurement Scope" — its own documented "core qualification gate" for those two categories, distinct from Cat4's Disqualify criteria. This is **GATE #0** for the whole pipeline: it runs before any paid enrichment tool, anywhere downstream, and nothing `excluded = yes` or `company_type = unknown`/`wrong-industry` may proceed to a paid step. Use this whenever the user hands over a list or CSV of company domains/account names for the Data Centers GTM channel and wants them qualified, classified, scored, or filtered — even if they don't say "ICP" explicitly, e.g. "revisa esta lista de cuentas", "clasifica este CSV de dominios", "cuáles de estas empresas nos sirven". This is stage 1 of the 7-skill Data Centers pipeline (icp-check → signal-scan → committee → email-waterfall → hook → draft → guardrail-audit) — always run it first on a new account batch, before signal scanning, committee-building, or drafting.
+description: Classifies Data Centers accounts (Power & Electrical, Energy Storage) against Prima's ICP — sub-segment (4A/4B/4C/4D for Cat4; N/A-Cat1/N/A-Cat2/N/A-Cat3/N/A-Cat5 for the other in-scope categories, or G1/G2/G3 for the adjacent-groups overlay), priority (P1/P2/P3, or read from Notion's curated Prima Priority for Cat1/2/3/5), vertical owner (Aldahir vs Manu vs UNKNOWN), an explicit `company_type`, and exclusions. Category 1 (AI Infrastructure Operators) and Category 2 (Crypto Miners Pivoting to AI) are in scope alongside Cat3/Cat4, gated on Notion's "Equipment Procurement Scope" — its own documented "core qualification gate" for those two categories, distinct from Cat4's Disqualify criteria. Category 5 (Integrated DC Campus Builders) is also in scope, gated on Notion's own "Full-Scope Accountability" criterion (Full / Strong / Partial / Disqualify → Cat7); Category 6 (AI Campus Builders / Developers) is out of scope and only used as a signal to find the tenant (Cat1) or the design-builder (Cat5), and Category 7 (GCs & Integrators) is out of scope for now. This is **GATE #0** for the whole pipeline: it runs before any paid enrichment tool, anywhere downstream, and nothing `excluded = yes` or `company_type = unknown`/`wrong-industry` may proceed to a paid step. Use this whenever the user hands over a list or CSV of company domains/account names for the Data Centers GTM channel and wants them qualified, classified, scored, or filtered — even if they don't say "ICP" explicitly, e.g. "revisa esta lista de cuentas", "clasifica este CSV de dominios", "cuáles de estas empresas nos sirven". This is stage 1 of the 7-skill Data Centers pipeline (icp-check → signal-scan → committee → email-waterfall → hook → draft → guardrail-audit) — always run it first on a new account batch, before signal scanning, committee-building, or drafting.
 ---
 
 # prima-icp-check
@@ -76,7 +76,7 @@ still turn out to be the wrong kind of business entirely once you actually read 
 | `miner-crypto-ai` | A crypto miner pivoting to AI/HPC hosting, same direct-equipment-buyer profile as Cat1 | `Cat2` |
 | `fabricator-modular` | A modular DC systems manufacturer (builds integrated systems, not a single-product OEM) | `Cat3` |
 | `oem-4A-4D` | A Category-4 OEM that manufactures its own product and outsources fabrication overflow | `Cat4` (any of 4A–4D), or `G1`/`G2`/`G3` |
-| `contractor-gc` | A general contractor / integrator that buys structural steel for building interiors, not for its own product | `Cat7`, or the GC/Integrator side of `Cat5` |
+| `contractor-gc` | A general contractor / integrator that buys structural steel for building interiors, not for its own product | `Cat7`, or the GC/Integrator side of `Cat5` (in scope — see "Category 5" below) |
 | `utility-line` | A transmission, substation, or utility infrastructure *developer* — builds/operates the line or campus shell, doesn't fabricate or buy equipment for a product of its own | usually excluded — see "Out of scope" |
 | `esco` | An energy-as-a-service / equipment-as-a-service provider that leases or operates equipment on behalf of customers rather than manufacturing and selling it | usually excluded unless Notion documents a specific fit |
 | `wrong-industry` | Confirmed, on reading what the account actually does, to have nothing to do with Data Centers power/storage/fabrication at all | always excluded |
@@ -142,7 +142,7 @@ one-off fix.
   else's fabrication, not a fab-buyer themselves)
 
 These five sit alongside the exclusions already documented below (Notion Disqualify, out-of-scope
-Cat5/6/7, existing customer) — they don't replace those, they're specific to the relevance gate and
+Cat6/7, existing customer) — they don't replace those, they're specific to the relevance gate and
 apply on top.
 
 **When `reference/icp-complement.md` is missing or stale:** stop and ask the user, the same way
@@ -155,9 +155,10 @@ evaluated.
 Applies only to accounts that are Category-4 OEMs in Notion (Cooling, Power & Electrical, Energy
 Storage, or Test & Commissioning product line). An account that isn't a Category-4 OEM at all
 doesn't get a 4A–4D sub-segment. Category-1 (AI Infrastructure Operators), Category-2 (Crypto
-Miners Pivoting to AI), and Category-3 (Modular DC Systems Manufacturers) accounts are in scope but
-handled separately — see "Category 1 & 2" and "Category 3" below — never force them into this
-table. Anything outside Cat 1, 2, 3, and 4 entirely — see "Out of scope" below.
+Miners Pivoting to AI), Category-3 (Modular DC Systems Manufacturers), and Category-5 (Integrated DC
+Campus Builders) accounts are in scope but handled separately — see "Category 1 & 2", "Category 3",
+and "Category 5" below — never force them into this table. Anything outside Cat 1, 2, 3, 4, and 5
+entirely — see "Out of scope" below.
 
 | Sub-segment | Archetype | Priority | Entry point (function) | Signals to look for |
 |---|---|---|---|---|
@@ -183,7 +184,7 @@ for `4A`/`4D` either — if the function description above ever needs to change,
 separate question from whatever 🔴/🟡/🟢 priority Notion shows for that company's Category-4 row. If
 Notion's own priority marking for a specific company visibly conflicts with the sub-segment-derived
 priority, don't silently pick one — note both in `reasoning` and let a human reconcile it.
-Category-1, Category-2, and Category-3 accounts don't derive priority this way at all — see below.
+Category-1, Category-2, Category-3, and Category-5 accounts don't derive priority this way at all — see below.
 
 ### G1/G2/G3 — the adjacent-groups overlay (`reference/icp-complement.md`)
 
@@ -269,10 +270,56 @@ Cat-3 accounts still go through exclusions (Disqualify / Disqualification Signal
 customer) exactly like any other account — exemption from "Out of scope" doesn't exempt them from a
 genuine ICP disqualification.
 
+### Category 5 (Integrated DC Campus Builders) — in scope, not on the 4A–4D scheme
+
+Category 5 (design-builders / campus builders that build the whole campus AND control the purchase
+of structure (Division 5) and of systems (MEP / cooling / power)) is a real, in-scope company
+category as of 2026-10-02 (Aldahir's decision, read from Notion "Data Centers GTM", where Cat5 is
+marked P2) — the "Out of scope" exclusion below does not apply to it. Like Cat3, the 4A–4D table is
+Category-4-only and is not forced onto Cat-5 accounts. Handle Cat 5 as follows:
+
+- **`sub_segment`** = `N/A-Cat5` — literal value, not `UNKNOWN`, same reasoning as `N/A-Cat3`.
+- **`priority`** = Notion's own curated "Prima Priority" for that company if it's listed in the Cat5
+  table; if it isn't listed, `P2` (Notion's category-level marking for Cat5) — never derive it from a
+  sub-segment table. **Anti-burn:** if Notion marks the account P1, keep P1 but add a flag in
+  `reasoning` that it must not receive an unvalidated angle — same reasoning as the G1/G2/G3 overlay.
+- **`vertical_owner`** = `UNKNOWN`, always — Cat5 is multi-vertical (structure plus power, cooling,
+  and other systems in one campus). Note in `reasoning` that ownership is assigned later by the
+  no-core 4-way rule, and never assign an owner on your own judgment.
+- **`company_type`** = `contractor-gc` — the GC/Integrator side of Cat5, per the table above.
+- **`notion_scope`** = Notion's curated "Full-Scope Accountability" text, verbatim. Same field name
+  as Cat1/2/4; Cat5's gate just has a different criterion name.
+- **`anchor_products`** = same process as Cat3/Cat4 — map via the Application Index in
+  `reference/prima-catalog.md` based on what the account builds or buys.
+
+**Qualification gate — Full-Scope Accountability.** Notion documents this as Cat5's own gate. Read
+the criterion definition live from Notion every run — never copy its text into this skill — and
+apply the curated value for the account:
+
+- **✅ Full / ✅ Strong** → qualifies. `excluded = no`.
+- **⚠️ Partial** → qualifies, with `needs_manual_scope_confirmation = yes` noted in `reasoning`.
+- **❌ Disqualify** (pure CM/GC, Division 5 only) → `excluded = yes` with
+  `exclusion_reason = "Out of scope: Cat5 gate failed (pure GC/Division 5 only) → Cat7"`. Cat7 is
+  out of scope for now, so there's nothing further to do with the account in this repo.
+
+If the account has no curated value in Notion, evaluate the Full-Scope Accountability criterion
+(read live from Notion) against verifiable public evidence: design-build with its own MEP or
+self-perform, its own prefab/modular capability, or DC design-build contracts. If the evidence is
+clear, assign Full / Strong / Partial / Disqualify and record the source in `reasoning` with the
+prefix `"inferred:"`; `notion_scope` stays blank. If the evidence is ambiguous, flag
+`NEEDS_HUMAN_REVIEW`. Never invent evidence.
+
+Cat5 accounts still go through the other exclusion checks (existing customer, relevance gate)
+exactly like any other account — this gate is in addition to those, not instead of them.
+
+**Category 6 (AI Campus Builders / Developers) is a signal, not a target.** It stays out of scope
+(shell-only; per Notion the buyer is the tenant). Use a Cat6 account only to find the tenant (→ Cat1)
+or the design-builder (→ Cat5), and classify those instead.
+
 ### Vertical owner — independent axis, not derived from sub-segment
 
-This table applies to **Category-4 accounts, and to `G1`/`G2`/`G3`**. Category-1, Category-2, and
-Category-3 `vertical_owner` are always `UNKNOWN` — see "Category 1 & 2" and "Category 3" above.
+This table applies to **Category-4 accounts, and to `G1`/`G2`/`G3`**. Category-1, Category-2,
+Category-3, and Category-5 `vertical_owner` are always `UNKNOWN` — see "Category 1 & 2", "Category 3", and "Category 5" above.
 
 Owner is keyed off the Notion Category-4 **product-line segment** (or, for G1/G2/G3, the overlay's
 own stated vertical — see the G1/G2/G3 table above), not the 4A–4D archetype:
@@ -290,11 +337,13 @@ own stated vertical — see the G1/G2/G3 table above), not the 4A–4D archetype
   them fully (sub-segment, priority, reasoning) but mark them as a **handoff** in `reasoning` (e.g.
   "owner: Manu — handoff, not pursued in this repo"). They are **not** excluded — `excluded` stays
   `no` for these unless a genuine Disqualify signal applies independently.
-- An account that is Category 5, 6, or 7 in Notion is **out of scope** for this repo. Mark it
+- An account that is Category 6 or 7 in Notion is **out of scope** for this repo (Cat6 is used only
+  as a signal to find the tenant → Cat1 or the design-builder → Cat5; Cat7 is out for now, P3,
+  decision pending). Mark it
   `excluded = yes` with `exclusion_reason` starting "Out of scope: ..." (distinct from an ICP
   disqualification — see below), and `company_category` / `sub_segment` / `priority` /
-  `vertical_owner` = `UNKNOWN`. Categories 1, 2, and 3 are exempt from this rule — see "Category 1
-  & 2" and "Category 3" above for their own handling — and Category 4 is covered by the table
+  `vertical_owner` = `UNKNOWN`. Categories 1, 2, 3, and 5 are exempt from this rule — see "Category 1
+  & 2", "Category 3", and "Category 5" above for their own handling — and Category 4 is covered by the table
   above.
 
 ### Exclusions
@@ -308,12 +357,12 @@ curated `notion_scope` value) — apply that instead of looking for a separate p
 list for those two.
 
 An account can be excluded for any of four reasons now — a genuine Notion Disqualify/
-Disqualification-Signal hit (including the Cat1/Cat2 scope gate), the out-of-scope rule above, a
+Disqualification-Signal hit (including the Cat1/Cat2 scope gate and the Cat5 Full-Scope gate), the out-of-scope rule above, a
 relevance-gate miss (see "Relevance gate" above), or an existing customer (below). Prefix
 `exclusion_reason` accordingly so a human can tell which kind of exclusion it is at a glance:
 
 - `"ICP disqualified: ..."` — a genuine Notion Disqualify/Disqualification-Signal hit
-- `"Out of scope: ..."` — Category 5/6/7, or not one of Cat1–4/G1–G3 at all
+- `"Out of scope: ..."` — Category 6/7, a failed Cat5 gate, or not one of Cat1–5/G1–G3 at all
 - `"Relevance gate: ..."` — mapped to a real bucket but failed the fab-buyer test, hit a hard
   exclude (solar utility/trackers, wind, tidal/marine, off-grid solar, pure electronics), or never
   produced a real bucket mapping at all — name which one in the text
@@ -361,10 +410,10 @@ For each account:
 
 1. Resolve the domain/account name to whatever's needed to classify it — Notion Category (1–7) —
    and set **`company_category`** from that: `Cat1` (AI Infrastructure Operators), `Cat2` (Crypto
-   Miners Pivoting to AI/HPC), `Cat3` (Modular DC Systems Manufacturers), `Cat4` (and if so, also
+   Miners Pivoting to AI/HPC), `Cat3` (Modular DC Systems Manufacturers), `Cat5` (Integrated DC Campus Builders), `Cat4` (and if so, also
    resolve the product-line segment: Cooling / Power & Electrical / Energy Storage / Test &
    Commissioning / Multi-focus), `UNKNOWN` for anything else determinable only as out-of-scope
-   (Cat 5, 6, 7), or leave `company_category` blank with `sub_segment` set to `G1`/`G2`/`G3` if the
+   (Cat 6, 7), or leave `company_category` blank with `sub_segment` set to `G1`/`G2`/`G3` if the
    account maps to the icp-complement overlay instead of a Notion category. Pull this from the
    account itself, from Notion's existing leads tables if the company is already listed there, or
    from whatever enrichment data the user already supplied. Don't invent facts about the account any
@@ -393,6 +442,11 @@ For each account:
    `sub_segment = N/A-Cat3`; `priority` read from Notion's curated Prima Priority for that company
    (or `UNKNOWN` if not listed); `vertical_owner = UNKNOWN` with the cross-vertical note in
    `reasoning`. Steps 6–7 below are Cat-4-only — skip them.
+5b. If `company_category = Cat5`: follow "Category 5 (Integrated DC Campus Builders)" above —
+   `sub_segment = N/A-Cat5`; `company_type = contractor-gc`; `priority` from Notion's curated Prima
+   Priority (or `P2` if not listed); `vertical_owner = UNKNOWN`; `notion_scope` = the curated
+   "Full-Scope Accountability" text, verbatim. Apply the Full-Scope gate before Step 8
+   (exclusions). Steps 6–7 below are Cat-4-only — skip them.
 6. If `company_category = Cat4`: determine **sub-segment** (`4A`/`4B`/`4C`/`4D`/`UNKNOWN`), then
    **priority** from the sub-segment table (or `UNKNOWN` if sub-segment is `UNKNOWN`) — note any
    conflict with Notion's own per-company priority marking in `reasoning` rather than resolving it
@@ -400,7 +454,7 @@ For each account:
    account maps to `G1`/`G2`/`G3` (no Notion `company_category` at all), set `sub_segment` to the
    literal group id, `priority = P2`, and `vertical_owner = Aldahir` per the G1/G2/G3 table above.
 7. Read **`notion_scope`**: whatever curated scope text Notion has for this company — "Fabrication
-   Outsourcing Scope" for Cat 3, "Equipment Procurement Scope" for Cat 1/2/4 — verbatim, as text.
+   Outsourcing Scope" for Cat 3, "Equipment Procurement Scope" for Cat 1/2/4, "Full-Scope Accountability" for Cat 5 — verbatim, as text.
    Leave blank if Notion doesn't have it for this company, or if the account is a `G1`/`G2`/`G3`
    overlay account with no Notion entry at all. Don't interpret, score, or convert it to a number
    here — that's `prima-scope-score`'s job for Cat 4 (and, for Cat 1/2/3, a job that skill
@@ -409,7 +463,7 @@ For each account:
    qualification gate above), the out-of-scope rule, or a relevance-gate miss from step 3. An
    excluded account still gets a sub-segment/priority/owner if that was determinable (exclusion is a
    separate flag, not a reason to skip classification) — except out-of-scope accounts, which aren't
-   Cat-1/2/3/4/G1-3 at all, so there's no segment to classify against.
+   Cat-1/2/3/4/5/G1-3 at all, so there's no segment to classify against.
 9. Write one line of plain-language **reasoning** per account: what pushed it into that sub-segment/
    priority/owner/company_type, or why it landed on `UNKNOWN`/excluded/`NEEDS_HUMAN_REVIEW`/handoff.
    This is what a human (or the next skill) will actually read to sanity-check the call — don't just
@@ -458,13 +512,13 @@ Return the same rows the user gave you, with these columns added (in this order)
 
 | Column | Values |
 |---|---|
-| `company_category` | `Cat1` \| `Cat2` \| `Cat3` \| `Cat4` \| `UNKNOWN` — blank if the account maps to `G1`/`G2`/`G3` instead of a Notion category |
+| `company_category` | `Cat1` \| `Cat2` \| `Cat3` \| `Cat4` \| `Cat5` \| `UNKNOWN` — blank if the account maps to `G1`/`G2`/`G3` instead of a Notion category |
 | `company_type` | `operator-ai` \| `miner-crypto-ai` \| `fabricator-modular` \| `oem-4A-4D` \| `contractor-gc` \| `utility-line` \| `esco` \| `wrong-industry` \| `unknown` — see "`company_type`" above. Mandatory on every row; never blank. |
-| `sub_segment` | `4A` \| `4B` \| `4C` \| `4D` \| `N/A-Cat1` \| `N/A-Cat2` \| `N/A-Cat3` \| `G1` \| `G2` \| `G3` \| `UNKNOWN` |
+| `sub_segment` | `4A` \| `4B` \| `4C` \| `4D` \| `N/A-Cat1` \| `N/A-Cat2` \| `N/A-Cat3` \| `N/A-Cat5` \| `G1` \| `G2` \| `G3` \| `UNKNOWN` |
 | `priority` | `P1` \| `P2` \| `P3` \| `UNKNOWN` |
 | `vertical_owner` | `Aldahir` \| `Manu` \| `UNKNOWN` |
 | `anchor_products` | Prima catalog item(s) que esta cuenta probablemente necesita, según QUÉ FABRICA, mapeado vía el Application Index de `reference/prima-catalog.md` (ej. "1.1 switchboard skids; 3.5 switchgear enclosures") — o `UNCLEAR` si no se puede determinar qué fabrica la cuenta. Base del gancho para cuentas fit-only sin señal. |
-| `notion_scope` | Notion's curated scope text, verbatim — "Fabrication Outsourcing Scope" value for Cat 3, "Equipment Procurement Scope" value for Cat 1/2/4. Blank if Notion doesn't have it for this company, or if the account is a G1/G2/G3-only account with no Notion entry. Raw text only — never interpreted, scored, or converted to a number here. |
+| `notion_scope` | Notion's curated scope text, verbatim — "Fabrication Outsourcing Scope" value for Cat 3, "Equipment Procurement Scope" value for Cat 1/2/4, "Full-Scope Accountability" value for Cat 5. Blank if Notion doesn't have it for this company, or if the account is a G1/G2/G3-only account with no Notion entry. Raw text only — never interpreted, scored, or converted to a number here. |
 | `excluded` | `yes` \| `no` |
 | `exclusion_reason` | text, blank if `excluded = no` — prefixed `"ICP disqualified: ..."`, `"Out of scope: ..."`, `"Relevance gate: ..."`, or `"Existing customer: ..."` per "Exclusions" above |
 | `reasoning` | free text — the classification rationale, including the `company_type` call and, if applicable, why the account is `NEEDS_HUMAN_REVIEW` rather than a clean pass/exclude |
@@ -473,7 +527,7 @@ Don't rename these columns or change the value vocabulary once `prima-signal-sca
 it — if the schema needs to change later, that's a deliberate cross-skill decision, not a one-off
 tweak.
 
-**`prima-scope-score` is Cat4-only and never runs on Cat1/Cat2/Cat3 rows — for two different
+**`prima-scope-score` is Cat4-only and never runs on Cat1/Cat2/Cat3/Cat5 rows — for two different
 reasons.** For `Cat3`, its weighted score is built on a Cat-4-only product-type table (Power &
 Electrical Distribution / Energy Storage product categories) with no equivalent for Modular DC
 Systems Manufacturers, and Cat3 already has a human-confirmed `notion_scope` anyway. For `Cat1`/
@@ -482,7 +536,7 @@ manufacturing (it's hunting for who secretly subcontracts) — but for Cat1/Cat2
 criterion is **polarity-inverted**: operating and buying equipment directly in-house is exactly
 what qualifies these accounts ("✅ Full = builds AND equips own campus"). Running Cat4's scoring
 against a Cat1/Cat2 row would misclassify the best-fit accounts as disqualified. Don't route
-`Cat1`/`Cat2`/`Cat3` rows into `prima-scope-score` — hold them after this skill instead (they still
+`Cat1`/`Cat2`/`Cat3`/`Cat5` rows into `prima-scope-score` (Cat5's Full-Scope gate, like Cat1/Cat2's, rewards buying in-house, so Cat4's subcontracting model would misread it) — hold them after this skill instead (they still
 have `notion_scope` as raw text, plus the qualification-gate `excluded` verdict from "Category 1 &
 2" above where it applies). `G1`/`G2`/`G3` rows likewise skip `prima-scope-score` — the overlay
 groups don't have a Notion-curated scope value to score against; the relevance gate's fab-buyer test

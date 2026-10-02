@@ -117,7 +117,7 @@ const CONTACT_INSERT_COLUMNS = ['contact_name', 'contact_title', 'linkedin_url',
 const PROTECTED_CONTACT_COLUMNS_ALWAYS = ['id', 'account_id', 'last_touch_at', 'team_status', 'notes', 'created_at'];
 
 // Reference = leads pedidos por el equipo (eventos/listas), sin gate de ICP. Ver prima-reference-leads.
-const VALID_COMPANY_CATEGORIES = ['Cat1', 'Cat2', 'Cat3', 'Cat4', 'Reference'];
+const VALID_COMPANY_CATEGORIES = ['Cat1', 'Cat2', 'Cat3', 'Cat4', 'Cat5', 'Reference'];
 
 // --------------------------- CSV parsing (reused verbatim) ---------------------------
 function parseCSV(text) {

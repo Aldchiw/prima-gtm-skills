@@ -13,7 +13,7 @@
     --link:#2E6DA4;
     --ink:#1A1A1A; --ink-2:#52525B; --ink-3:#64646D;
     --bg:#F5F6F7; --surface:#FFFFFF; --border:#E4E4E7; --border-2:#D4D4D8;
-    --cat1:#4C5A92; --cat2:#8A6A22; --cat3:#7A5C8A; --cat4:#3D7A6C;
+    --cat1:#4C5A92; --cat2:#8A6A22; --cat3:#7A5C8A; --cat4:#3D7A6C; --cat5:#B0527A;
     --good:#3D7A52; --stale:#8B8B93;
     --sans:"Archivo",-apple-system,BlinkMacSystemFont,sans-serif;
     --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
@@ -59,7 +59,7 @@
   .chip.on{color:#fff;border-color:var(--ink);background:var(--ink)}
   .chip .cd{width:6px;height:6px;border-radius:50%;background:var(--catc);flex:none}
   .chip .ct{opacity:.55}
-  .cat-Cat1{--catc:var(--cat1)} .cat-Cat2{--catc:var(--cat2)} .cat-Cat3{--catc:var(--cat3)} .cat-Cat4{--catc:var(--cat4)} .cat-Reference{--catc:var(--stale)}
+  .cat-Cat1{--catc:var(--cat1)} .cat-Cat2{--catc:var(--cat2)} .cat-Cat3{--catc:var(--cat3)} .cat-Cat4{--catc:var(--cat4)} .cat-Cat5{--catc:var(--cat5)}.cat-Reference{--catc:var(--stale)}
 
   .sortctl{display:flex;align-items:center;gap:10px}
   .searchwrap{margin-bottom:14px}
@@ -537,6 +537,7 @@ const CATS = {
   Cat2:{name:"Cat 2", full:"Crypto→AI", color:"#e5484d"},
   Cat3:{name:"Cat 3", full:"Contractors", color:"#8e4ec6"},
   Cat4:{name:"Cat 4", full:"Manufacturers", color:"#d98016"},
+  Cat5:{name:"Cat 5", full:"Campus Builders", color:"#d6409f"},
   Reference:{name:"Reference", full:"Reference", color:"#8B8B93"}
 };
 const USERS = [

@@ -18,6 +18,7 @@ const BASE_CATS = {
   Cat2: { name: 'Cat 2', full: 'Crypto→AI', color: '#e5484d' },
   Cat3: { name: 'Cat 3', full: 'Contractors', color: '#8e4ec6' },
   Cat4: { name: 'Cat 4', full: 'Manufacturers', color: '#d98016' },
+  Cat5: { name: 'Cat 5', full: 'Campus Builders', color: '#d6409f' },
 };
 const DEFAULT_CAT_COLOR = '#9a9a9a';
 

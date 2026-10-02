@@ -54,12 +54,19 @@ global_excludes:
 
 # ── REGLA DE RELEVANCIA (gate obligatorio, ADEMÁS de fab-buyer) — 2026-09-16 ──
 # Una empresa CALIFICA solo si mapea a un bucket ICP real por su NEGOCIO REAL:
-#   - Cat1-7 de Notion (DC operators, crypto→AI, modular DC mfrs, DC OEMs, campus builders, GCs), o
+#   - Cat1-5 de Notion (DC operators, crypto→AI, modular DC mfrs, DC OEMs, integrated campus builders; Cat6 solo señal, Cat7 fuera por ahora), o
 #   - G1/G2/G3 de este overlay.
 # Si NO mapea a ningún bucket → EXCLUIR. PROHIBIDO "default a Cat4".
 # Ser fab-buyer NO basta: debe mapear a un bucket.
 relevance_gate:
-  in_scope: ["Cat1-7 (Notion)", "G1/G2/G3 (overlay)"]
+  in_scope: ["Cat1-5 (Notion; Cat6 solo como señal, Cat7 fuera por ahora)", "G1/G2/G3 (overlay)"]
   hard_excludes:
     - "generación de energía renovable cuyo mercado NO es DC ni power-para-DC: solar utility / solar trackers, wind (incl small wind), tidal / marine / hydrokinetic, solar residencial u off-grid microgrid"
     - "electrónica pura / componentes sin compra de fabricación metálica (enclosures/skids/estructura)"
+
+# ── 2026-10-02 (decisión Aldahir) ──
+# Cat5 (Integrated DC Campus Builders) abierta en el repo: Notion la define, su gate es
+#   "Full-Scope Accountability" (se lee en vivo de Notion, no se copia aquí). Ver prima-icp-check.
+# Cat6 (AI Campus Builders / Developers) solo como SEÑAL: tenant -> Cat1, design-builder -> Cat5.
+# Cat7 (GCs & Integrators) fuera de alcance por ahora.
+# G1/G2/G3 y relevance_gate no cambian.
