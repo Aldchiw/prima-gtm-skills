@@ -2285,7 +2285,7 @@ function renderSections(){
     const worst = isActiveView ? worstInFlowContact(l) : null;
     const html = cardHtml(l, worst);
     if (isActiveView && worst && worst.delay >= 1) {
-      return html.replace(/^<div class="(card[^"]*)"/, `<div class="$1" style="outline:1px solid rgba(200,30,58,0.28);box-shadow:0 0 0 3px rgba(200,30,58,0.07)">`);
+      return html.replace(/^(<div class="card[^"]*")/, '$1 style="outline:1px solid rgba(200,30,58,0.28);box-shadow:0 0 0 3px rgba(200,30,58,0.07)"');
     }
     return html;
   });
