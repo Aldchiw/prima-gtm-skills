@@ -1978,11 +1978,25 @@ async function approveDraft(contactId, btn){
     });
     const j = await res.json();
     if (!j.ok) throw new Error(j.error || "Error desconocido");
-    if (DRAFTS[contactId]) DRAFTS[contactId].status = "SEND";
+    const d = DRAFTS[contactId];
+    if (d) {
+      if (fupIndex > 0) {
+        d[`followup_${fupIndex}_status`] = "SEND";
+      } else {
+        d.status = "SEND";
+      }
+    }
+    // Update contact's last_touch_at locally so delay resets to 0 → removes notif
+    const todayIso = new Date().toISOString();
+    for (const l of LEADS) {
+      const c = l.contacts.find(c => c.id === contactId);
+      if (c) { c.last_touch_at = todayIso; break; }
+    }
     if (note) { note.textContent = "Aprobado ✓"; note.className = "cdraft-note ok"; }
     btn.remove();
     const statusEl = btn.closest(".cdraft")?.querySelector(".cdraft-status:first-child");
     if (statusEl) { statusEl.textContent = "SEND →"; statusEl.className = "cdraft-status send"; }
+    renderNotifBell();
   } catch(e) {
     btn.disabled = false;
     if (note) { note.textContent = e.message; note.className = "cdraft-note err"; }
