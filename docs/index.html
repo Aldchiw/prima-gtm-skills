@@ -565,7 +565,7 @@ const VERTICAL_OWNER_TO_USER_ID = {
 function ownerFromVertical(v){ return VERTICAL_OWNER_TO_USER_ID[String(v||"").trim()] || "unassigned"; }
 
 // Pin helpers — persisted in sessionStorage so they survive re-renders but reset on new tab/session.
-function getPinned(){ try { return new Set(JSON.parse(sessionStorage.getItem("pinned_accounts")||"[]")); } catch(){ return new Set(); } }
+function getPinned(){ try { return new Set(JSON.parse(sessionStorage.getItem("pinned_accounts")||"[]")); } catch(e){ return new Set(); } }
 function setPinned(set){ try { sessionStorage.setItem("pinned_accounts", JSON.stringify([...set])); } catch(e){} }
 function togglePin(co){ const p=getPinned(); if(p.has(co)) p.delete(co); else p.add(co); setPinned(p); }
 function isPinned(co){ return getPinned().has(co); }
