@@ -166,6 +166,9 @@
     border:1px solid var(--border);border-radius:7px;padding:8px 10px;resize:vertical;min-height:60px;line-height:1.5}
   .cdraft-textarea:focus{outline:none;border-color:var(--border-2)}
   .cdraft-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .pin-btn{background:none;border:none;padding:2px 4px;cursor:pointer;color:var(--ink-4);font-size:14px;line-height:1;flex-shrink:0;transition:color .15s}
+  .pin-btn.pinned{color:#f59e0b}
+  .pin-btn:hover{color:#f59e0b}
   .cdraft-approve{font-family:var(--sans);font-size:12.5px;font-weight:600;padding:7px 16px;border-radius:7px;
     background:var(--ink);color:#fff;border:none;cursor:pointer;transition:.12s}
   .cdraft-approve:hover{opacity:.85}
@@ -560,6 +563,12 @@ const VERTICAL_OWNER_TO_USER_ID = {
   "gabriela zacarias": "gaby", "Gabriela Zacarias": "gaby", "gaby": "gaby", "Gaby": "gaby",
 };
 function ownerFromVertical(v){ return VERTICAL_OWNER_TO_USER_ID[String(v||"").trim()] || "unassigned"; }
+
+// Pin helpers — persisted in sessionStorage so they survive re-renders but reset on new tab/session.
+function getPinned(){ try { return new Set(JSON.parse(sessionStorage.getItem("pinned_accounts")||"[]")); } catch(){ return new Set(); } }
+function setPinned(set){ try { sessionStorage.setItem("pinned_accounts", JSON.stringify([...set])); } catch(e){} }
+function togglePin(co){ const p=getPinned(); if(p.has(co)) p.delete(co); else p.add(co); setPinned(p); }
+function isPinned(co){ return getPinned().has(co); }
 const STEPS = ["E1","LI","E2","E3"];
 const SORTS = [
   {k:"warm", label:"Warm intro first"},
@@ -602,6 +611,10 @@ function activeContactOf(l){
 function activeStage(l){ const c = activeContactOf(l); return c ? c.stage : 0; }
 
 function compareLeads(a,b){
+  // Pinned accounts always sort to the top, within any view.
+  const pa = isPinned(a.co) ? 0 : 1;
+  const pb = isPinned(b.co) ? 0 : 1;
+  if (pa !== pb) return pa - pb;
   // "In sequence" always orders by most-recently-touched account first,
   // regardless of the sort control (which drives pipeline/closed instead) --
   // that control stays visible but is a no-op in this view, same trade-off
@@ -779,6 +792,7 @@ function renderSort(){
 function renderTiles(){
   const mine = myOpenLeads();
   const mineSeq = myInSequenceLeads();
+  const activeContactCount = followupContacts(d => d >= 1).length || mineSeq.length;
   const mineClosed = myClosedLeads();
   const mineNeedsContact = myNeedsContactLeads();
   const f = myAllLeads().filter(l=>isNewSignal(l.signal)).length;
@@ -798,7 +812,7 @@ function renderTiles(){
     <button type="button" class="tile ${allActive?'on':''}" data-t="all" aria-pressed="${allActive}"><div class="n">${mine.length}</div><div class="l">My leads</div></button>
     <button type="button" class="tile fresh ${newsfeedActive?'on':''}" data-t="fresh" aria-pressed="${newsfeedActive}"><div class="n">${f}</div><div class="l">Fresh signals</div></button>
     ${warmTile}
-    <button type="button" class="tile ${seqActive?'on':''}" data-t="seq" aria-pressed="${seqActive}"><div class="n">${mineSeq.length}</div><div class="l">In sequence</div></button>
+    <button type="button" class="tile ${seqActive?'on':''}" data-t="seq" aria-pressed="${seqActive}"><div class="n">${activeContactCount}</div><div class="l">Active</div></button>
     <button type="button" class="tile ${closedActive?'on':''}" data-t="closed" aria-pressed="${closedActive}"><div class="n">${mineClosed.length}</div><div class="l">Closed</div></button>`;
   el("#tiles").querySelectorAll(".tile").forEach(t=>t.onclick=()=>{
     const k = t.dataset.t;
@@ -1345,8 +1359,8 @@ function bindCloseActions(container){
 }
 
 function renderFollowups(){
-  renderFollowupSection("#followups", (FUP_PER_CONTACT ? followupContacts(d => d >= 1) : followupAccounts(d => d >= 1)), "Followups", "",
-    "No overdue contacts.", COLLAPSE_FOLLOWUPS);
+  // Followups section removed — overdue contacts now shown inline in Active view.
+  el("#followups").innerHTML = "";
 }
 
 function renderNotifBell(){
@@ -2026,6 +2040,15 @@ document.addEventListener("click", e => {
   };
 });
 
+// Wire pin buttons
+document.addEventListener("click", e => {
+  const btn = e.target.closest(".pin-btn");
+  if (!btn) return;
+  e.stopPropagation();
+  togglePin(btn.dataset.account);
+  renderSections();
+});
+
 // Wire LinkedIn copy buttons
 document.addEventListener("click", e => {
   const btn = e.target.closest(".li-copy");
@@ -2138,10 +2161,12 @@ function cardHtml(l, followupWorst){
   const reassignBtn = canReassign
     ? `<button type="button" class="reassign-btn" data-account="${escAttr(l.co)}" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--hairline);background:var(--surface);color:var(--ink-3);cursor:pointer;margin-left:auto">Reasignar</button>`
     : "";
+  const pinned = isPinned(l.co);
+  const pinBtn = `<button type="button" class="pin-btn${pinned?" pinned":""}" data-account="${escAttr(l.co)}" title="${pinned?"Quitar pin":"Fijar arriba"}" aria-pressed="${pinned}">★</button>`;
   return `<div class="${cardClass}" role="listitem"${cardAttrs}>${warm}
     <div class="cbody">
       <div>
-        <div class="co" style="display:flex;align-items:center;gap:6px">${l.co}<span class="badge cat-${l.cat}" title="${(CATS[l.cat]||{full:l.cat}).full}"><span class="cd" aria-hidden="true"></span>${l.cat}</span>${segmentBadge}${reassignBtn}</div>
+        <div class="co" style="display:flex;align-items:center;gap:6px">${l.co}<span class="badge cat-${l.cat}" title="${(CATS[l.cat]||{full:l.cat}).full}"><span class="cd" aria-hidden="true"></span>${l.cat}</span>${segmentBadge}${pinBtn}${reassignBtn}</div>
         ${badge}
         ${closedBadge}
         ${contactBlock(l, active, followupWorst)}
@@ -2252,8 +2277,16 @@ function renderSections(){
     if (clearBtn) clearBtn.onclick = () => { state.cat="all"; state.warmOnly=false; state.q=""; const si=el("#leadsearch"); if(si) si.value=""; renderAll(); };
     return;
   }
+  const isActiveView = state.view === "insequence";
   const groups = groupByCategory(rows, l => l.cat);
-  el("#list").innerHTML = categorySectionsHtml(groups, l=>cardHtml(l));
+  el("#list").innerHTML = categorySectionsHtml(groups, l => {
+    const worst = isActiveView ? worstInFlowContact(l) : null;
+    const html = cardHtml(l, worst);
+    if (isActiveView && worst && worst.delay >= 1) {
+      return html.replace(/^<div class="(card[^"]*)"/, `<div class="$1" style="outline:1px solid rgba(200,30,58,0.28);box-shadow:0 0 0 3px rgba(200,30,58,0.07)">`);
+    }
+    return html;
+  });
   el("#list").querySelectorAll(".contactsel").forEach(sel=>{
     sel.onchange = () => { state.activeContact[sel.dataset.co] = parseInt(sel.value,10); renderSections(); };
   });
@@ -2387,7 +2420,9 @@ async function loadLeads(){
       })),
     warm: null,
     accountId: a.id,
-    user: a.assigned_user_id || ownerFromVertical(a.vertical_owner),
+    assignedUserId: a.assigned_user_id || null,
+    verticalOwner: a.vertical_owner || "",
+    user: "me",
   }));
   renderAll();
 }
