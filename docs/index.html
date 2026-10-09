@@ -2162,7 +2162,9 @@ function cardHtml(l, followupWorst){
     ? `<button type="button" class="reassign-btn" data-account="${escAttr(l.co)}" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--hairline);background:var(--surface);color:var(--ink-3);cursor:pointer;margin-left:auto">Reasignar</button>`
     : "";
   const pinned = isPinned(l.co);
-  const pinBtn = `<button type="button" class="pin-btn${pinned?" pinned":""}" data-account="${escAttr(l.co)}" title="${pinned?"Quitar pin":"Fijar arriba"}" aria-pressed="${pinned}">★</button>`;
+  const pinCls = pinned ? "pin-btn pinned" : "pin-btn";
+  const pinTitle = pinned ? "Quitar pin" : "Fijar arriba";
+  const pinBtn = `<button type="button" class="${pinCls}" data-account="${escAttr(l.co)}" title="${pinTitle}" aria-pressed="${pinned}">★</button>`;
   return `<div class="${cardClass}" role="listitem"${cardAttrs}>${warm}
     <div class="cbody">
       <div>
