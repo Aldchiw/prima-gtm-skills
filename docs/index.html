@@ -1878,8 +1878,9 @@ function activeDraftContent(contact, d) {
     { cuerpo: d.followup_3_cuerpo, status: d.followup_3_status, idx: 3 },
     { cuerpo: d.followup_4_cuerpo, status: d.followup_4_status, idx: 4 },
   ];
+  const TERMINAL = new Set(["SENT", "SKIP", "SEND"]);
   for (const f of fups) {
-    if (f.cuerpo && (f.status || "").toUpperCase() === "PENDING") {
+    if (f.cuerpo && !TERMINAL.has((f.status || "").toUpperCase())) {
       return { cuerpo: f.cuerpo, asunto: `Re: ${d.asunto}`, fup_index: f.idx };
     }
   }
