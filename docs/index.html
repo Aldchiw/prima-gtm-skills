@@ -1881,9 +1881,22 @@ function draftBlockHtml(contact){
     </div>`;
   }
   const { cuerpo, asunto, fup_index } = activeDraftContent(contact, d);
+  const originalStatus = (d.status || "").toUpperCase();
+
+  // Bug 3/4: original already SENT, no FUP draft generated yet — don't show original
+  if (fup_index === 0 && originalStatus === "SENT") {
+    return `<div class="cdraft" style="padding:12px 18px;color:var(--ink-3);font-size:13px">
+      FUP pendiente de generación por el bot
+    </div>`;
+  }
+
   const fupLabel = fup_index > 0 ? `FUP ${fup_index}` : "";
-  const approveBtn = (fup_index > 0 || (d.status || "").toUpperCase() !== "SENT")
+  const approveBtn = (fup_index > 0 || originalStatus !== "SENT")
     ? `<button type="button" class="cdraft-approve" data-contact-id="${escAttr(contact.id)}" data-fup-index="${fup_index}">Aprobar → SEND${fupLabel ? ` (${fupLabel})` : ""}</button>`
+    : "";
+  // Bug 2: original PENDING but stage already past first touch (sent manually)
+  const markSentBtn = (fup_index === 0 && originalStatus === "PENDING" && contact.stage > 0)
+    ? `<button type="button" class="cdraft-approve" data-contact-id="${escAttr(contact.id)}" data-fup-index="-1" style="background:var(--ink-3)">Marcar como enviado</button>`
     : "";
   return `<div class="cdraft" data-draft-contact="${escAttr(contact.id)}">
     <div class="cdraft-head" onclick="this.nextElementSibling.classList.toggle('open')">
@@ -1901,6 +1914,7 @@ function draftBlockHtml(contact){
       </div>
       <div class="cdraft-actions">
         ${approveBtn}
+        ${markSentBtn}
         <span class="cdraft-note" data-draft-note="${escAttr(contact.id)}"></span>
       </div>
     </div>
@@ -1912,6 +1926,21 @@ async function approveDraft(contactId, btn){
   const note = document.querySelector(`.cdraft-note[data-draft-note="${contactId}"]`);
   btn.disabled = true;
   if (note) { note.textContent = ""; note.className = "cdraft-note"; }
+
+  // fupIndex === -1: "Marcar como enviado" — email fue enviado manualmente, solo actualizar status local + Supabase
+  if (fupIndex === -1) {
+    try {
+      await sb.from("email_drafts").update({ status: "SENT" }).eq("contact_id", contactId);
+      if (DRAFTS[contactId]) DRAFTS[contactId].status = "SENT";
+      if (note) { note.textContent = "Marcado como enviado ✓"; note.className = "cdraft-note ok"; }
+      renderSections(); renderFollowups();
+    } catch(e) {
+      if (note) { note.textContent = String(e); note.className = "cdraft-note err"; }
+      btn.disabled = false;
+    }
+    return;
+  }
+
   const draftEl = document.querySelector(`.cdraft[data-draft-contact="${contactId}"]`);
   const asunto = draftEl?.querySelector(`input[data-field="asunto"]`)?.value;
   const cuerpo = draftEl?.querySelector(`textarea[data-field="cuerpo"]`)?.value;
@@ -2237,13 +2266,18 @@ async function loadLeads(){
   ]);
   if (accountsRes.error) { console.error("loadLeads error:", accountsRes.error.message); return; }
   DRAFTS = {};
-  for (const d of (draftsRes.data || [])) DRAFTS[d.contact_id] = d;
+  const DRAFTS_BY_EMAIL = {};
+  for (const d of (draftsRes.data || [])) {
+    if (d.contact_id) DRAFTS[d.contact_id] = d;
+    if (d.contact_email) DRAFTS_BY_EMAIL[d.contact_email.toLowerCase()] = d;
+  }
   // Patch stage for contacts whose draft is SENT/MANUAL but Supabase stage
   // hasn't been updated yet by the hourly sync.
   for (const a of (accountsRes.data || [])) {
     for (const c of (a.contacts || [])) {
+      const d = DRAFTS[c.id] || DRAFTS_BY_EMAIL[(c.contact_email || "").toLowerCase()];
+      if (d && !DRAFTS[c.id]) DRAFTS[c.id] = d;
       if (!c.stage || c.stage === "Not Contacted") {
-        const d = DRAFTS[c.id];
         if (d && ["SENT","MANUAL"].includes((d.status || "").toUpperCase())) {
           c.stage = "First Touch (Email)";
         }

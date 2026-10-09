@@ -185,9 +185,9 @@ Deno.serve(async () => {
       for (const c of contacts || []) emailToId[c.contact_email?.toLowerCase()] = c.id;
 
       const upserts = draftRows
-        .filter((d) => emailToId[d.correo])
+        .filter((d) => emailToId[d.correo?.toLowerCase()])
         .map((d) => ({
-          contact_id:        emailToId[d.correo],
+          contact_id:        emailToId[d.correo?.toLowerCase()],
           contact_email:     d.correo,
           asunto:            d.asunto,
           cuerpo:            d.cuerpo,
@@ -223,8 +223,8 @@ Deno.serve(async () => {
 
       // Stage sync: update contacts.stage based on Sheet data
       const stageUpdates = draftRows
-        .filter((d) => d.inferred_stage && emailToId[d.correo])
-        .map((d) => ({ id: emailToId[d.correo], stage: d.inferred_stage }));
+        .filter((d) => d.inferred_stage && emailToId[d.correo?.toLowerCase()])
+        .map((d) => ({ id: emailToId[d.correo?.toLowerCase()], stage: d.inferred_stage }));
 
       for (const u of stageUpdates) {
         await supabase
