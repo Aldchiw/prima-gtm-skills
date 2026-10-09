@@ -552,6 +552,14 @@ let LEADS = [];
 const ADMIN_EMAILS = ["ivan.vazquez@prima.ai"];
 let CURRENT_USER_EMAIL = "";
 function isAdmin(){ return ADMIN_EMAILS.includes(CURRENT_USER_EMAIL); }
+// Map vertical_owner text values from leads_master to USERS ids.
+const VERTICAL_OWNER_TO_USER_ID = {
+  "aldahir": "aldahir", "Aldahir": "aldahir",
+  "manuel ibarra": "manu", "Manuel Ibarra": "manu", "manu": "manu", "Manuel": "manu",
+  "gustavo rivas": "gustavo", "Gustavo Rivas": "gustavo", "gustavo": "gustavo", "Gustavo": "gustavo",
+  "gabriela zacarias": "gaby", "Gabriela Zacarias": "gaby", "gaby": "gaby", "Gaby": "gaby",
+};
+function ownerFromVertical(v){ return VERTICAL_OWNER_TO_USER_ID[String(v||"").trim()] || "unassigned"; }
 const STEPS = ["E1","LI","E2","E3"];
 const SORTS = [
   {k:"warm", label:"Warm intro first"},
@@ -1975,6 +1983,49 @@ document.addEventListener("click", e => {
   if (contactId) approveDraft(contactId, btn);
 });
 
+// Wire Reasignar buttons
+document.addEventListener("click", e => {
+  const btn = e.target.closest(".reassign-btn");
+  if (!btn) return;
+  e.stopPropagation();
+  const accountName = btn.dataset.account;
+  const l = LEADS.find(x => x.co === accountName);
+  if (!l) return;
+  const currentUser = USERS.find(u => u.id === l.user) || USERS.find(u => u.id === "unassigned");
+  const options = USERS.filter(u => u.id !== "unassigned")
+    .map(u => `<option value="${u.id}" ${u.id === l.user ? "selected" : ""}>${u.name}</option>`).join("");
+  const modal = document.createElement("div");
+  modal.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:9999;display:flex;align-items:center;justify-content:center";
+  modal.innerHTML = `<div style="background:var(--surface);border-radius:12px;padding:24px;min-width:280px;box-shadow:0 8px 32px rgba(0,0,0,.18)">
+    <div style="font-weight:600;margin-bottom:12px">Reasignar ${accountName}</div>
+    <div style="font-size:12.5px;color:var(--ink-3);margin-bottom:14px">Dueno actual: ${currentUser ? currentUser.name : "Sin asignar"}</div>
+    <select id="reassign-select" style="width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--hairline);font-size:13px;margin-bottom:16px">${options}</select>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button type="button" id="reassign-cancel" style="padding:7px 16px;border-radius:6px;border:1px solid var(--hairline);background:var(--surface);cursor:pointer">Cancelar</button>
+      <button type="button" id="reassign-confirm" style="padding:7px 16px;border-radius:6px;border:none;background:var(--red);color:#fff;cursor:pointer;font-weight:600">Confirmar</button>
+    </div>
+    <div id="reassign-note" style="font-size:12px;margin-top:8px;color:var(--ink-3)"></div>
+  </div>`;
+  document.body.appendChild(modal);
+  modal.querySelector("#reassign-cancel").onclick = () => modal.remove();
+  modal.querySelector("#reassign-confirm").onclick = async () => {
+    const newUserId = modal.querySelector("#reassign-select").value;
+    const note = modal.querySelector("#reassign-note");
+    modal.querySelector("#reassign-confirm").disabled = true;
+    note.textContent = "Guardando...";
+    try {
+      const { error } = await sb.from("accounts").update({ assigned_user_id: newUserId }).eq("account_name", accountName);
+      if (error) throw error;
+      l.user = newUserId;
+      note.textContent = "Reasignado correctamente";
+      setTimeout(() => { modal.remove(); renderAll(); }, 700);
+    } catch(err) {
+      note.textContent = "Error: " + (err.message || String(err));
+      modal.querySelector("#reassign-confirm").disabled = false;
+    }
+  };
+});
+
 // Wire LinkedIn copy buttons
 document.addEventListener("click", e => {
   const btn = e.target.closest(".li-copy");
@@ -2083,10 +2134,14 @@ function cardHtml(l, followupWorst){
   }
   const draftBlock = active ? draftBlockHtml(active) : "";
   const liBlock = active ? liMsgBlockHtml(active) : "";
+  const canReassign = !followupWorst && activeStage(l) === 0 && (isAdmin() || l.user === state.user);
+  const reassignBtn = canReassign
+    ? `<button type="button" class="reassign-btn" data-account="${escAttr(l.co)}" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--hairline);background:var(--surface);color:var(--ink-3);cursor:pointer;margin-left:auto">Reasignar</button>`
+    : "";
   return `<div class="${cardClass}" role="listitem"${cardAttrs}>${warm}
     <div class="cbody">
       <div>
-        <div class="co">${l.co}<span class="badge cat-${l.cat}" title="${(CATS[l.cat]||{full:l.cat}).full}"><span class="cd" aria-hidden="true"></span>${l.cat}</span>${segmentBadge}</div>
+        <div class="co" style="display:flex;align-items:center;gap:6px">${l.co}<span class="badge cat-${l.cat}" title="${(CATS[l.cat]||{full:l.cat}).full}"><span class="cd" aria-hidden="true"></span>${l.cat}</span>${segmentBadge}${reassignBtn}</div>
         ${badge}
         ${closedBadge}
         ${contactBlock(l, active, followupWorst)}
@@ -2331,7 +2386,8 @@ async function loadLeads(){
         })),
       })),
     warm: null,
-    user: "me",
+    accountId: a.id,
+    user: a.assigned_user_id || ownerFromVertical(a.vertical_owner),
   }));
   renderAll();
 }

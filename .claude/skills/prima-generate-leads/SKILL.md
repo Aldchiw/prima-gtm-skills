@@ -396,6 +396,28 @@ Two files, same as every other batch, **not** a third format:
   (from `prima-scope-score`) is already the Cat4 answer to the same question. `scope_tier` itself is
   unchanged — still the computed tier, still Cat4-only, blank for `Cat3` rows exactly as before.
 
+### Hard rule: preserve `assigned_owner` from `leads_master.csv` (added 2026-10-09)
+
+When a company discovered in Step 0 or the cascade already appears in `output/leads_master.csv`
+(matched by `account_name`), the enrichment rule is:
+
+- **Do not skip the company** — finding it in the master is not the same as it being a dedup discard.
+  A firmographic or signal discovery of an existing company means the pipeline should try to add *more*
+  contacts to it, not silently ignore it.
+- **Preserve `assigned_owner`** — read the existing row's `assigned_owner` from `leads_master.csv`
+  and carry it into any new contact rows written for that company. Never overwrite or blank out a
+  pre-existing owner. If the master has no `assigned_owner` for that account (the column is empty),
+  leave it empty in the new rows too — don't default to any name.
+- **New contact rows only** — only add contacts not already present in the master for that company
+  (`account_name` + `contact_name` is the dedup key). Never touch existing rows for that company.
+- **Report it separately** — in the final vendor message, call out how many discovered companies were
+  "existing accounts enriched" vs. "new accounts added," so the operator knows whether to expect
+  duplicates when importing to the Sheet.
+
+Read `leads_master.csv` once at the start of the run (after verifying it exists), build a map of
+`account_name → assigned_owner`, and use it during the write step above. If `leads_master.csv`
+doesn't exist yet, skip this step without error — the first run ever has no master to consult.
+
 ### Hard rule: merge `stage`/`contact_count`, never reset them (added 2026-07-21)
 
 `leads_final.csv` is regenerated from scratch every run — but `stage` and `contact_count` are
