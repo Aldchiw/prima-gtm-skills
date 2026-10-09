@@ -178,11 +178,23 @@ Edge Function `sync-sdr-sheet`, cron horario. Lee el tab del Sheet de Zadrac SDR
 
 Ambas funciones usan una Service Account de Google (env vars `GOOGLE_SA_EMAIL` + `GOOGLE_SA_PRIVATE_KEY`) para autenticarse contra Sheets API via JWT/OAuth2.
 
+### Owner mapping y reasignacion (2026-10-09)
+
+`l.user` ya no es "me" hardcodeado — el cockpit lee `assigned_user_id` de Supabase y, si esta vacio, infiere el dueno desde `vertical_owner` ("Aldahir" → "aldahir", "Manuel Ibarra" → "manu", etc.). El filtro de usuarios del header ahora filtra data real.
+
+Boton **Reasignar** en tarjetas con stage 0 (Not Contacted): visible para admin o para el dueno actual. Abre un modal con dropdown de usuarios; al confirmar, actualiza `accounts.assigned_user_id` en Supabase. Bloqueado automaticamente cuando el contacto ya inicio secuencia (stage > 0) — no se puede cambiar dueno con outreach activo.
+
+### Sync SDR Sheet — fix de permisos (2026-10-09)
+
+La Edge Function `sync-sdr-sheet` fallaba con "No se encontro el tab gid 1226985717" porque la Service Account de Google (`prima-leads-bot@prima-leads-sheet.iam.gserviceaccount.com`) no tenia acceso al Sheet. Fix: compartir el Sheet con esa SA como Editor desde Google Sheets → Compartir.
+
 ### Pendientes de implementacion
 
 - `contacts.stage` no se actualiza en tiempo real desde el cockpit cuando el SDR hace Done/Replied — se sobreescribe en el siguiente sync horario si el Sheet tiene un valor distinto. Falta definir prioridad: cockpit vs Sheet como fuente de verdad.
 - Auth por JWT de Google Workspace en lugar de Magic Link — requiere configurar un OAuth client ID en el proyecto de Supabase.
 - `app-cockpit-schema.sql` desactualizado — no refleja `email_drafts`, politicas RLS actuales, ni las dos Edge Functions.
+- **Cloud Run automation**: agente con doble trigger (cron semanal + form on-demand) para correr `prima-generate-leads` y `prima-reference-leads` sin que nadie este detras de Claude Code.
+- **Lead request form en cockpit**: form donde el equipo (Gus, Manu, Alda, Gaby) solicita leads de una empresa o evento; dispara `prima-reference-leads` via el agente de Cloud Run.
 
 ## 7. Estado actual y pendientes conocidos
 
@@ -216,4 +228,4 @@ Ambas funciones usan una Service Account de Google (env vars `GOOGLE_SA_EMAIL` +
   confundirlo con `templates/index.md`.
 
 ---
-*Documentado originalmente el 2026-07-28. Actualizado el 2026-09-22: agregada sección del Cockpit SDR (sección 6), numeradas las secciones siguientes.*
+*Documentado originalmente el 2026-07-28. Actualizado el 2026-09-22: sección 6 del Cockpit SDR. Actualizado el 2026-10-09: owner mapping, botón reasignación, fix sync SA permissions, dedup rule en prima-generate-leads, skill prima-reference-leads.*
