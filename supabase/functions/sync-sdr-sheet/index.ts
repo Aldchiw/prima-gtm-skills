@@ -239,7 +239,8 @@ Deno.serve(async () => {
       JSON.stringify({ ok: true, touch_rows: touchRows.length, draft_upserted: draftUpserted, result: touchData }),
       { headers: { "Content-Type": "application/json" } });
   } catch (e) {
-    return new Response(JSON.stringify({ ok: false, error: String(e) }),
+    const msg = e instanceof Error ? e.message : JSON.stringify(e);
+    return new Response(JSON.stringify({ ok: false, error: msg }),
       { status: 500, headers: { "Content-Type": "application/json" } });
   }
 });
