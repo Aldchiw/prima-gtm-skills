@@ -2538,9 +2538,7 @@ function hideLogin(){ el("#loginView").style.display = "none"; }
 el("#sendBtn").onclick = async () => {
   const email = el("#loginEmail").value.trim();
   if (!email) { showLogin("Escribe tu correo.", false); return; }
-  const { error } = await sb.auth.signInWithOtp({
-    email, options: { emailRedirectTo: window.location.origin },
-  });
+  const { error } = await sb.auth.signInWithOtp({ email });
   showLogin(error ? error.message : "Revisa tu correo -- te mandamos un Magic Link.", !error);
 };
 
