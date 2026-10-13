@@ -396,6 +396,34 @@
   .nitem-detail{font-size:11.5px;color:var(--ink-3);display:flex;gap:8px}
   .nitem-delay{color:var(--red-text);font-weight:600}
   .nitem-channel{font-weight:500}
+
+  /* Reference leads request form */
+  .rl-section{margin-top:40px;padding-top:28px;border-top:1px solid var(--border)}
+  .rl-head{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:4px}
+  .rl-sub{font-size:12px;color:var(--ink-3);margin-bottom:18px}
+  .rl-form{display:flex;flex-direction:column;gap:12px;max-width:580px}
+  .rl-label{font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:4px;display:block}
+  .rl-textarea{width:100%;box-sizing:border-box;min-height:100px;resize:vertical;font-family:var(--sans);
+    font-size:12.5px;color:var(--ink);background:var(--surface);border:1px solid var(--border);
+    border-radius:8px;padding:10px 12px;line-height:1.5}
+  .rl-textarea:focus-visible{outline:2px solid var(--red);outline-offset:1px;border-color:transparent}
+  .rl-textarea::placeholder{color:var(--ink-3)}
+  .rl-input{width:100%;box-sizing:border-box;font-family:var(--sans);font-size:12.5px;color:var(--ink);
+    background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+  .rl-input:focus-visible{outline:2px solid var(--red);outline-offset:1px;border-color:transparent}
+  .rl-input::placeholder{color:var(--ink-3)}
+  .rl-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .rl-submit{font-family:var(--sans);font-size:13px;font-weight:600;color:#fff;background:var(--red);
+    border:none;border-radius:8px;padding:9px 20px;cursor:pointer;transition:.12s}
+  .rl-submit:hover:not(:disabled){background:color-mix(in srgb, var(--red) 85%, black)}
+  .rl-submit:disabled{background:var(--border);color:var(--ink-3);cursor:default}
+  .rl-status{font-size:12px;font-weight:500}
+  .rl-status.ok{color:var(--good)}
+  .rl-status.err{color:var(--red-text)}
+  .rl-result{margin-top:14px;background:var(--bg);border:1px solid var(--border);border-radius:10px;
+    padding:14px 16px;font-size:12px;color:var(--ink-2);line-height:1.7;max-width:580px}
+  .rl-result b{color:var(--ink);font-weight:600}
+  .rl-result .rl-skipped{margin-top:8px;font-size:11.5px;color:var(--ink-3)}
 </style>
 </head>
 <body>
@@ -481,6 +509,26 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
   <div class="needscontact-linkwrap" id="needscontact-link"></div>
   <div class="summary" id="summary"></div>
   <div id="list"></div>
+
+  <div class="rl-section" id="rlSection">
+    <div class="rl-head">Request Reference leads</div>
+    <div class="rl-sub">Pega una empresa por linea. El agente busca contactos, senal y genera las filas en leads_master.csv.</div>
+    <div class="rl-form">
+      <div>
+        <label class="rl-label" for="rlEmpresas">Empresas (una por linea)</label>
+        <textarea class="rl-textarea" id="rlEmpresas" placeholder="CEMEX&#10;Grupo IDESA&#10;Vitro"></textarea>
+      </div>
+      <div>
+        <label class="rl-label" for="rlContext">Contexto (opcional)</label>
+        <input class="rl-input" id="rlContext" type="text" placeholder="Ej: referidas por cliente X, feria Hannover 2026">
+      </div>
+      <div class="rl-row">
+        <button type="button" class="rl-submit" id="rlSubmit">Solicitar leads</button>
+        <span class="rl-status" id="rlStatus"></span>
+      </div>
+    </div>
+    <div class="rl-result" id="rlResult" hidden></div>
+  </div>
 
   <div class="foot">
     <span class="fl">How this works</span>
@@ -2511,6 +2559,77 @@ document.addEventListener("click", (e) => {
 // markup so renderAll() never re-creates it (keeps focus + typed text).
 if (!SHOW_LEAD_SEARCH) { const sw = el("#searchwrap"); if (sw) sw.hidden = true; }
 el("#leadsearch").oninput = (e) => { state.q = e.target.value.trim(); renderAll(); };
+
+// Reference leads form
+(function(){
+  const EDGE_FN = "https://axknjzbiteuwrjpbuows.supabase.co/functions/v1/reference-leads";
+
+  el("rlSubmit").onclick = async function(){
+    const raw = (el("rlEmpresas").value || "").trim();
+    if (!raw) { showStatus("Agrega al menos una empresa.", "err"); return; }
+    const empresas = raw.split("\n").map(s => s.trim()).filter(Boolean);
+    const context = (el("rlContext").value || "").trim();
+
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { showStatus("Inicia sesion primero.", "err"); return; }
+
+    setLoading(true);
+    showStatus("Procesando... puede tardar 30-60 segundos.", "");
+    el("rlResult").hidden = true;
+
+    try {
+      const res = await fetch(EDGE_FN, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + session.access_token,
+          "apikey": SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({
+          empresas,
+          requested_by: CURRENT_USER_EMAIL,
+          context: context || ("pedido de " + CURRENT_USER_EMAIL),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        showStatus("Error: " + (data.error || res.status), "err");
+        return;
+      }
+      showStatus("Listo.", "ok");
+      renderResult(data);
+    } catch(e) {
+      showStatus("Error de red: " + e.message, "err");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  function setLoading(on){
+    el("rlSubmit").disabled = on;
+    el("rlSubmit").textContent = on ? "Procesando..." : "Solicitar leads";
+  }
+
+  function showStatus(msg, cls){
+    const s = el("rlStatus");
+    s.textContent = msg;
+    s.className = "rl-status" + (cls ? " " + cls : "");
+  }
+
+  function renderResult(d){
+    const box = el("rlResult");
+    let html = "<b>" + d.escritas + " filas escritas</b> en leads_master.csv";
+    if (d.duplicadas > 0) html += " &middot; " + d.duplicadas + " duplicadas omitidas";
+    if (d.conflictos_pipeline > 0) html += " &middot; " + d.conflictos_pipeline + " en otro pipeline (no escritas)";
+    if (d.cost_usd) html += " &middot; costo: $" + Number(d.cost_usd).toFixed(3);
+    if (d.skipped && d.skipped.length > 0) {
+      html += '<div class="rl-skipped"><b>No encontradas / sin contacto:</b> ' +
+        d.skipped.map(s => s.account_name + " (" + s.reason + ")").join(", ") + "</div>";
+    }
+    box.innerHTML = html;
+    box.hidden = false;
+  }
+})();
 
 sb.auth.onAuthStateChange((event, session) => {
   if (session) {

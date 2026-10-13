@@ -1,14 +1,13 @@
 $PROJECT = "zadrac-tests"
 
-$ANTHROPIC_KEY = Read-Host "Anthropic API key" -AsSecureString
+$ANTHROPIC_KEY = Read-Host -Prompt "Anthropic API key" -AsSecureString
 $ANTHROPIC_PLAIN = [Runtime.InteropServices.Marshal]::PtrToStringAuto(
     [Runtime.InteropServices.Marshal]::SecureStringToBSTR($ANTHROPIC_KEY))
 
-$GITHUB_TOKEN = Read-Host "GitHub token (ghp_...)" -AsSecureString
+$GITHUB_TOKEN = Read-Host -Prompt "GitHub token (ghp_...)" -AsSecureString
 $GITHUB_PLAIN = [Runtime.InteropServices.Marshal]::PtrToStringAuto(
     [Runtime.InteropServices.Marshal]::SecureStringToBSTR($GITHUB_TOKEN))
 
-# Write to temp files (deleted immediately after)
 $tmpA = [System.IO.Path]::GetTempFileName()
 $tmpG = [System.IO.Path]::GetTempFileName()
 
@@ -30,7 +29,8 @@ if (-not $?) {
 Remove-Item $tmpA, $tmpG -Force
 
 Write-Host "=== Creating secret: reference-leads-api-key ==="
-$API_KEY = Read-Host "API key para el servicio (inventa una clave larga, ej: rl_prima_$(Get-Random))" -AsSecureString
+Write-Host "Inventa una API key larga, ej: rl_prima_abc123xyz789"
+$API_KEY = Read-Host -Prompt "API key para el servicio" -AsSecureString
 $API_KEY_PLAIN = [Runtime.InteropServices.Marshal]::PtrToStringAuto(
     [Runtime.InteropServices.Marshal]::SecureStringToBSTR($API_KEY))
 $tmpK = [System.IO.Path]::GetTempFileName()
@@ -40,7 +40,7 @@ if (-not $?) {
     gcloud secrets versions add reference-leads-api-key --data-file=$tmpK --project $PROJECT
 }
 Remove-Item $tmpK -Force
-Write-Host "Guarda esa API key — la necesitarás en el cockpit."
+Write-Host "Guarda esa API key, la necesitaras en el cockpit."
 
 Write-Host "=== Granting Cloud Run SA access ==="
 $PROJECT_NUMBER = gcloud projects describe $PROJECT --format="value(projectNumber)"
