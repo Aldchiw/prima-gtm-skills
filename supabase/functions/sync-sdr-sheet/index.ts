@@ -69,7 +69,7 @@ function parseRows(values: string[][]) {
   const iCuerpo  = col(header, "cuerpo");
   const iThread  = col(header, "thread_id");
   const iResp    = col(header, "respondio");
-  const iFResp   = col(header, "fecha_resp");
+  const iFResp   = col(header, "fecha_respuesta");
   const iTipoR   = col(header, "tipo_respuesta");
   const iEstado  = col(header, "estado");
   const iFup1C   = col(header, "followup_1_cuerpo");
@@ -133,7 +133,7 @@ function parseRows(values: string[][]) {
       cuerpo:            iCuerpo >= 0 ? (row[iCuerpo] || "").trim()  : "",
       status: (row[iStatus] || "").trim(),
       thread_id:         iThread >= 0 ? (row[iThread] || "").trim()  : "",
-      respondio:         iResp   >= 0 ? (row[iResp]   || "").trim().toUpperCase() === "TRUE" : false,
+      respondio:         iResp   >= 0 ? (["TRUE","SÍ","SI","YES","1"].includes((row[iResp] || "").trim().toUpperCase())) : false,
       fecha_resp:        iFResp  >= 0 ? (row[iFResp]  || "").trim()  : "",
       tipo_respuesta:    iTipoR  >= 0 ? (row[iTipoR]  || "").trim()  : "",
       estado:            iEstado >= 0 ? (row[iEstado] || "").trim()  : "",

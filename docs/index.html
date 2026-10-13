@@ -2668,6 +2668,20 @@ el("#leadsearch").oninput = (e) => { state.q = e.target.value.trim(); renderAll(
   }
 })();
 
+// Detect Supabase auth errors returned as hash params (e.g. otp_expired)
+(function(){
+  const hp = new URLSearchParams(window.location.hash.slice(1));
+  const errCode = hp.get("error_code");
+  if (errCode) {
+    history.replaceState(null, "", window.location.pathname);
+    const msgs = {
+      otp_expired: "Tu link de acceso expiró (solo duran 1 hora). Solicita uno nuevo.",
+      access_denied: "Acceso denegado. Solicita un nuevo Magic Link.",
+    };
+    showLogin(msgs[errCode] || "Error de acceso: " + errCode + ". Solicita un nuevo link.", false);
+  }
+})();
+
 sb.auth.onAuthStateChange((event, session) => {
   if (session) {
     CURRENT_USER_EMAIL = session.user.email || "";
