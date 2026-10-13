@@ -397,19 +397,35 @@
   .nitem-delay{color:var(--red-text);font-weight:600}
   .nitem-channel{font-weight:500}
 
-  /* Reference leads request form */
-  .rl-section{margin-top:40px;padding-top:28px;border-top:1px solid var(--border)}
-  .rl-head{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:4px}
-  .rl-sub{font-size:12px;color:var(--ink-3);margin-bottom:18px}
-  .rl-form{display:flex;flex-direction:column;gap:12px;max-width:580px}
+  /* Reference leads — floating button + drawer */
+  .rl-fab{position:fixed;bottom:24px;right:24px;z-index:200;display:flex;align-items:center;gap:8px;
+    font-family:var(--sans);font-size:13px;font-weight:600;color:#fff;background:var(--red);
+    border:none;border-radius:999px;padding:10px 18px;cursor:pointer;
+    box-shadow:0 4px 16px rgba(218,85,81,.35);transition:.15s}
+  .rl-fab:hover{background:color-mix(in srgb, var(--red) 85%, black);box-shadow:0 6px 20px rgba(218,85,81,.4)}
+  .rl-fab svg{flex:none}
+  .rl-overlay{position:fixed;inset:0;z-index:210;background:rgba(26,26,26,.35);display:none}
+  .rl-overlay.open{display:block}
+  .rl-drawer{position:fixed;top:0;right:0;bottom:0;z-index:220;width:min(420px,100vw);
+    background:var(--surface);box-shadow:-4px 0 32px rgba(26,26,26,.14);
+    display:flex;flex-direction:column;transform:translateX(100%);transition:transform .22s ease}
+  .rl-drawer.open{transform:translateX(0)}
+  .rl-drawer-head{display:flex;align-items:center;justify-content:space-between;
+    padding:18px 20px 14px;border-bottom:1px solid var(--border);flex:none}
+  .rl-drawer-title{font-size:14px;font-weight:600;color:var(--ink)}
+  .rl-drawer-sub{font-size:11.5px;color:var(--ink-3);margin-top:2px}
+  .rl-drawer-close{font-family:var(--sans);font-size:18px;line-height:1;color:var(--ink-3);
+    background:none;border:none;cursor:pointer;padding:4px 6px;border-radius:6px}
+  .rl-drawer-close:hover{color:var(--ink);background:var(--bg)}
+  .rl-drawer-body{flex:1;overflow-y:auto;padding:18px 20px 24px;display:flex;flex-direction:column;gap:14px}
   .rl-label{font-size:11px;font-weight:600;color:var(--ink-2);margin-bottom:4px;display:block}
-  .rl-textarea{width:100%;box-sizing:border-box;min-height:100px;resize:vertical;font-family:var(--sans);
-    font-size:12.5px;color:var(--ink);background:var(--surface);border:1px solid var(--border);
+  .rl-textarea{width:100%;box-sizing:border-box;min-height:110px;resize:vertical;font-family:var(--sans);
+    font-size:12.5px;color:var(--ink);background:var(--bg);border:1px solid var(--border);
     border-radius:8px;padding:10px 12px;line-height:1.5}
   .rl-textarea:focus-visible{outline:2px solid var(--red);outline-offset:1px;border-color:transparent}
   .rl-textarea::placeholder{color:var(--ink-3)}
   .rl-input{width:100%;box-sizing:border-box;font-family:var(--sans);font-size:12.5px;color:var(--ink);
-    background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+    background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
   .rl-input:focus-visible{outline:2px solid var(--red);outline-offset:1px;border-color:transparent}
   .rl-input::placeholder{color:var(--ink-3)}
   .rl-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
@@ -420,8 +436,8 @@
   .rl-status{font-size:12px;font-weight:500}
   .rl-status.ok{color:var(--good)}
   .rl-status.err{color:var(--red-text)}
-  .rl-result{margin-top:14px;background:var(--bg);border:1px solid var(--border);border-radius:10px;
-    padding:14px 16px;font-size:12px;color:var(--ink-2);line-height:1.7;max-width:580px}
+  .rl-result{background:var(--bg);border:1px solid var(--border);border-radius:10px;
+    padding:14px 16px;font-size:12px;color:var(--ink-2);line-height:1.7}
   .rl-result b{color:var(--ink);font-weight:600}
   .rl-result .rl-skipped{margin-top:8px;font-size:11.5px;color:var(--ink-3)}
 </style>
@@ -510,30 +526,43 @@ FINISH: unreviewed and undocumented is unfinished; this build ends with the fini
   <div class="summary" id="summary"></div>
   <div id="list"></div>
 
-  <div class="rl-section" id="rlSection">
-    <div class="rl-head">Request Reference leads</div>
-    <div class="rl-sub">Pega una empresa por linea. El agente busca contactos, senal y genera las filas en leads_master.csv.</div>
-    <div class="rl-form">
-      <div>
-        <label class="rl-label" for="rlEmpresas">Empresas (una por linea)</label>
-        <textarea class="rl-textarea" id="rlEmpresas" placeholder="CEMEX&#10;Grupo IDESA&#10;Vitro"></textarea>
-      </div>
-      <div>
-        <label class="rl-label" for="rlContext">Contexto (opcional)</label>
-        <input class="rl-input" id="rlContext" type="text" placeholder="Ej: referidas por cliente X, feria Hannover 2026">
-      </div>
-      <div class="rl-row">
-        <button type="button" class="rl-submit" id="rlSubmit">Solicitar leads</button>
-        <span class="rl-status" id="rlStatus"></span>
-      </div>
-    </div>
-    <div class="rl-result" id="rlResult" hidden></div>
-  </div>
-
   <div class="foot">
     <span class="fl">How this works</span>
     <b>Each teammate sees only the leads assigned to them, grouped by category.</b> Every lead updates live with its buy-window signal, its follow-up stage, and — the edge — whether Gaby or Daniel has a warm path in.<br>
     Live wiring: signals from the Signal Radar · assignments &amp; follow-ups from Zadrac · warm intros from Gaby &amp; Daniel's exported connections (matched locally, zero API cost).
+  </div>
+</div>
+
+<button type="button" class="rl-fab" id="rlFab" aria-label="Request Reference leads">
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M7 1v12M1 7h12" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>
+  </svg>
+  Reference leads
+</button>
+
+<div class="rl-overlay" id="rlOverlay"></div>
+<div class="rl-drawer" id="rlDrawer" role="dialog" aria-modal="true" aria-label="Request Reference leads">
+  <div class="rl-drawer-head">
+    <div>
+      <div class="rl-drawer-title">Request Reference leads</div>
+      <div class="rl-drawer-sub">Una empresa por linea. El agente busca contactos y escribe en leads_master.csv.</div>
+    </div>
+    <button type="button" class="rl-drawer-close" id="rlDrawerClose" aria-label="Cerrar">&times;</button>
+  </div>
+  <div class="rl-drawer-body">
+    <div>
+      <label class="rl-label" for="rlEmpresas">Empresas (una por linea)</label>
+      <textarea class="rl-textarea" id="rlEmpresas" placeholder="CEMEX&#10;Grupo IDESA&#10;Vitro"></textarea>
+    </div>
+    <div>
+      <label class="rl-label" for="rlContext">Contexto (opcional)</label>
+      <input class="rl-input" id="rlContext" type="text" placeholder="Ej: referidas por cliente X, feria Hannover 2026">
+    </div>
+    <div class="rl-row">
+      <button type="button" class="rl-submit" id="rlSubmit">Solicitar leads</button>
+      <span class="rl-status" id="rlStatus"></span>
+    </div>
+    <div class="rl-result" id="rlResult" hidden></div>
   </div>
 </div>
 
@@ -2557,6 +2586,16 @@ document.addEventListener("click", (e) => {
 // markup so renderAll() never re-creates it (keeps focus + typed text).
 if (!SHOW_LEAD_SEARCH) { const sw = el("#searchwrap"); if (sw) sw.hidden = true; }
 el("#leadsearch").oninput = (e) => { state.q = e.target.value.trim(); renderAll(); };
+
+// Reference leads drawer
+(function(){
+  function openDrawer(){ el("rlDrawer").classList.add("open"); el("rlOverlay").classList.add("open"); }
+  function closeDrawer(){ el("rlDrawer").classList.remove("open"); el("rlOverlay").classList.remove("open"); }
+  el("rlFab").onclick = openDrawer;
+  el("rlDrawerClose").onclick = closeDrawer;
+  el("rlOverlay").onclick = closeDrawer;
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closeDrawer(); });
+})();
 
 // Reference leads form
 (function(){
