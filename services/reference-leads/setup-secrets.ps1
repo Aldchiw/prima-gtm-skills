@@ -29,11 +29,24 @@ if (-not $?) {
 
 Remove-Item $tmpA, $tmpG -Force
 
+Write-Host "=== Creating secret: reference-leads-api-key ==="
+$API_KEY = Read-Host "API key para el servicio (inventa una clave larga, ej: rl_prima_$(Get-Random))" -AsSecureString
+$API_KEY_PLAIN = [Runtime.InteropServices.Marshal]::PtrToStringAuto(
+    [Runtime.InteropServices.Marshal]::SecureStringToBSTR($API_KEY))
+$tmpK = [System.IO.Path]::GetTempFileName()
+[System.IO.File]::WriteAllText($tmpK, $API_KEY_PLAIN, [System.Text.Encoding]::UTF8)
+gcloud secrets create reference-leads-api-key --data-file=$tmpK --project $PROJECT --replication-policy automatic 2>$null
+if (-not $?) {
+    gcloud secrets versions add reference-leads-api-key --data-file=$tmpK --project $PROJECT
+}
+Remove-Item $tmpK -Force
+Write-Host "Guarda esa API key — la necesitarás en el cockpit."
+
 Write-Host "=== Granting Cloud Run SA access ==="
 $PROJECT_NUMBER = gcloud projects describe $PROJECT --format="value(projectNumber)"
 $SA = "service-${PROJECT_NUMBER}@serverless-robot-prod.iam.gserviceaccount.com"
 
-foreach ($SECRET in @("anthropic-api-key", "github-token-reference-leads")) {
+foreach ($SECRET in @("anthropic-api-key", "github-token-reference-leads", "reference-leads-api-key")) {
     gcloud secrets add-iam-policy-binding $SECRET `
         --member="serviceAccount:$SA" `
         --role="roles/secretmanager.secretAccessor" `

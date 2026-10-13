@@ -12,11 +12,11 @@ gcloud run deploy $SERVICE `
     --platform managed `
     --region $REGION `
     --project $PROJECT `
-    --no-allow-unauthenticated `
+    --allow-unauthenticated `
     --memory 512Mi `
     --cpu 1 `
     --timeout 300 `
-    --set-secrets "ANTHROPIC_API_KEY=anthropic-api-key:latest,GITHUB_TOKEN=github-token-reference-leads:latest" `
+    --set-secrets "ANTHROPIC_API_KEY=anthropic-api-key:latest,GITHUB_TOKEN=github-token-reference-leads:latest,SERVICE_API_KEY=reference-leads-api-key:latest" `
     --set-env-vars "GITHUB_REPO=Aldchiw/prima-gtm-skills,GITHUB_BRANCH=main"
 
 Write-Host "=== URL del servicio ==="

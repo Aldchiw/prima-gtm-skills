@@ -17,6 +17,14 @@ log = logging.getLogger(__name__)
 
 ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"]
 GITHUB_TOKEN = os.environ["GITHUB_TOKEN"]
+SERVICE_API_KEY = os.environ["SERVICE_API_KEY"]
+
+
+def check_api_key():
+    key = request.headers.get("X-Api-Key", "")
+    if key != SERVICE_API_KEY:
+        return jsonify({"ok": False, "error": "Unauthorized"}), 401
+    return None
 GITHUB_REPO = os.environ.get("GITHUB_REPO", "Aldchiw/prima-gtm-skills")
 GITHUB_BRANCH = os.environ.get("GITHUB_BRANCH", "main")
 MASTER_CSV_PATH = "output/leads_master.csv"
@@ -192,11 +200,15 @@ def merge_rows(
 
 @app.route("/health", methods=["GET"])
 def health():
+    err = check_api_key()
+    if err: return err
     return jsonify({"ok": True})
 
 
 @app.route("/run", methods=["POST"])
 def run():
+    err = check_api_key()
+    if err: return err
     body = request.get_json(silent=True) or {}
     empresas: list[str] = body.get("empresas", [])
     requested_by: str = body.get("requested_by", "")
