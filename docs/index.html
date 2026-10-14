@@ -716,13 +716,22 @@ function compareLeads(a,b){
 function isClosed(c){
   return c.stage_text === "Replied" || c.stage_text === "Stopped";
 }
-// An account is "in sequence" once ANY of its contacts has stage > 0 and
-// isn't closed -- that account belongs to the "In sequence" view/tile now,
-// not the cold pipeline (Followups is a further, overdue-only subset of
-// "in sequence"). A closed contact no longer counts, even though its stage
-// number (4) would otherwise still read as "advanced".
+// An account is "in sequence" once ANY of its contacts has verifiably
+// started the outreach sequence:
+//   stage >= 2  (FUP 1+) — at this point E1 was already sent by definition
+//   stage == 1  (First Touch) — only counts when the draft is SENT or MANUAL,
+//               i.e. the email actually went out; a PENDING draft means it
+//               hasn't been sent yet and the account stays in the cold pipeline
 function accountInSequence(l){
-  return realContactsOf(l).some(c => c.stage > 0 && !isClosed(c));
+  return realContactsOf(l).some(c => {
+    if (isClosed(c)) return false;
+    if (c.stage >= 2) return true;
+    if (c.stage === 1) {
+      const d = DRAFTS[c.id];
+      return d && ["SENT","MANUAL"].includes((d.status || "").toUpperCase());
+    }
+    return false;
+  });
 }
 // #2: true once every REAL contact on the account is closed (Replied/
 // Stopped) -- such an account belongs only in Closed. Uses realContactsOf
