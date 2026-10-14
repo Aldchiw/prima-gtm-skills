@@ -443,19 +443,20 @@
 </style>
 </head>
 <body>
-<div id="loginView">
+<div id="loginView" style="display:none">
   <div class="loginCard">
-    <div class="loginBrand">Outreach Cockpit</div>
+    <div class="loginBrand">Inicia sesion para usar Reference Leads</div>
     <input id="loginEmail" type="email" placeholder="tu@prima.ai" autocomplete="email">
     <button type="button" id="sendBtn">Enviar Magic Link</button>
     <div id="loginMsg"></div>
+    <button type="button" id="loginCloseBtn" style="margin-top:8px;width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:transparent;color:var(--muted);font-size:12px;cursor:pointer;">Cancelar</button>
   </div>
 </div>
 <style>
-  #loginView{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:var(--bg);}
+  #loginView{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.45);}
   #loginView .loginCard{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:32px;width:100%;max-width:360px;box-sizing:border-box;}
   #loginView .loginBrand{font-size:16px;font-weight:600;color:var(--ink);margin-bottom:16px;}
-  #loginView input{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;margin-bottom:10px;color:var(--ink);}
+  #loginView input{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;margin-bottom:10px;color:var(--ink);background:var(--bg);}
   #loginView button{width:100%;padding:10px 12px;border:none;border-radius:8px;background:var(--link);color:#fff;font-size:13px;font-weight:600;cursor:pointer;}
   #loginView #loginMsg{margin-top:10px;font-size:12px;min-height:16px;}
   #loginView #loginMsg.ok{color:var(--good);}
@@ -2564,6 +2565,8 @@ function showLogin(msg, ok){
 }
 function hideLogin(){ el("#loginView").style.display = "none"; }
 
+el("#loginCloseBtn").onclick = hideLogin;
+
 el("#sendBtn").onclick = async () => {
   const email = el("#loginEmail").value.trim();
   if (!email) { showLogin("Escribe tu correo.", false); return; }
@@ -2608,7 +2611,7 @@ el("#leadsearch").oninput = (e) => { state.q = e.target.value.trim(); renderAll(
     const context = (el("rlContext").value || "").trim();
 
     const { data: { session } } = await sb.auth.getSession();
-    if (!session) { showStatus("Inicia sesion primero.", "err"); return; }
+    if (!session) { showLogin("Inicia sesion para usar Reference Leads.", false); return; }
 
     setLoading(true);
     showStatus("Procesando... puede tardar 30-60 segundos.", "");
@@ -2687,24 +2690,21 @@ sb.auth.onAuthStateChange((event, session) => {
     CURRENT_USER_EMAIL = session.user.email || "";
     el("#sessionEmail").textContent = session.user.email;
     hideLogin();
-    loadLeads();
   } else {
     CURRENT_USER_EMAIL = "";
-    LEADS = [];
-    showLogin("", true);
+    el("#sessionEmail").textContent = "";
   }
 });
 
+// Load cockpit immediately — no auth required to view
 sb.auth.getSession().then(({ data }) => {
   if (data.session) {
     CURRENT_USER_EMAIL = data.session.user.email || "";
     el("#sessionEmail").textContent = data.session.user.email;
     hideLogin();
-    loadLeads();
-  } else {
-    showLogin("", true);
   }
 });
+loadLeads();
 </script>
 </body>
 </html>
