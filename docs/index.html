@@ -443,7 +443,7 @@
 </style>
 </head>
 <body>
-<div id="loginView" style="display:none">
+<div id="loginView">
   <div class="loginCard">
     <div class="loginBrand">Inicia sesion para usar Reference Leads</div>
     <input id="loginEmail" type="email" placeholder="tu@prima.ai" autocomplete="email">
@@ -453,7 +453,7 @@
   </div>
 </div>
 <style>
-  #loginView{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.45);}
+  #loginView{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;background:var(--bg);}
   #loginView .loginCard{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:32px;width:100%;max-width:360px;box-sizing:border-box;}
   #loginView .loginBrand{font-size:16px;font-weight:600;color:var(--ink);margin-bottom:16px;}
   #loginView input{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;margin-bottom:10px;color:var(--ink);background:var(--bg);}
@@ -2410,7 +2410,9 @@ function renderSections(){
   bindCloseActions(el("#list"));
 }
 function renderAll(){ renderFollowups(); renderNotifBell(); renderSourceChips(); renderChips(); renderSort(); renderTiles(); renderSections(); }
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: { flowType: "pkce" }
+});
 
 // Sheet/CSV stage was always text ("Not Contacted", "First Touch (Email)",
 // "FUP 2", ...) -- the UI needs the 0-4 number SEQUENCE_STEPS/stageLabel
@@ -2690,21 +2692,24 @@ sb.auth.onAuthStateChange((event, session) => {
     CURRENT_USER_EMAIL = session.user.email || "";
     el("#sessionEmail").textContent = session.user.email;
     hideLogin();
+    loadLeads();
   } else {
     CURRENT_USER_EMAIL = "";
-    el("#sessionEmail").textContent = "";
+    LEADS = [];
+    showLogin("", true);
   }
 });
 
-// Load cockpit immediately — no auth required to view
 sb.auth.getSession().then(({ data }) => {
   if (data.session) {
     CURRENT_USER_EMAIL = data.session.user.email || "";
     el("#sessionEmail").textContent = data.session.user.email;
     hideLogin();
+    loadLeads();
+  } else {
+    showLogin("", true);
   }
 });
-loadLeads();
 </script>
 </body>
 </html>
