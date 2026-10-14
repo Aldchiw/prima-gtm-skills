@@ -2592,11 +2592,11 @@ el("#leadsearch").oninput = (e) => { state.q = e.target.value.trim(); renderAll(
 
 // Reference leads drawer
 (function(){
-  function openDrawer(){ el("rlDrawer").classList.add("open"); el("rlOverlay").classList.add("open"); }
-  function closeDrawer(){ el("rlDrawer").classList.remove("open"); el("rlOverlay").classList.remove("open"); }
-  el("rlFab").onclick = openDrawer;
-  el("rlDrawerClose").onclick = closeDrawer;
-  el("rlOverlay").onclick = closeDrawer;
+  function openDrawer(){ el("#rlDrawer").classList.add("open"); el("#rlOverlay").classList.add("open"); }
+  function closeDrawer(){ el("#rlDrawer").classList.remove("open"); el("#rlOverlay").classList.remove("open"); }
+  el("#rlFab").onclick = openDrawer;
+  el("#rlDrawerClose").onclick = closeDrawer;
+  el("#rlOverlay").onclick = closeDrawer;
   document.addEventListener("keydown", e => { if (e.key === "Escape") closeDrawer(); });
 })();
 
@@ -2604,18 +2604,18 @@ el("#leadsearch").oninput = (e) => { state.q = e.target.value.trim(); renderAll(
 (function(){
   const EDGE_FN = "https://axknjzbiteuwrjpbuows.supabase.co/functions/v1/reference-leads";
 
-  el("rlSubmit").onclick = async function(){
-    const raw = (el("rlEmpresas").value || "").trim();
+  el("#rlSubmit").onclick = async function(){
+    const raw = (el("#rlEmpresas").value || "").trim();
     if (!raw) { showStatus("Agrega al menos una empresa.", "err"); return; }
     const empresas = raw.split("\n").map(s => s.trim()).filter(Boolean);
-    const context = (el("rlContext").value || "").trim();
+    const context = (el("#rlContext").value || "").trim();
 
     const { data: { session } } = await sb.auth.getSession();
     if (!session) { showLogin("Inicia sesion para usar Reference Leads.", false); return; }
 
     setLoading(true);
     showStatus("Procesando... puede tardar 30-60 segundos.", "");
-    el("rlResult").hidden = true;
+    el("#rlResult").hidden = true;
 
     try {
       const res = await fetch(EDGE_FN, {
@@ -2646,18 +2646,18 @@ el("#leadsearch").oninput = (e) => { state.q = e.target.value.trim(); renderAll(
   };
 
   function setLoading(on){
-    el("rlSubmit").disabled = on;
-    el("rlSubmit").textContent = on ? "Procesando..." : "Solicitar leads";
+    el("#rlSubmit").disabled = on;
+    el("#rlSubmit").textContent = on ? "Procesando..." : "Solicitar leads";
   }
 
   function showStatus(msg, cls){
-    const s = el("rlStatus");
+    const s = el("#rlStatus");
     s.textContent = msg;
     s.className = "rl-status" + (cls ? " " + cls : "");
   }
 
   function renderResult(d){
-    const box = el("rlResult");
+    const box = el("#rlResult");
     let html = "<b>" + d.escritas + " filas escritas</b> en leads_master.csv";
     if (d.duplicadas > 0) html += " &middot; " + d.duplicadas + " duplicadas omitidas";
     if (d.conflictos_pipeline > 0) html += " &middot; " + d.conflictos_pipeline + " en otro pipeline (no escritas)";
