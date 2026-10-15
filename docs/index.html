@@ -388,12 +388,15 @@
   .npanel-head{padding:12px 14px 8px;font-size:11px;font-weight:600;color:var(--ink-3);
     letter-spacing:.04em;text-transform:uppercase;border-bottom:1px solid var(--border)}
   .npanel-empty{padding:14px;font-size:13px;color:var(--ink-3);text-align:center}
-  .nitem{display:flex;flex-direction:column;gap:3px;padding:10px 14px;border-bottom:1px solid var(--border);
+  .nitem-dismiss{margin-left:auto;flex:none;align-self:flex-start;background:none;border:none;color:var(--ink-3);font-size:16px;cursor:pointer;padding:0 2px;line-height:1}
+  .nitem-dismiss:hover{color:var(--red-text)}
+  .nitem{display:flex;flex-direction:row;align-items:flex-start;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border);
     cursor:pointer;transition:.1s}
   .nitem:last-child{border-bottom:none}
   .nitem:hover{background:var(--bg)}
+  .nitem-body{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}
   .nitem-co{font-size:13px;font-weight:600;color:var(--ink)}
-  .nitem-detail{font-size:11.5px;color:var(--ink-3);display:flex;gap:8px}
+  .nitem-detail{font-size:11.5px;color:var(--ink-3);display:flex;gap:8px;flex-wrap:wrap}
   .nitem-delay{color:var(--red-text);font-weight:600}
   .nitem-channel{font-weight:500}
 
@@ -642,9 +645,10 @@ const VERTICAL_OWNER_TO_USER_ID = {
 };
 function ownerFromVertical(v){ return VERTICAL_OWNER_TO_USER_ID[String(v||"").trim()] || "unassigned"; }
 
-// Pin helpers — persisted in sessionStorage so they survive re-renders but reset on new tab/session.
-function getPinned(){ try { return new Set(JSON.parse(sessionStorage.getItem("pinned_accounts")||"[]")); } catch(e){ return new Set(); } }
-function setPinned(set){ try { sessionStorage.setItem("pinned_accounts", JSON.stringify([...set])); } catch(e){} }
+// Pin helpers — persisted in localStorage keyed by user so they survive across sessions and tabs.
+function pinnedKey(){ return "pinned_accounts:" + (state ? state.user : "me"); }
+function getPinned(){ try { return new Set(JSON.parse(localStorage.getItem(pinnedKey())||"[]")); } catch(e){ return new Set(); } }
+function setPinned(set){ try { localStorage.setItem(pinnedKey(), JSON.stringify([...set])); } catch(e){} }
 function togglePin(co){ const p=getPinned(); if(p.has(co)) p.delete(co); else p.add(co); setPinned(p); }
 function isPinned(co){ return getPinned().has(co); }
 const STEPS = ["E1","LI","E2","E3"];
@@ -716,6 +720,18 @@ function compareLeads(a,b){
 function isClosed(c){
   return c.stage_text === "Replied" || c.stage_text === "Stopped";
 }
+// A contact is "bounced" when its draft has respondio=true and tipo_respuesta
+// matches a bounce indicator. Bounces are treated like closed contacts for
+// filtering purposes (no overdue timer, no notifications) but shown in a
+// separate "Bounced" section instead of Active.
+function isBounced(c){
+  const d = DRAFTS[c.id];
+  if (!d || !d.respondio) return false;
+  const tipo = (d.tipo_respuesta || d.estado || "").toLowerCase();
+  const estado = (d.estado || d.tipo_respuesta || "").toLowerCase();
+  return tipo.includes("bounce") || estado.includes("bounce");
+}
+function isInactive(c){ return isClosed(c) || isBounced(c); }
 // An account is "in sequence" once ANY of its contacts has verifiably
 // started the outreach sequence:
 //   stage >= 2  (FUP 1+) — at this point E1 was already sent by definition
@@ -724,7 +740,7 @@ function isClosed(c){
 //               hasn't been sent yet and the account stays in the cold pipeline
 function accountInSequence(l){
   return realContactsOf(l).some(c => {
-    if (isClosed(c)) return false;
+    if (isInactive(c)) return false;
     if (c.stage >= 2) return true;
     if (c.stage === 1) {
       const d = DRAFTS[c.id];
@@ -743,6 +759,15 @@ function accountAllClosed(l){
   const real = realContactsOf(l);
   return real.length > 0 && real.every(c => isClosed(c));
 }
+// True when every real contact is inactive (closed or bounced) and at least
+// one is bounced -- these accounts get moved to a separate "Bounced" section.
+function accountAllInactive(l){
+  const real = realContactsOf(l);
+  return real.length > 0 && real.every(c => isInactive(c));
+}
+function accountHasBounced(l){
+  return realContactsOf(l).some(c => isBounced(c));
+}
 function myAllLeads(){
   return LEADS.filter(l => l.user===state.user);
 }
@@ -753,10 +778,15 @@ function myOpenLeads(){
   // in the "Needs contact" view, not in the cold "My leads" pipeline.
   return myAllLeads().filter(l => realContactsOf(l).length > 0 && !accountInSequence(l) && !accountAllClosed(l));
 }
+// Accounts that are in sequence AND all inactive contacts are bounced (not just closed):
+// these show in a separate "Bounced" subsection of the In Sequence view.
+function myBouncedLeads(){
+  return myAllLeads().filter(l => accountInSequence(l) && accountAllInactive(l) && accountHasBounced(l));
+}
 // The mirror set for the "In sequence" tile/view: accounts with at least
-// one contact past stage 0 that isn't closed.
+// one contact past stage 0 that isn't inactive (closed/bounced).
 function myInSequenceLeads(){
-  return myAllLeads().filter(l => accountInSequence(l));
+  return myAllLeads().filter(l => accountInSequence(l) && !accountAllInactive(l));
 }
 // #2: an account is "Closed" only when ALL its real contacts are closed.
 // Closing one contact of a multi-contact account leaves it in its active
@@ -967,7 +997,7 @@ function effectiveTouchDate(c){
 function worstInFlowContact(l){
   let worst = null;
   for (const c of realContactsOf(l)) {
-    if ((c.stage > 0 || isManualOrLinkedIn(c)) && !isClosed(c)) {
+    if ((c.stage > 0 || isManualOrLinkedIn(c)) && !isInactive(c)) {
       const iso = effectiveTouchDate(c);
       const days = iso ? daysSinceTouch(iso) : 30;
       if (days === null) continue;
@@ -1013,7 +1043,7 @@ function followupContacts(predicate){
   const rows = [];
   for (const l of LEADS) {
     for (const c of realContactsOf(l)) {
-      if ((c.stage > 0 || isManualOrLinkedIn(c)) && !isClosed(c)) {
+      if ((c.stage > 0 || isManualOrLinkedIn(c)) && !isInactive(c)) {
         const iso = effectiveTouchDate(c);
         const days = iso ? daysSinceTouch(iso) : 30;
         if (days === null) continue;
@@ -1450,8 +1480,16 @@ function renderFollowups(){
   el("#followups").innerHTML = "";
 }
 
+function getDismissedNotifs(){ try { return new Set(JSON.parse(sessionStorage.getItem("dismissed_notifs")||"[]")); } catch(e){ return new Set(); } }
+function dismissNotif(key){ const s=getDismissedNotifs(); s.add(key); try { sessionStorage.setItem("dismissed_notifs", JSON.stringify([...s])); } catch(e){} }
+
 function renderNotifBell(){
-  const rows = followupContacts(d => d >= 1);
+  const allRows = followupContacts(d => d >= 1);
+  const dismissed = getDismissedNotifs();
+  const rows = allRows.filter(r => {
+    const key = (r.l.co||"") + ":" + (r.worst.c.id||"");
+    return !dismissed.has(key);
+  });
   const badge = el("#nbadge");
   const body  = el("#npanel-body");
   if (!badge || !body) return;
@@ -1466,25 +1504,35 @@ function renderNotifBell(){
   body.innerHTML = rows.slice(0, 30).map(r => {
     const c = r.worst.c;
     const co = (r.l.co || "").trim();
-    const name = (c.contact_name || "").trim();
+    const name = (c.contact_name || c.name || "").trim();
     const d = r.worst.delay;
+    const key = escAttr(co + ":" + (c.id||""));
     const channel = isManualOrLinkedIn(c)
       ? ((c.stage_text || "").toLowerCase().includes("linkedin") ? "LinkedIn" : "Manual")
       : "Email";
-    return `<div class="nitem" data-notif-co="${escAttr(co)}" data-notif-name="${escAttr(name)}">
-      <span class="nitem-co">${escAttr(co)}</span>
-      <span class="nitem-detail">
-        <span class="nitem-delay">${d} dia${d===1?"":"s"} vencido</span>
-        <span class="nitem-channel">${channel}</span>
-        ${name ? `<span>${escAttr(name)}</span>` : ""}
-      </span>
+    return `<div class="nitem" data-notif-co="${escAttr(co)}" data-notif-name="${escAttr(name)}" data-notif-key="${key}">
+      <div class="nitem-body">
+        <span class="nitem-co">${escAttr(co)}</span>
+        <span class="nitem-detail">
+          <span class="nitem-delay">${d} dia${d===1?"":"s"} vencido</span>
+          <span class="nitem-channel">${channel}</span>
+          ${name ? `<span>${escAttr(name)}</span>` : ""}
+        </span>
+      </div>
+      <button type="button" class="nitem-dismiss" data-notif-key="${key}" aria-label="Descartar">&times;</button>
     </div>`;
   }).join("");
+  body.querySelectorAll(".nitem-dismiss").forEach(btn => {
+    btn.addEventListener("click", e => {
+      e.stopPropagation();
+      dismissNotif(btn.dataset.notifKey);
+      renderNotifBell();
+    });
+  });
   body.querySelectorAll(".nitem").forEach(item => {
     item.addEventListener("click", () => {
       const co = item.dataset.notifCo;
       el("#npanel").classList.remove("open");
-      // Switch to Active view so the card is in the DOM, then scroll to it.
       const needsSwitch = state.view !== "insequence";
       if (needsSwitch) { state.view = "insequence"; renderAll(); }
       const scrollAndHighlight = () => {
@@ -2385,7 +2433,7 @@ function renderSections(){
   }
   const isActiveView = state.view === "insequence";
   const groups = groupByCategory(rows, l => l.cat);
-  el("#list").innerHTML = categorySectionsHtml(groups, l => {
+  let listHtml = categorySectionsHtml(groups, l => {
     const worst = isActiveView ? worstInFlowContact(l) : null;
     const html = cardHtml(l, worst);
     if (isActiveView && worst && worst.delay >= 1) {
@@ -2393,6 +2441,15 @@ function renderSections(){
     }
     return html;
   });
+  // Append a "Bounced" subsection when viewing "In sequence"
+  if (isActiveView) {
+    const bounced = myBouncedLeads();
+    if (bounced.length > 0) {
+      const bouncedCards = bounced.map(l => cardHtml(l, null)).join("");
+      listHtml += `<div class="section bounce-section"><div class="sechead2" style="border-color:rgba(200,30,58,0.25)"><span class="catdot" aria-hidden="true" style="background:var(--red-text)"></span><h3 style="color:var(--red-text)">&#9888; Bounced</h3><span class="seccount">${bounced.length}</span></div><div class="list" role="list">${bouncedCards}</div></div>`;
+    }
+  }
+  el("#list").innerHTML = listHtml;
   el("#list").querySelectorAll(".contactsel").forEach(sel=>{
     sel.onchange = () => { state.activeContact[sel.dataset.co] = parseInt(sel.value,10); renderSections(); };
   });
