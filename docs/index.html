@@ -726,9 +726,9 @@ function isClosed(c){
 // separate "Bounced" section instead of Active.
 function isBounced(c){
   const d = DRAFTS[c.id];
-  if (!d || !d.respondio) return false;
-  const tipo = (d.tipo_respuesta || d.estado || "").toLowerCase();
-  const estado = (d.estado || d.tipo_respuesta || "").toLowerCase();
+  if (!d) return false;
+  const tipo = (d.tipo_respuesta || "").toLowerCase();
+  const estado = (d.estado || "").toLowerCase();
   return tipo.includes("bounce") || estado.includes("bounce");
 }
 function isInactive(c){ return isClosed(c) || isBounced(c); }
@@ -759,12 +759,6 @@ function accountAllClosed(l){
   const real = realContactsOf(l);
   return real.length > 0 && real.every(c => isClosed(c));
 }
-// True when every real contact is inactive (closed or bounced) and at least
-// one is bounced -- these accounts get moved to a separate "Bounced" section.
-function accountAllInactive(l){
-  const real = realContactsOf(l);
-  return real.length > 0 && real.every(c => isInactive(c));
-}
 function accountHasBounced(l){
   return realContactsOf(l).some(c => isBounced(c));
 }
@@ -778,15 +772,13 @@ function myOpenLeads(){
   // in the "Needs contact" view, not in the cold "My leads" pipeline.
   return myAllLeads().filter(l => realContactsOf(l).length > 0 && !accountInSequence(l) && !accountAllClosed(l));
 }
-// Accounts that are in sequence AND all inactive contacts are bounced (not just closed):
-// these show in a separate "Bounced" subsection of the In Sequence view.
+// Accounts in sequence with at least one bounced contact → "Bounced" subsection.
 function myBouncedLeads(){
-  return myAllLeads().filter(l => accountInSequence(l) && accountAllInactive(l) && accountHasBounced(l));
+  return myAllLeads().filter(l => accountInSequence(l) && accountHasBounced(l));
 }
-// The mirror set for the "In sequence" tile/view: accounts with at least
-// one contact past stage 0 that isn't inactive (closed/bounced).
+// Active in-sequence accounts: in sequence but NO bounced contact.
 function myInSequenceLeads(){
-  return myAllLeads().filter(l => accountInSequence(l) && !accountAllInactive(l));
+  return myAllLeads().filter(l => accountInSequence(l) && !accountHasBounced(l));
 }
 // #2: an account is "Closed" only when ALL its real contacts are closed.
 // Closing one contact of a multi-contact account leaves it in its active
