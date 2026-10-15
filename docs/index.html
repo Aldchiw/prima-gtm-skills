@@ -81,6 +81,7 @@
   .tile .l{font-size:11px;color:var(--ink-3);margin-top:8px;font-weight:500}
   .tile.warm .n{color:var(--red)}
   .tile.fresh .n{color:var(--good)}
+  .tile.bounce .n{color:var(--red-text)}
   .tile.on{background:var(--ink);border-color:var(--ink)}
   .tile.on .n,.tile.on .l{color:#fff}
 
@@ -772,11 +773,11 @@ function myOpenLeads(){
   // in the "Needs contact" view, not in the cold "My leads" pipeline.
   return myAllLeads().filter(l => realContactsOf(l).length > 0 && !accountInSequence(l) && !accountAllClosed(l));
 }
-// Accounts in sequence with at least one bounced contact → "Bounced" subsection.
+// Accounts in sequence with at least one bounced contact → "Bounced" view.
 function myBouncedLeads(){
   return myAllLeads().filter(l => accountInSequence(l) && accountHasBounced(l));
 }
-// Active in-sequence accounts: in sequence but NO bounced contact.
+// Active in-sequence: in sequence but NO bounced contact.
 function myInSequenceLeads(){
   return myAllLeads().filter(l => accountInSequence(l) && !accountHasBounced(l));
 }
@@ -812,6 +813,7 @@ function myValueChainLeads(){
 // itself gets overridden.
 function viewBaseLeads(){
   if (state.view === "insequence") return myInSequenceLeads();
+  if (state.view === "bounced") return myBouncedLeads();
   if (state.view === "closed") return myClosedLeads();
   if (state.view === "needscontact") return myNeedsContactLeads();
   return myOpenLeads();
@@ -901,6 +903,7 @@ function renderSort(){
 function renderTiles(){
   const mine = myOpenLeads();
   const mineSeq = myInSequenceLeads();
+  const mineBounced = myBouncedLeads();
   const activeContactCount = followupContacts(d => d >= 1).length || mineSeq.length;
   const mineClosed = myClosedLeads();
   const mineNeedsContact = myNeedsContactLeads();
@@ -910,18 +913,24 @@ function renderTiles(){
   const newsfeedActive = state.view==="newsfeed";
   const needsContactActive = state.view==="needscontact";
   const seqActive = state.view==="insequence";
+  const bouncedActive = state.view==="bounced";
   const closedActive = state.view==="closed";
+  const hasBounced = mineBounced.length > 0;
   // 5 tiles with the warm tile shown, 4 without it (base .tiles is already
   // a 4-column grid, so only the warm-shown case needs the override).
-  el("#tiles").classList.toggle("cols-5", SHOW_WARM_INTROS);
+  el("#tiles").classList.toggle("cols-5", SHOW_WARM_INTROS || hasBounced);
   const warmTile = SHOW_WARM_INTROS
     ? `<button type="button" class="tile warm ${state.warmOnly?'on':''}" data-t="warm" aria-pressed="${state.warmOnly}"><div class="n">${w}</div><div class="l">Warm intros</div></button>`
+    : "";
+  const bouncedTile = hasBounced
+    ? `<button type="button" class="tile bounce ${bouncedActive?'on':''}" data-t="bounced" aria-pressed="${bouncedActive}"><div class="n">${mineBounced.length}</div><div class="l">Bounced</div></button>`
     : "";
   el("#tiles").innerHTML = `
     <button type="button" class="tile ${allActive?'on':''}" data-t="all" aria-pressed="${allActive}"><div class="n">${mine.length}</div><div class="l">My leads</div></button>
     <button type="button" class="tile fresh ${newsfeedActive?'on':''}" data-t="fresh" aria-pressed="${newsfeedActive}"><div class="n">${f}</div><div class="l">Fresh signals</div></button>
     ${warmTile}
     <button type="button" class="tile ${seqActive?'on':''}" data-t="seq" aria-pressed="${seqActive}"><div class="n">${activeContactCount}</div><div class="l">Active</div></button>
+    ${bouncedTile}
     <button type="button" class="tile ${closedActive?'on':''}" data-t="closed" aria-pressed="${closedActive}"><div class="n">${mineClosed.length}</div><div class="l">Closed</div></button>`;
   el("#tiles").querySelectorAll(".tile").forEach(t=>t.onclick=()=>{
     const k = t.dataset.t;
@@ -929,6 +938,7 @@ function renderTiles(){
     else if(k==="fresh"){ state.view = state.view==="newsfeed" ? "pipeline" : "newsfeed"; state.warmOnly=false; }
     else if(k==="warm"){ const next=!state.warmOnly; state.warmOnly=next; }
     else if(k==="seq"){ state.view = state.view==="insequence" ? "pipeline" : "insequence"; state.warmOnly=false; }
+    else if(k==="bounced"){ state.view = state.view==="bounced" ? "pipeline" : "bounced"; state.warmOnly=false; }
     else if(k==="closed"){ state.view = state.view==="closed" ? "pipeline" : "closed"; state.warmOnly=false; }
     renderAll();
   });
@@ -2433,14 +2443,6 @@ function renderSections(){
     }
     return html;
   });
-  // Append a "Bounced" subsection when viewing "In sequence"
-  if (isActiveView) {
-    const bounced = myBouncedLeads();
-    if (bounced.length > 0) {
-      const bouncedCards = bounced.map(l => cardHtml(l, null)).join("");
-      listHtml += `<div class="section bounce-section"><div class="sechead2" style="border-color:rgba(200,30,58,0.25)"><span class="catdot" aria-hidden="true" style="background:var(--red-text)"></span><h3 style="color:var(--red-text)">&#9888; Bounced</h3><span class="seccount">${bounced.length}</span></div><div class="list" role="list">${bouncedCards}</div></div>`;
-    }
-  }
   el("#list").innerHTML = listHtml;
   el("#list").querySelectorAll(".contactsel").forEach(sel=>{
     sel.onchange = () => { state.activeContact[sel.dataset.co] = parseInt(sel.value,10); renderSections(); };
