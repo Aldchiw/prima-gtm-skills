@@ -781,10 +781,23 @@ function accountAllInactive(l){
   const real = realContactsOf(l);
   return real.length > 0 && real.every(c => isInactive(c));
 }
-function myBouncedLeads(){
-  return myAllLeads().filter(l => accountInSequence(l) && accountAllInactive(l) && accountHasBounced(l));
+// Like accountInSequence but ignores inactive status — needed to route
+// all-bounced accounts (accountInSequence returns false when every contact
+// is inactive, so they'd never qualify otherwise).
+function accountWasInSequence(l){
+  return realContactsOf(l).some(c => {
+    if (c.stage >= 2) return true;
+    if (c.stage === 1) {
+      const d = DRAFTS[c.id];
+      return d && ["SENT","MANUAL"].includes((d.status || "").toUpperCase());
+    }
+    return false;
+  });
 }
-// Active in-sequence: in sequence and NOT all-inactive.
+function myBouncedLeads(){
+  return myAllLeads().filter(l => accountWasInSequence(l) && accountAllInactive(l) && accountHasBounced(l));
+}
+// Active in-sequence: in sequence and NOT all-inactive-bounced.
 function myInSequenceLeads(){
   return myAllLeads().filter(l => accountInSequence(l) && !(accountAllInactive(l) && accountHasBounced(l)));
 }
