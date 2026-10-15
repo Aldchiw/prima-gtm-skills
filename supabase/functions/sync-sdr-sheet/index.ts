@@ -245,9 +245,10 @@ function parseRows(values: string[][]) {
     const status = (row[iStatus] || "").trim().toUpperCase();
     if (!correo.includes("@")) continue;
 
-    // Touch sync (existing — only SENT/MANUAL rows)
+    // Touch sync (existing — only SENT/MANUAL rows with a valid ISO date)
     const fecha = iFecha >= 0 ? (row[iFecha] || "").trim().slice(0, 10) : "";
-    if ((status === "SENT" || status === "MANUAL") && fecha) touchRows.push({ correo, fecha });
+    if ((status === "SENT" || status === "MANUAL") && /^\d{4}-\d{2}-\d{2}$/.test(fecha))
+      touchRows.push({ correo, fecha });
 
     // Infer stage from Sheet columns (highest wins)
     const respondio  = iResp  >= 0 ? (row[iResp]  || "").trim().toUpperCase() === "TRUE" : false;
