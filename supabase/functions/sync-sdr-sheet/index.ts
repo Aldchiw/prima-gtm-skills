@@ -80,7 +80,6 @@ function parsePrimaLeads(values: string[][]) {
   const iEmail    = h.indexOf("contact_email");
   const iEStatus  = h.indexOf("email_status");
   const iStage    = h.indexOf("stage");
-  const iOwner    = h.indexOf("assigned_owner");
   const iTStatus  = h.indexOf("team_status");
   const iNotes    = h.indexOf("notes");
   const iExcluded = h.indexOf("excluded");
@@ -93,20 +92,18 @@ function parsePrimaLeads(values: string[][]) {
     const name = (row[iName] || "").trim();
     if (!name) continue;
 
-    // skip excluded accounts
     const excluded = iExcluded >= 0 ? (row[iExcluded] || "").trim().toLowerCase() : "";
     if (excluded === "yes" || excluded === "true" || excluded === "sí") continue;
 
     if (!accountMap[name]) {
       accountMap[name] = {
         account_name:     name,
-        domain:           iDomain  >= 0 ? (row[iDomain]  || "").trim() : "",
-        company_category: iCat     >= 0 ? (row[iCat]     || "").trim() : "",
-        priority:         iPrio    >= 0 ? (row[iPrio]     || "").trim() : "",
-        signal_detail:    iSigD    >= 0 ? (row[iSigD]    || "").trim() : "",
-        signal_url:       iSigU    >= 0 ? (row[iSigU]    || "").trim() : "",
+        domain:           iDomain  >= 0 ? (row[iDomain]  || "").trim() || null : null,
+        company_category: iCat     >= 0 ? (row[iCat]     || "").trim() || null : null,
+        priority:         iPrio    >= 0 ? (row[iPrio]     || "").trim() || null : null,
+        signal_detail:    iSigD    >= 0 ? (row[iSigD]    || "").trim() || null : null,
+        signal_url:       iSigU    >= 0 ? (row[iSigU]    || "").trim() || null : null,
         signal_date:      iSigDate >= 0 ? (row[iSigDate] || "").trim().slice(0, 10) || null : null,
-        source:           "engine",
       };
     }
 
@@ -115,17 +112,16 @@ function parsePrimaLeads(values: string[][]) {
     if (!contactName && !email) continue;
 
     contactRows.push({
-      account_name:   name,
-      contact_name:   contactName,
-      contact_title:  iCTitle  >= 0 ? (row[iCTitle]  || "").trim() : "",
-      contact_email:  email || null,
-      email_status:   iEStatus >= 0 ? (row[iEStatus] || "").trim() : "",
-      linkedin_url:   iLinked  >= 0 ? (row[iLinked]  || "").trim() : "",
-      priority_tier:  iPTier   >= 0 ? (row[iPTier]   || "").trim() : "",
-      stage:          iStage   >= 0 ? (row[iStage]   || "").trim() || "Not Contacted" : "Not Contacted",
-      assigned_owner: iOwner   >= 0 ? (row[iOwner]   || "").trim() : "",
-      team_status:    iTStatus >= 0 ? (row[iTStatus] || "").trim() : "",
-      notes:          iNotes   >= 0 ? (row[iNotes]   || "").trim() : "",
+      account_name:  name,
+      contact_name:  contactName || null,
+      contact_title: iCTitle  >= 0 ? (row[iCTitle]  || "").trim() || null : null,
+      contact_email: email || null,
+      email_status:  iEStatus >= 0 ? (row[iEStatus] || "").trim() || null : null,
+      linkedin_url:  iLinked  >= 0 ? (row[iLinked]  || "").trim() || null : null,
+      priority_tier: iPTier   >= 0 ? (row[iPTier]   || "").trim() || null : null,
+      stage:         "Not Contacted",
+      team_status:   iTStatus >= 0 ? (row[iTStatus] || "").trim() || null : null,
+      notes:         iNotes   >= 0 ? (row[iNotes]   || "").trim() || null : null,
     });
   }
 
@@ -136,48 +132,65 @@ async function syncPrimaLeads(supabase: any, token: string) {
   const values = await readPrimaLeads(token);
   const { accounts, contacts } = parsePrimaLeads(values);
 
-  // Upsert accounts
-  let accountsUpserted = 0;
-  if (accounts.length) {
-    const { error } = await supabase
-      .from("accounts")
-      .upsert(accounts, { onConflict: "account_name", ignoreDuplicates: false });
-    if (error) throw new Error("accounts upsert: " + error.message);
-    accountsUpserted = accounts.length;
-  }
-
-  // Build account_name → id map
-  const { data: accRows } = await supabase
-    .from("accounts")
-    .select("id, account_name");
+  // Fetch existing accounts and contacts to avoid duplicate inserts
+  const { data: existingAccounts } = await supabase
+    .from("accounts").select("id, account_name");
   const nameToId: Record<string, string> = {};
-  for (const a of (accRows || [])) nameToId[a.account_name] = a.id;
-
-  // Upsert contacts (only those with an email — needed for draft linking)
-  let contactsUpserted = 0;
-  const contactsWithEmail = contacts.filter((c) => c.contact_email);
-  if (contactsWithEmail.length) {
-    const upserts = contactsWithEmail.map((c) => ({
-      account_id:     nameToId[c.account_name] || null,
-      contact_name:   c.contact_name,
-      contact_title:  c.contact_title,
-      contact_email:  c.contact_email,
-      email_status:   c.email_status || null,
-      linkedin_url:   c.linkedin_url || null,
-      priority_tier:  c.priority_tier || null,
-      stage:          c.stage,
-      assigned_owner: c.assigned_owner || null,
-      team_status:    c.team_status || null,
-      notes:          c.notes || null,
-    }));
-    const { error } = await supabase
-      .from("contacts")
-      .upsert(upserts, { onConflict: "contact_email", ignoreDuplicates: false });
-    if (error) throw new Error("contacts upsert: " + error.message);
-    contactsUpserted = upserts.length;
+  const existingNames = new Set<string>();
+  for (const a of (existingAccounts || [])) {
+    nameToId[a.account_name] = a.id;
+    existingNames.add(a.account_name);
   }
 
-  return { accountsUpserted, contactsUpserted };
+  // Insert only new accounts
+  const newAccounts = accounts.filter((a) => !existingNames.has(a.account_name));
+  let accountsInserted = 0;
+  if (newAccounts.length) {
+    const { error } = await supabase.from("accounts").insert(newAccounts);
+    if (error) throw new Error("accounts insert: " + error.message);
+    accountsInserted = newAccounts.length;
+
+    // Refresh nameToId with newly inserted accounts
+    const { data: fresh } = await supabase
+      .from("accounts").select("id, account_name").in("account_name", newAccounts.map((a: any) => a.account_name));
+    for (const a of (fresh || [])) nameToId[a.account_name] = a.id;
+  }
+
+  // Fetch existing contact emails
+  const { data: existingContacts } = await supabase
+    .from("contacts").select("contact_email");
+  const existingEmails = new Set<string>(
+    (existingContacts || []).map((c: any) => (c.contact_email || "").toLowerCase())
+  );
+
+  // Insert only new contacts that have an email and don't already exist
+  const newContacts = contacts
+    .filter((c) => c.contact_email && !existingEmails.has(c.contact_email.toLowerCase()))
+    .map((c) => ({
+      account_id:    nameToId[c.account_name] || null,
+      contact_name:  c.contact_name,
+      contact_title: c.contact_title,
+      contact_email: c.contact_email,
+      email_status:  c.email_status,
+      linkedin_url:  c.linkedin_url,
+      priority_tier: c.priority_tier,
+      stage:         c.stage,
+      team_status:   c.team_status,
+      notes:         c.notes,
+    }));
+
+  let contactsInserted = 0;
+  if (newContacts.length) {
+    // Insert in batches of 100 to avoid payload limits
+    for (let i = 0; i < newContacts.length; i += 100) {
+      const batch = newContacts.slice(i, i + 100);
+      const { error } = await supabase.from("contacts").insert(batch);
+      if (error) throw new Error("contacts insert batch: " + error.message);
+      contactsInserted += batch.length;
+    }
+  }
+
+  return { accountsInserted, contactsInserted };
 }
 
 function col(header: string[], name: string) {
