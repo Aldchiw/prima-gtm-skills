@@ -773,13 +773,20 @@ function myOpenLeads(){
   // in the "Needs contact" view, not in the cold "My leads" pipeline.
   return myAllLeads().filter(l => realContactsOf(l).length > 0 && !accountInSequence(l) && !accountAllClosed(l));
 }
-// Accounts in sequence with at least one bounced contact → "Bounced" view.
-function myBouncedLeads(){
-  return myAllLeads().filter(l => accountInSequence(l) && accountHasBounced(l));
+// An account goes to "Bounced" only when ALL its real contacts are inactive
+// (bounced or closed) and at least one is a bounce. If any active contact
+// remains, the account stays in "Active" (the bounced contact is just skipped
+// for timers/notifications via isInactive).
+function accountAllInactive(l){
+  const real = realContactsOf(l);
+  return real.length > 0 && real.every(c => isInactive(c));
 }
-// Active in-sequence: in sequence but NO bounced contact.
+function myBouncedLeads(){
+  return myAllLeads().filter(l => accountInSequence(l) && accountAllInactive(l) && accountHasBounced(l));
+}
+// Active in-sequence: in sequence and NOT all-inactive.
 function myInSequenceLeads(){
-  return myAllLeads().filter(l => accountInSequence(l) && !accountHasBounced(l));
+  return myAllLeads().filter(l => accountInSequence(l) && !(accountAllInactive(l) && accountHasBounced(l)));
 }
 // #2: an account is "Closed" only when ALL its real contacts are closed.
 // Closing one contact of a multi-contact account leaves it in its active
