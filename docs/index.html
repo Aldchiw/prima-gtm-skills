@@ -1266,8 +1266,7 @@ async function generateLinkedInMsgs(contact){
   const lead = LEADS.find(l => realContactsOf(l).some(c => c.id === contact.id));
   const signal = (lead && lead.signal && lead.signal.type === "news") ? lead.signal.text : "";
   const signal_url = (lead && lead.signal) ? lead.signal.url : "";
-  LI_MSGS[contact.id] = { loading: true };
-  renderSections(); renderFollowups();
+  LI_MSGS[contact.id] = { loading: true, contact };
   try {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/generate-linkedin-msgs`, {
       method: "POST",
@@ -1284,9 +1283,9 @@ async function generateLinkedInMsgs(contact){
     if (!j.ok) throw new Error(j.error || "Error al generar mensajes");
     LI_MSGS[contact.id] = { connect_note: j.connect_note, dm_msg: j.dm_msg };
   } catch(e) {
-    LI_MSGS[contact.id] = { error: e.message };
+    LI_MSGS[contact.id] = { error: e.message, contact };
   }
-  renderSections(); renderFollowups();
+  renderSections(); renderFollowups(); renderTiles();
 }
 
 async function startFromPicker(wrap, contact){
@@ -2223,6 +2222,16 @@ document.addEventListener("click", e => {
   renderSections();
 });
 
+// Wire LinkedIn retry button
+document.addEventListener("click", e => {
+  const retryBtn = e.target.closest(".li-retry");
+  if (retryBtn) {
+    const contactId = retryBtn.dataset.liRetry;
+    const contact = Object.values(LI_MSGS).find(m => m.contact && m.contact.id === contactId)?.contact;
+    if (contact) { delete LI_MSGS[contactId]; generateLinkedInMsgs(contact); }
+  }
+});
+
 // Wire LinkedIn copy buttons
 document.addEventListener("click", e => {
   const btn = e.target.closest(".li-copy");
@@ -2251,7 +2260,7 @@ function liMsgBlockHtml(contact){
   if (m.error) {
     return `<div class="li-msgs">
       <div class="li-msgs-head">${liIco} LinkedIn</div>
-      <div class="li-msgs-loading" style="color:var(--red-text)">${escAttr(m.error)}</div>
+      <div class="li-msgs-loading" style="color:var(--red-text)">Error al generar mensajes. <button type="button" class="li-retry" data-li-retry="${escAttr(contact.id)}" style="font-size:11px;padding:2px 8px;border-radius:5px;border:1px solid var(--border);background:var(--surface);color:var(--ink-2);cursor:pointer;margin-left:4px">Reintentar</button></div>
     </div>`;
   }
   const charCount = (m.connect_note || "").length;
