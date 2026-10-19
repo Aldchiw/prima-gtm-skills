@@ -1296,6 +1296,11 @@ async function startFromPicker(wrap, contact){
   const emailChecked = wrap.querySelector(".pick-email")?.checked ?? false;
   const liChecked   = wrap.querySelector(".pick-li")?.checked   ?? false;
   const note = wrap.querySelector(".startpick-note");
+  if (!contact || !contact.id) {
+    if (note) { note.textContent = "Error: contacto no encontrado"; note.className = "startpick-note err"; }
+    alert("Start sequence error: contact is null or has no id.\nRevisa la consola (F12) para más detalles.");
+    return;
+  }
   if (!emailChecked && !liChecked) {
     if (note) { note.textContent = "Selecciona al menos uno"; note.className = "startpick-note err"; }
     return;
@@ -1303,19 +1308,26 @@ async function startFromPicker(wrap, contact){
   if (liChecked) {
     const li = normalizeUrl(contact.linkedin);
     if (li) window.open(li, "_blank", "noopener");
-    // Kick off LinkedIn message generation (async, shows loading state)
     generateLinkedInMsgs(contact);
   }
-  // Enum only has Email and LinkedIn — when both selected, Email takes priority
   const channel = emailChecked ? "Email" : "LinkedIn";
   const stageText = `First Touch (${channel})`;
   const touchedAt = new Date().toISOString();
   wrap.querySelectorAll("button").forEach(b => { b.disabled = true; });
-  const { error } = await sb.from("contacts").update({ stage: stageText, last_touch_at: touchedAt }).eq("id", contact.id);
-  if (error) {
-    console.error("[startFromPicker] Supabase update error:", error, "contact.id:", contact?.id, "stageText:", stageText);
+  try {
+    const { error } = await sb.from("contacts").update({ stage: stageText, last_touch_at: touchedAt }).eq("id", contact.id);
+    if (error) {
+      console.error("[startFromPicker] Supabase error:", error, "id:", contact.id, "stage:", stageText);
+      wrap.querySelectorAll("button").forEach(b => { b.disabled = false; });
+      if (note) { note.textContent = `Error: ${error.message || error.code || "Save error"}`; note.className = "startpick-note err"; }
+      alert(`Start sequence FALLÓ:\n${error.message || JSON.stringify(error)}\n\ncontact.id: ${contact.id}\nstage: ${stageText}`);
+      return;
+    }
+  } catch(e) {
+    console.error("[startFromPicker] Exception:", e, "id:", contact.id);
     wrap.querySelectorAll("button").forEach(b => { b.disabled = false; });
-    if (note) { note.textContent = `Error: ${error.message || error.code || "Save error"}`; note.className = "startpick-note err"; }
+    if (note) { note.textContent = `Error: ${e.message}`; note.className = "startpick-note err"; }
+    alert(`Start sequence EXCEPCIÓN:\n${e.message}\n\ncontact.id: ${contact.id}`);
     return;
   }
   contact.stage = stageFromText(stageText);
@@ -2301,9 +2313,24 @@ function cardHtml(l, followupWorst){
   const worst = followupWorst || worstInFlowContact(l);
   const badge = followupWorst ? followupTagHtml(followupWorst) : "";
   const closedBadge = closedContactsBadgeHtml(l);
-  const footer = worst
-    ? (followupWorst ? doneButtonHtml(worst) : inSequenceFooterHtml(worst))
-    : (active && active.id && active.stage === 0 ? startSequenceHtml(active) : "");
+  // Footer reflects the SELECTED contact (active), not always the worst-in-flow.
+  // This lets switching the dropdown from Dawn→Zac show Start sequence for Zac.
+  let footer;
+  if (followupWorst) {
+    footer = doneButtonHtml(followupWorst);
+  } else if (active && active.id) {
+    if (active.stage === 0) {
+      footer = startSequenceHtml(active);
+    } else if (!isClosed(active)) {
+      const _activeDays = active.last_touch_at ? daysSinceTouch(active.last_touch_at) : null;
+      const _activeDelay = (_activeDays !== null) ? _activeDays - 7 : 0;
+      footer = inSequenceFooterHtml({ c: active, days: _activeDays ?? 0, delay: _activeDelay });
+    } else {
+      footer = "";
+    }
+  } else {
+    footer = "";
+  }
   // Only an in-flow card (has a worst-in-flow contact) opens the touch modal
   // on click -- cold-pipeline/closed cards skip the "clickable" class and
   // data-contact-id, so the delegated click handler below ignores them.
