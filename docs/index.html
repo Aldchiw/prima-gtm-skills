@@ -1304,7 +1304,8 @@ async function startFromPicker(wrap, contact){
     // Kick off LinkedIn message generation (async, shows loading state)
     generateLinkedInMsgs(contact);
   }
-  const channel = (emailChecked && liChecked) ? "Email + LinkedIn" : (emailChecked ? "Email" : "LinkedIn");
+  // Enum only has Email and LinkedIn — when both selected, Email takes priority
+  const channel = emailChecked ? "Email" : "LinkedIn";
   const stageText = `First Touch (${channel})`;
   const touchedAt = new Date().toISOString();
   wrap.querySelectorAll("button").forEach(b => { b.disabled = true; });
