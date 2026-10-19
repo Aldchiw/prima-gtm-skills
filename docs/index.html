@@ -1298,7 +1298,6 @@ async function startFromPicker(wrap, contact){
   const note = wrap.querySelector(".startpick-note");
   if (!contact || !contact.id) {
     if (note) { note.textContent = "Error: contacto no encontrado"; note.className = "startpick-note err"; }
-    alert("Start sequence error: contact is null or has no id.\nRevisa la consola (F12) para más detalles.");
     return;
   }
   if (!emailChecked && !liChecked) {
@@ -1314,8 +1313,6 @@ async function startFromPicker(wrap, contact){
   const stageText = `First Touch (${channel})`;
   const touchedAt = new Date().toISOString();
   wrap.querySelectorAll("button").forEach(b => { b.disabled = true; });
-  if (note) { note.textContent = `Enviando… id:${contact.id.slice(0,8)}`; note.className = "startpick-note"; }
-  let _httpStatus = 0, _respBody = null;
   try {
     const _resp = await fetch(
       `${SUPABASE_URL}/rest/v1/contacts?id=eq.${encodeURIComponent(contact.id)}`,
@@ -1330,27 +1327,16 @@ async function startFromPicker(wrap, contact){
         body: JSON.stringify({ stage: stageText, last_touch_at: touchedAt }),
       }
     );
-    _httpStatus = _resp.status;
-    _respBody = await _resp.json().catch(() => null);
-    console.log("[startFromPicker] PATCH", _httpStatus, _respBody, "id:", contact.id);
-    if (!_resp.ok) {
-      const msg = (_respBody && (_respBody.message || _respBody.error || JSON.stringify(_respBody))) || `HTTP ${_httpStatus}`;
+    const _body = await _resp.json().catch(() => null);
+    if (!_resp.ok || !Array.isArray(_body) || _body.length === 0) {
+      const msg = (_body && (_body.message || _body.error)) || (_resp.ok ? "0 filas actualizadas" : `HTTP ${_resp.status}`);
       wrap.querySelectorAll("button").forEach(b => { b.disabled = false; });
-      if (note) { note.textContent = `Error ${_httpStatus}: ${msg}`; note.className = "startpick-note err"; }
-      alert(`Start sequence FALLÓ (HTTP ${_httpStatus}):\n${msg}\n\ncontact.id: ${contact.id}\nstage: ${stageText}`);
-      return;
-    }
-    if (!Array.isArray(_respBody) || _respBody.length === 0) {
-      wrap.querySelectorAll("button").forEach(b => { b.disabled = false; });
-      if (note) { note.textContent = `Error: 0 filas actualizadas (RLS?)  id:${contact.id.slice(0,8)}`; note.className = "startpick-note err"; }
-      alert(`Start sequence: Supabase devolvió 0 filas actualizadas.\n\nEsto es usualmente un problema de RLS — el anon key no tiene permiso para actualizar este contacto.\n\ncontact.id: ${contact.id}\nstage: ${stageText}\nRespuesta: ${JSON.stringify(_respBody)}`);
+      if (note) { note.textContent = `Error: ${msg}`; note.className = "startpick-note err"; }
       return;
     }
   } catch(e) {
-    console.error("[startFromPicker] Exception:", e, "id:", contact.id);
     wrap.querySelectorAll("button").forEach(b => { b.disabled = false; });
     if (note) { note.textContent = `Error: ${e.message}`; note.className = "startpick-note err"; }
-    alert(`Start sequence EXCEPCIÓN de red:\n${e.message}\n\ncontact.id: ${contact.id}`);
     return;
   }
   contact.stage = stageFromText(stageText);
