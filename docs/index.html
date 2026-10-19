@@ -614,7 +614,7 @@ const LINKEDIN_STEP = true;
 // #1: render each real contact on an account as its OWN row (own cadence,
 // own Start/Done/Stopped, own Comments) instead of one active contact + a
 // selector. Pipeline/in-sequence/closed only; Followups keeps single-worst.
-const PER_CONTACT_ROWS = false;
+const PER_CONTACT_ROWS = true;
 
 /* DATA:START — generado por scripts/generate-cockpit.js, no editar a mano */
 const CATS = {
@@ -1313,8 +1313,9 @@ async function startFromPicker(wrap, contact){
   wrap.querySelectorAll("button").forEach(b => { b.disabled = true; });
   const { error } = await sb.from("contacts").update({ stage: stageText, last_touch_at: touchedAt }).eq("id", contact.id);
   if (error) {
+    console.error("[startFromPicker] Supabase update error:", error, "contact.id:", contact?.id, "stageText:", stageText);
     wrap.querySelectorAll("button").forEach(b => { b.disabled = false; });
-    if (note) { note.textContent = "Save error"; note.className = "startpick-note err"; }
+    if (note) { note.textContent = `Error: ${error.message || error.code || "Save error"}`; note.className = "startpick-note err"; }
     return;
   }
   contact.stage = stageFromText(stageText);
