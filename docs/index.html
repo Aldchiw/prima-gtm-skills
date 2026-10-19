@@ -766,6 +766,8 @@ function accountHasBounced(l){
   return realContactsOf(l).some(c => isBounced(c));
 }
 function myAllLeads(){
+  // Admin en vista "me" ve todos los leads (incluyendo los reasignados)
+  if (isAdmin() && state.user === "me") return LEADS;
   return LEADS.filter(l => l.user===state.user);
 }
 // The "cold" pipeline set: this user's accounts, minus anything already in
