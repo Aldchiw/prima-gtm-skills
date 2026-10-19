@@ -2227,6 +2227,12 @@ document.addEventListener("click", e => {
       const { error } = await sb.from("accounts").update({ assigned_user_id: newUserId }).eq("account_name", accountName);
       if (error) throw error;
       l.user = newUserId;
+      // Sync remitente in SDR Sheet (fire-and-forget, only updates @manufacturing rows)
+      fetch(`${SUPABASE_URL}/functions/v1/update-remitente`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ empresa: accountName, new_user_id: newUserId }),
+      }).catch(() => {});
       note.textContent = "Reasignado correctamente";
       setTimeout(() => { modal.remove(); renderAll(); }, 700);
     } catch(err) {
