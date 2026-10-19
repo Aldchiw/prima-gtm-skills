@@ -1284,10 +1284,12 @@ async function generateLinkedInMsgs(contact){
     const j = await res.json();
     if (!j.ok) throw new Error(j.error || "Error al generar mensajes");
     LI_MSGS[contact.id] = { connect_note: j.connect_note, dm_msg: j.dm_msg };
+    renderSections(); renderFollowups(); renderTiles();
   } catch(e) {
+    // On error: just store state, don't re-render — startFromPicker owns the re-render
+    // and firing here would race with the stage update (showing "Not started" again)
     LI_MSGS[contact.id] = { error: e.message, contact };
   }
-  renderSections(); renderFollowups(); renderTiles();
 }
 
 async function startFromPicker(wrap, contact){
