@@ -736,16 +736,18 @@ function isInactive(c){ return isClosed(c) || isBounced(c); }
 // An account is "in sequence" once ANY of its contacts has verifiably
 // started the outreach sequence:
 //   stage >= 2  (FUP 1+) — at this point E1 was already sent by definition
-//   stage == 1  (First Touch) — only counts when the draft is SENT or MANUAL,
-//               i.e. the email actually went out; a PENDING draft means it
-//               hasn't been sent yet and the account stays in the cold pipeline
+//   stage == 1  (First Touch Email) — only counts when the draft is SENT or MANUAL
+//   stage == 1  (First Touch LinkedIn) — counts immediately; no email draft to check
 function accountInSequence(l){
   return realContactsOf(l).some(c => {
     if (isInactive(c)) return false;
     if (c.stage >= 2) return true;
     if (c.stage === 1) {
+      const stageText = (c.stage_text || "");
+      // LinkedIn touch counts as in-sequence without needing an email draft
+      if (stageText.includes("LinkedIn") && !stageText.includes("Email")) return true;
       const d = DRAFTS[c.id];
-      return d && ["SENT","MANUAL"].includes((d.status || "").toUpperCase());
+      return d && ["SENT","MANUAL","SEND"].includes((d.status || "").toUpperCase());
     }
     return false;
   });
