@@ -2749,7 +2749,8 @@ el("#leadsearch").oninput = (e) => { state.q = e.target.value.trim(); renderAll(
     const empresas = raw.split("\n").map(s => s.trim()).filter(Boolean);
     const context = (el("#rlContext").value || "").trim();
 
-    const { data: { session } } = await sb.auth.getSession();
+    let { data: { session } } = await sb.auth.getSession();
+    if (session) { const ref = await sb.auth.refreshSession(); if (!ref.error) session = ref.data.session; }
     if (!session) { showLogin("Inicia sesion para usar Reference Leads.", false); return; }
 
     setLoading(true);
