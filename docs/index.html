@@ -731,7 +731,7 @@ function isBounced(c){
   if (!d) return false;
   const tipo = (d.tipo_respuesta || "").toLowerCase();
   const estado = (d.estado || "").toLowerCase();
-  return tipo.includes("bounce") || estado.includes("bounce");
+  return tipo.includes("bounce") || estado.includes("bounce") || estado.includes("rechazado");
 }
 function isInactive(c){ return isClosed(c) || isBounced(c); }
 // An account is "in sequence" once ANY of its contacts has verifiably
