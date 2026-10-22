@@ -731,7 +731,7 @@ function isBounced(c){
   if (!d) return false;
   const tipo = (d.tipo_respuesta || "").toLowerCase();
   const estado = (d.estado || "").toLowerCase();
-  return tipo.includes("bounce") || estado.includes("bounce") || estado.includes("rechazado");
+  return tipo.includes("bounce") || estado.includes("bounce");
 }
 function isInactive(c){ return isClosed(c) || isBounced(c); }
 // An account is "in sequence" once ANY of its contacts has verifiably
@@ -805,9 +805,7 @@ function myBouncedLeads(){
 function isReplied(c){
   const d = DRAFTS[c.id];
   if (!d || !d.respondio) return false;
-  if (isBounced(c)) return false;
-  const estado = (d.estado || "").toLowerCase();
-  return !estado.includes("rechazado");
+  return !isBounced(c);
 }
 function myRepliedLeads(){
   return myAllLeads().filter(l => realContactsOf(l).some(c => isReplied(c)));
