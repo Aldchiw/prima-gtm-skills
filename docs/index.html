@@ -805,7 +805,9 @@ function myBouncedLeads(){
 function isReplied(c){
   const d = DRAFTS[c.id];
   if (!d || !d.respondio) return false;
-  return !isBounced(c);
+  if (isBounced(c)) return false;
+  const estado = (d.estado || "").toLowerCase();
+  return !estado.includes("rechazado");
 }
 function myRepliedLeads(){
   return myAllLeads().filter(l => realContactsOf(l).some(c => isReplied(c)));
