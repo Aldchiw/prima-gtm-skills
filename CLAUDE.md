@@ -114,3 +114,12 @@ real batch returned up to 12 profiles per account, mostly irrelevant (Marketing/
 the procurement/infra function being searched for) — actual cost was $9.52, not the couple of dollars
 expected. The same batch also ran the Deepline workspace credit balance to -22.94, silently failing the
 next 5 email lookups with `INSUFFICIENT_CREDITS` instead of stopping cleanly.
+
+
+## REGLA DURA — MASTER ÚNICO (2026-10-22, decisión de Aldahir)
+output/leads_master.csv en GitHub (origin/main) y en la compu de Aldahir son SIEMPRE el mismo archivo. El repo es público por decisión de Aldahir y el master SÍ se commitea. Llaves (.env, google-key.json, JSON de service accounts) y backups NUNCA se commitean.
+1. Antes de escribir al master o de correr cualquier sync: git fetch. Si origin/main cambió output/leads_master.csv, trae esas filas y súmalas al master local por llave account_name|contact_name normalizada. Lo que agrega Zadrac o su servicio SIEMPRE se suma y nunca se borra ni se sobreescribe. Filas viejas que solo estén en GitHub y que local ya limpió o renombró NO regresan.
+2. Si una fila de Zadrac choca por llave con una fila local con datos distintos, no se pierde ninguna: se reporta a Aldahir y él decide.
+3. Después de escribir al master: backup local, git add SOLO output/leads_master.csv, commit y push inmediato. Verificar que origin/main y local tengan el mismo md5.
+4. Si el push es rechazado porque origin cambió: repetir el paso 1 y reintentar. NUNCA git push --force.
+5. Filas nuevas de Zadrac siguen el flujo normal para llegar a la app: sync-supabase dry-run → --apply → UPDATE assigned_user_id por id (dueño = quien pidió) → add-owner-to-csv.js → sync-sheet.js.
