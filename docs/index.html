@@ -804,9 +804,10 @@ function myBouncedLeads(){
 }
 function isReplied(c){
   const d = DRAFTS[c.id];
-  if (!d || !d.respondio || isBounced(c)) return false;
-  const tipo = (d.tipo_respuesta || "").toLowerCase().trim();
-  return tipo.length > 0 && !tipo.includes("bounce");
+  if (!d || !d.respondio) return false;
+  const estado = (d.estado || "").toLowerCase().trim();
+  // Only genuine replies: estado must exist and not be a bounce/rejection/empty-sequence marker
+  return estado.length > 0 && !estado.includes("bounce") && !estado.includes("rechaz");
 }
 function myRepliedLeads(){
   return myAllLeads().filter(l => realContactsOf(l).some(c => isReplied(c)));
