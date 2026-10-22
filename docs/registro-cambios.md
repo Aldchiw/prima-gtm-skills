@@ -11,6 +11,26 @@ mismo Zadrac, es el nombre del proyecto/equipo SDR que él lleva.
 
 ---
 
+## 2026-10-22 — pull de Zadrac (IVzzVll): 13 commits del 19 y 20-oct (`f20ffee` → `10210a3`) + 1 que llegó con el pull (`f2ddb3a`)
+
+`git pull --rebase --autostash`, sin conflictos. Los 13 commits tocan solo 2 archivos (`docs/index.html` y la función nueva `supabase/functions/update-remitente/index.ts`); +203/-40 entre `be5bfb6` y `10210a3`. Ningún CSV de `output/`, ni este registro ni `app-cockpit-log.md`.
+
+| Cambio | Detalle |
+|---|---|
+| LinkedIn no bloqueante | Un error al abrir LinkedIn ya no frena el flujo; hay botón **Reintentar** (`f20ffee`). Se arregló la race condition entre el error de LinkedIn y la actualización del stage (`c76b95b`). |
+| LinkedIn mueve a Active | Un touch de LinkedIn mueve la cuenta a Active de inmediato (`e48bfec`). |
+| Enum de stage | `stage` solo acepta `Email` o `LinkedIn`, no combinado (`d2e4b43`). |
+| start-sequence | Ya no bloquea la UI mientras se aprueba el draft (`bfd712a`). Hubo tandas de debug (alerts, PATCH crudo para diagnosticar RLS, `PER_CONTACT_ROWS` true y luego revertido porque rompía el formato) y se limpiaron (`ed073a1`, `f3d2b50`, `06e3d5e`, `e88b2b4`, `b6d01eb`). |
+| Admin ve todos los leads | El admin sigue viendo todos los leads aunque reasigne (`myAllLeads`, `6e45d0a`). |
+| `update-remitente` (función nueva) | Al reasignar una cuenta, actualiza el remitente en el Sheet SDR (pestaña `SDR Outreach`, columna G, por empresa en columna B) con la cuenta de servicio de Google; auto-sync del Sheet al reasignar (`c948fcb`). Cierra en parte el choque 5 de la entrada 2026-10-19 (reasignar solo tocaba Supabase), pero sigue sin tocar `leads_master.csv` (`assigned_owner`/`vertical_owner`). |
+| `reference-leads`: token | `10210a3` refresca el token de sesión antes de llamar a reference-leads. |
+
+**Nota sobre el 401 de reference-leads:** según el código, el 401 no viene de la sesión sino de la falta del secret `REFERENCE_LEADS_API_KEY` en Supabase (la función lo lee con `Deno.env.get(...)!` para el `X-Api-Key` hacia Cloud Run). Aldahir decidió **NO cargarlo** hasta rediseñar el botón (solo guardar el pedido).
+
+**Llegó con este pull, no es de los 13:** `f2ddb3a` (2026-10-22, IVzzVll) quita el requisito de sesión Supabase en reference-leads: borra 24 líneas de `supabase/functions/reference-leads/index.ts` y el front manda `SUPABASE_ANON_KEY` como Bearer, igual que otras edge functions. El secret `REFERENCE_LEADS_API_KEY` sigue sin cargarse, así que el botón sigue sin funcionar hasta cargarlo o rediseñarlo.
+
+---
+
 ## 2026-10-19 — pull de Zadrac (IVzzVll): 33 commits, 2026-10-09 a 2026-10-15 (`a220c1d` → `be5bfb6`)
 
 `git pull --rebase --autostash`, sin conflictos. 12 archivos, +1198/-62.

@@ -255,6 +255,17 @@ IDEA PENDIENTE (canal engine): historial de noticias por cuenta que se ACUMULE (
 - **Prompt de arranque próxima sesión:**
   _"Cockpit EN VIVO (docs/index.html). Esta sesión cerró: news feed New/All split (<30d), In sequence ordenado por toque más reciente, View in pipeline con scroll+resalte, y la vista Needs contact (enlace discreto bajo los tiles, ~38 cuentas de TAM sin contacto). Lo que sigue es un canal NUEVO de ENGINE: enriquecer Needs contact (contacto+email) y refrescar noticias viejas, luego sync a Supabase (respaldar antes). También hay una feature a diseñar: agregar leads de otro source, categorizados por origen, con su propia entrada en el cockpit para pasarles solo los skills de enriquecimiento. Pendiente aparte (no arrancada): historial acumulado de noticias por cuenta (ver sesión 2026-08-30 parte 2). Paso a paso."_
 
+## 2026-10-22 — Zadrac (Iván): LinkedIn no bloqueante, reasignar + `update-remitente`, token de reference-leads (13 commits del 19 y 20-oct, traídos vía pull el 2026-10-22)
+
+- **LinkedIn:** el error ya no bloquea y hay botón Reintentar; un touch de LinkedIn mueve la cuenta a Active de inmediato; se arregló la race condition con el update de stage.
+- **Stage:** el enum solo acepta `Email` o `LinkedIn`, no combinado.
+- **start-sequence:** ya no bloquea la UI mientras aprueba el draft (se limpiaron los alerts de debug y se revirtió `PER_CONTACT_ROWS`).
+- **Reasignar:** el admin ve todos los leads aunque reasigne (`myAllLeads`). Función nueva `update-remitente`: al reasignar actualiza el remitente en el Sheet SDR (`SDR Outreach`, col. G).
+- **reference-leads:** `10210a3` refresca el token antes de llamar. El 401, según el código, viene de la falta del secret `REFERENCE_LEADS_API_KEY` en Supabase, no de la sesión; Aldahir decidió NO cargarlo hasta rediseñar el botón (solo guardar pedido). `f2ddb3a` (2026-10-22, llegó con el pull) quitó además el requisito de sesión y usa la anon key.
+- Detalle: `docs/registro-cambios.md`, entrada 2026-10-22.
+
+---
+
 ## 2026-10-19 — Zadrac (Iván): Reference leads, Reasignar, bounced/active/pins, sync Prima Leads (33 commits, traídos vía pull el 2026-10-19)
 
 - **Reference leads (drawer flotante):** form de empresas -> edge function `reference-leads` -> Cloud Run `services/reference-leads` -> Claude -> commit a `output/leads_master.csv` en GitHub. NO escribe a Supabase directo; llega a la app por el sync normal. Requiere login (Supabase magic link, PKCE).
