@@ -867,7 +867,7 @@ function currentBaseLeads(){
 
 function filtered(){
   return currentBaseLeads()
-    .filter(l => state.cat==="all" || l.cat===state.cat)
+    .filter(l => state.cat==="all" || (state.cat==="favorites" ? isPinned(l.co) : l.cat===state.cat))
     .filter(l => !SHOW_SOURCE_FILTER || state.source==="all" || l.source===state.source)
     .filter(l => !state.warmOnly || l.warm)
     .sort(compareLeads);
@@ -884,12 +884,16 @@ function renderChips(){
   const mine = currentBaseLeads();
   const presentCats = new Set(mine.map(l => l.cat).filter(Boolean));
   if (presentCats.size <= 1) { el("#catchips").innerHTML = ""; return; }
-  const chips = [{k:"all",name:"All"}].concat(
+  const chips = [{k:"all",name:"All"},{k:"favorites",name:"Favorites"}].concat(
     Object.keys(CATS).map(k=>({k,name:CATS[k].name})));
   el("#catchips").innerHTML = chips.map(c=>{
-    const count = c.k==="all"? mine.length : mine.filter(l=>l.cat===c.k).length;
-    return `<button type="button" class="chip ${c.k!=='all'?'cat-'+c.k:''} ${state.cat===c.k?'on':''}" data-c="${c.k}" aria-pressed="${state.cat===c.k}">
-      ${c.k!=="all"?`<span class="cd" aria-hidden="true"></span>`:""}${c.name}<span class="ct">${count}</span></button>`;
+    let count;
+    if (c.k==="all") count = mine.length;
+    else if (c.k==="favorites") count = mine.filter(l=>isPinned(l.co)).length;
+    else count = mine.filter(l=>l.cat===c.k).length;
+    const icon = c.k==="favorites" ? "⭐ " : (c.k!=="all" ? `<span class="cd" aria-hidden="true"></span>` : "");
+    return `<button type="button" class="chip ${c.k!=='all'&&c.k!=='favorites'?'cat-'+c.k:''} ${state.cat===c.k?'on':''}" data-c="${c.k}" aria-pressed="${state.cat===c.k}">
+      ${icon}${c.name}<span class="ct">${count}</span></button>`;
   }).join("");
   el("#catchips").querySelectorAll(".chip").forEach(ch=>ch.onclick=()=>{state.cat=ch.dataset.c;renderAll();});
 }
