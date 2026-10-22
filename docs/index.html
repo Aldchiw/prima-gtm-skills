@@ -2749,10 +2749,6 @@ el("#leadsearch").oninput = (e) => { state.q = e.target.value.trim(); renderAll(
     const empresas = raw.split("\n").map(s => s.trim()).filter(Boolean);
     const context = (el("#rlContext").value || "").trim();
 
-    let { data: { session } } = await sb.auth.getSession();
-    if (session) { const ref = await sb.auth.refreshSession(); if (!ref.error) session = ref.data.session; }
-    if (!session) { showLogin("Inicia sesion para usar Reference Leads.", false); return; }
-
     setLoading(true);
     showStatus("Procesando... puede tardar 30-60 segundos.", "");
     el("#rlResult").hidden = true;
@@ -2762,7 +2758,7 @@ el("#leadsearch").oninput = (e) => { state.q = e.target.value.trim(); renderAll(
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": "Bearer " + session.access_token,
+          "Authorization": "Bearer " + SUPABASE_ANON_KEY,
           "apikey": SUPABASE_ANON_KEY,
         },
         body: JSON.stringify({
