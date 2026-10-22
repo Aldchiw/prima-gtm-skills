@@ -11,6 +11,29 @@ mismo Zadrac, es el nombre del proyecto/equipo SDR que él lleva.
 
 ---
 
+## 2026-10-19 — pull de Zadrac (IVzzVll): 33 commits, 2026-10-09 a 2026-10-15 (`a220c1d` → `be5bfb6`)
+
+`git pull --rebase --autostash`, sin conflictos. 12 archivos, +1198/-62.
+
+| Archivo | Qué cambió |
+|---|---|
+| `docs/index.html` | Cockpit: tiles Active y Bounced, contorno rojo por atraso, pin/estrella por tarjeta (localStorage), campanita descartable, botón "Marcar como enviado", botón **Reasignar**, drawer flotante **Reference leads**, auth con PKCE y sin muro de login (login solo para Reference leads) |
+| `supabase/functions/reference-leads/index.ts` | NUEVA. Proxy: valida sesión Supabase y reenvía a Cloud Run con `X-Api-Key` |
+| `services/reference-leads/*` | NUEVO. Servicio Cloud Run (Flask): llama a Claude `claude-opus-4-5`, lee y **commitea `output/leads_master.csv` a GitHub** (`Aldchiw/prima-gtm-skills`, main) |
+| `supabase/functions/sync-sdr-sheet/index.ts` | Ahora también sincroniza el Sheet "Prima Leads" a `accounts` + `contacts` (solo inserta nuevos); valida fecha ISO antes de `sync_sheet_touches`; `fecha_resp` → `fecha_respuesta` |
+| `.claude/skills/prima-generate-leads/SKILL.md` | Regla nueva: preservar `assigned_owner` del master y no saltar empresas ya existentes (solo agregar contactos nuevos) |
+| `README.md` | Resumen de cambios 2026-10-09 |
+
+**Choques con nuestras reglas (detalle en la respuesta de la sesión):**
+1. `services/reference-leads` NO usa `prima-reference-leads/SKILL.md`: prompt propio, sin muestra 10-20, sin tope de gasto, sin respaldo ni OK previo, escribe directo a GitHub.
+2. Dedup por `account_name`+`contact_name` (compatible con la regla provisional), pero sin dueño en el reporte y el master que ve el modelo está truncado a 8000 caracteres.
+3. Sin tope de contactos por cuenta (máx. 2) ni cadencia en el servicio.
+4. `assigned_owner` lo decide el modelo; el prompt no aplica la regla de dueños de Cat5.
+5. Reasignar solo escribe `accounts.assigned_user_id` en Supabase; no toca `leads_master.csv` (`assigned_owner`/`vertical_owner`), así que el siguiente sync desde el master puede deshacerlo.
+6. `sync-sdr-sheet`: Prima Leads entra con `stage = "Not Contacted"` y dedup solo por email.
+
+---
+
 ## 2026-10-02 — cambios propios sobre lo de Zadrac (commit `4d84fe1`)
 
 Sin pull: son correcciones de Aldahir (vía Claude) a los hallazgos del 2026-10-01 (tarde). Zadrac

@@ -255,6 +255,16 @@ IDEA PENDIENTE (canal engine): historial de noticias por cuenta que se ACUMULE (
 - **Prompt de arranque próxima sesión:**
   _"Cockpit EN VIVO (docs/index.html). Esta sesión cerró: news feed New/All split (<30d), In sequence ordenado por toque más reciente, View in pipeline con scroll+resalte, y la vista Needs contact (enlace discreto bajo los tiles, ~38 cuentas de TAM sin contacto). Lo que sigue es un canal NUEVO de ENGINE: enriquecer Needs contact (contacto+email) y refrescar noticias viejas, luego sync a Supabase (respaldar antes). También hay una feature a diseñar: agregar leads de otro source, categorizados por origen, con su propia entrada en el cockpit para pasarles solo los skills de enriquecimiento. Pendiente aparte (no arrancada): historial acumulado de noticias por cuenta (ver sesión 2026-08-30 parte 2). Paso a paso."_
 
+## 2026-10-19 — Zadrac (Iván): Reference leads, Reasignar, bounced/active/pins, sync Prima Leads (33 commits, traídos vía pull el 2026-10-19)
+
+- **Reference leads (drawer flotante):** form de empresas -> edge function `reference-leads` -> Cloud Run `services/reference-leads` -> Claude -> commit a `output/leads_master.csv` en GitHub. NO escribe a Supabase directo; llega a la app por el sync normal. Requiere login (Supabase magic link, PKCE).
+- **Reasignar:** botón por tarjeta (solo cuentas con stage 0, admin o dueño actual); hace `accounts.update({assigned_user_id})` por `account_name`. Solo cambia esa columna en Supabase.
+- **Cockpit:** tiles Active y Bounced (solo si TODOS los contactos están inactivos+bounced), contorno rojo por atraso, pin/estrella en localStorage, notif descartable, "Marcar como enviado" (`email_drafts.status = SENT`), sin muro de login.
+- **sync-sdr-sheet:** además importa el Sheet "Prima Leads" a `accounts`+`contacts` (solo nuevos, dedup por email).
+- Detalle y choques con reglas: `docs/registro-cambios.md`, entrada 2026-10-19.
+
+---
+
 ## 2026-09-01 — Enriquecimiento Needs-contact — MUESTRA (5 Cat4)
 - Recon: 34 Needs-contact (32 Cat4, 2 Cat1), todas sin nombre y sin email.
 - Deepline 22.35 -> 21.45 cr (0.90 gastado; committee=0, email=0.90).
