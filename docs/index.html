@@ -804,7 +804,9 @@ function myBouncedLeads(){
 }
 function isReplied(c){
   const d = DRAFTS[c.id];
-  return d && d.respondio && !isBounced(c);
+  if (!d || !d.respondio || isBounced(c)) return false;
+  const tipo = (d.tipo_respuesta || "").toLowerCase().trim();
+  return tipo.length > 0 && !tipo.includes("bounce");
 }
 function myRepliedLeads(){
   return myAllLeads().filter(l => realContactsOf(l).some(c => isReplied(c)));
