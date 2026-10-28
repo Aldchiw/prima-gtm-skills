@@ -40,7 +40,7 @@ Si falta el contexto, usa `request: pedido de <requested_by>`. No hagas más pre
 - No corre `prima-scope-score` — ese step es Cat4-only y no aplica aquí
 - No descubre empresas nuevas — trabaja solo con la lista que recibió
 - No corre `prima-hook`, `prima-draft`, ni `prima-guardrail-audit` — produce leads contactables, no copy de outreach
-- No toca filas que no son de esta corrida, ni cambia `stage`, `contact_count` o columnas del equipo
+- No toca filas que no son de esta corrida, ni cambia `stage`, `contact_count`, dueño, categoría o columnas del equipo de cuentas existentes
 
 ## Step 0 — Muestra y tope de gasto (antes de cualquier proveedor pagado)
 
@@ -92,11 +92,13 @@ Si el contacto top no produce email verificado, intenta el siguiente de la misma
 
 **2. Resumen y OK.** Muestra cuántas filas nuevas se van a escribir, cuántos duplicados se van a saltar (ver regla abajo) y para quién es el lote. Espera OK explícito antes de tocar el master. Sin OK, no se escribe nada.
 
-**3. Regla de duplicados — PROVISIONAL** (pendiente de definir entre Aldahir y Zadrac):
-Todo el sistema (Sheet, Supabase, columnas del equipo) identifica a una persona por `account_name + "|" + contact_name`, y cada empresa tiene UNA sola `company_category`.
-- Si la misma persona (`account_name` + `contact_name`) **ya existe** en el master: **no se escribe**. Se reporta como `DUPLICADO` con su dueño actual, para avisar a quien pidió el lote.
-- Si la persona es nueva pero la **empresa ya existe** en el master con categoría ICP (Cat1–Cat4): **no se escribe por ahora**. Se reporta como `EMPRESA_EN_PIPELINE` con su categoría y dueño actual. (Escribirla con `Reference` cambiaría la categoría de toda la empresa en Supabase.)
-- Solo las empresas **nuevas** en el master se escriben como `Reference`.
+**3. Regla de duplicados y cuentas existentes** (misma regla que `prima-generate-leads`, para TODAS las categorías):
+Todo el sistema (Sheet, Supabase, columnas del equipo) identifica a una persona por `account_name + "|" + contact_name`, y cada empresa tiene UNA sola `company_category` y UN solo dueño.
+- **Empresa ya existe en el master** (match por dominio o por `account_name` normalizado): no se crea otra cuenta y no se salta la empresa. Se suman **solo contactos que no existan** por `account_name|contact_name`, con la `company_category` y el `assigned_owner` de la cuenta existente — nunca `Reference`, nunca se cambia el dueño. Si el dueño de la cuenta existente está vacío, queda vacío en las filas nuevas (no se asigna a `requested_by`).
+- **Máximo 2 principales por cuenta:** si la cuenta ya tiene 2 contactos principales, o tiene secuencia activa (algún contacto con `stage` distinto de `Not Contacted`), los contactos nuevos entran con `email_status` = `BACKUP_HOLD -- no secuenciar hasta agotar los 2 principales de la cuenta | <source_files>` (mismo formato que el resto del master).
+- **Persona que ya existe** (`account_name` + `contact_name`): no se escribe. Se reporta como `DUPLICADO` con su dueño actual.
+- Se reporta: `<Empresa> ya es de <dueño>: se sumaron N contactos`.
+- Solo las empresas **nuevas** en el master se escriben como `Reference` y con `assigned_owner` = `requested_by`.
 
 **4. Escritura.** Agrega las filas nuevas al final, con exactamente el header actual del master (24 columnas, mismo orden). Si el header del master no coincide con la tabla de abajo, detente y avisa: no agregues ni renombres columnas. Conserva el formato del archivo (todas las celdas entre comillas, mismos saltos de línea).
 
@@ -133,21 +135,32 @@ También escribe filas completas (todos los contactos, no solo el top) a `output
 
 **5. Después de escribir.** Verifica que el master siga teniendo el mismo header y que el número de filas sea el anterior + las nuevas. No corras `sync-sheet.js` ni `sync-supabase.js --apply` por tu cuenta: reporta que están listos para correr y espera OK.
 
+## Cuando la dispara el botón del cockpit (sin persona que apruebe)
+
+Aplica **solo** cuando el pedido llega del botón "+ Reference leads" del cockpit. Si Aldahir la corre a mano, sigue el flujo normal con todos sus OK y pausas.
+
+- **Tope por corrida:** 5 créditos de Deepline, ya aprobado — no pide OK. Si el estimado pasa del tope, procesa solo las empresas que quepan y reporta el resto como "no procesadas por tope". El tope mensual de la cuenta lo aplica Deepline.
+- **Máximo 10 empresas por pedido;** el resto se reporta como "no procesadas".
+- **Máximo 2 contactos por empresa, sin búsqueda de banca.** Emails: waterfall estándar, verificado o vacío.
+- **`requested_by` obligatorio:** si llega vacío, no corre ni gasta nada y lo reporta.
+- **Escritura al master:** aplica la REGLA DURA — MASTER ÚNICO de `CLAUDE.md`. No corre syncs (Supabase/Sheet); esos los corre Aldahir. Desde el botón, el servicio escribe directo en GitHub: parte siempre de la última versión de origin/main, agrega sus filas, hace commit y push SOLO de output/leads_master.csv y nunca usa --force; si el push es rechazado, vuelve a bajar la última versión y reintenta. Aldahir suma esas filas a su local con el paso 1 de la regla dura.
+- **Precedencia:** solo en este caso, estas reglas ganan sobre los OK y pausas de `CLAUDE.md`, `prima-committee` y `prima-email-waterfall`. Todo lo demás (verificado o vacío, nunca inventar, regla dura del master, guardrails de envío) sigue igual.
+
 ## Resumen final al usuario
 
 ```
 Listo — {N_procesadas} empresas de referencia procesadas (lote {source_files}, dueño {requested_by})
 
 RESULTADO
-- {n_escritas} filas nuevas escritas en leads_master.csv como Reference
+- {n_escritas} filas nuevas escritas en leads_master.csv (Reference o cuenta existente)
 - {n_verificado} con email verificado
 - {n_linkedin_only} solo LinkedIn
 - {n_duplicado} DUPLICADO (persona ya en el master) — no escritas
-- {n_en_pipeline} EMPRESA_EN_PIPELINE (empresa ya en el ICP) — no escritas
+- {n_cuenta_existente} contactos sumados a cuentas que ya existían (categoría y dueño sin cambios)
 - {n_no_contacto} sin contacto localizable (ni LinkedIn ni email)
 - {n_no_encontrada} no se pudo resolver dominio ni presencia web
 
-{lista de DUPLICADO / EMPRESA_EN_PIPELINE con su dueño actual, y NO_CONTACTO / NO_ENCONTRADA con razón breve}
+{lista de DUPLICADO y de cuentas existentes ("<Empresa> ya es de <dueño>: se sumaron N contactos"), y NO_CONTACTO / NO_ENCONTRADA con razón breve}
 
 Respaldo: output/leads_master.bak-<fecha>-preReference.csv
 Archivo: output/leads_master.csv

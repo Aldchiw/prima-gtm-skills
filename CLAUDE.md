@@ -82,6 +82,8 @@ de cuentas existentes. Los 4 CSVs originales quedan como fuentes históricas.
 - Cada vez que se traigan cambios de otra persona (`pull`), registrar una entrada en
   `docs/registro-cambios.md` con fecha, autor, commits y archivos, y si tocó la app (`docs/index.html`
   o `supabase/`), también en `app-cockpit-log.md`.
+- Antes de editar una skill o una regla, revisar que no contradiga otra skill, CLAUDE.md ni la bitácora
+  (SESION_LOG.md, docs/registro-cambios.md); si hay choque, reportarlo antes de editar.
 - Antes de proponer cualquier cambio de diseño o de estructura/lógica de la app (`docs/index.html`,
   `supabase/`, CSS, colores, categorías en `CATS`), leer `DESIGN.md` y el código afectado, explicar a
   Aldahir cómo funciona hoy y qué impacto tendría el cambio, y esperar su OK antes de editar.
@@ -120,6 +122,6 @@ next 5 email lookups with `INSUFFICIENT_CREDITS` instead of stopping cleanly.
 output/leads_master.csv en GitHub (origin/main) y en la compu de Aldahir son SIEMPRE el mismo archivo. El repo es público por decisión de Aldahir y el master SÍ se commitea. Llaves (.env, google-key.json, JSON de service accounts) y backups NUNCA se commitean.
 1. Antes de escribir al master o de correr cualquier sync: git fetch. Si origin/main cambió output/leads_master.csv, trae esas filas y súmalas al master local por llave account_name|contact_name normalizada. Lo que agrega Zadrac o su servicio SIEMPRE se suma y nunca se borra ni se sobreescribe. Filas viejas que solo estén en GitHub y que local ya limpió o renombró NO regresan.
 2. Si una fila de Zadrac choca por llave con una fila local con datos distintos, no se pierde ninguna: se reporta a Aldahir y él decide.
-3. Después de escribir al master: backup local, git add SOLO output/leads_master.csv, commit y push inmediato. Verificar que origin/main y local tengan el mismo md5.
+3. Después de escribir al master: backup local, git add SOLO output/leads_master.csv, commit y push inmediato. Verificar que origin/main y local tengan el mismo contenido comparando md5 sin \r (core.autocrlf=true).
 4. Si el push es rechazado porque origin cambió: repetir el paso 1 y reintentar. NUNCA git push --force.
 5. Filas nuevas de Zadrac siguen el flujo normal para llegar a la app: sync-supabase dry-run → --apply → UPDATE assigned_user_id por id (dueño = quien pidió) → add-owner-to-csv.js → sync-sheet.js.
