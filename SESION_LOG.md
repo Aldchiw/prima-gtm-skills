@@ -1,3 +1,9 @@
+## 2026-11-01 — Salida de Zadrac: recuento y traspaso
+- Zadrac salió de Prima el 30-oct. Se registraron sus 10 commits sin registrar del 22-oct (Favoritos, auto-sync del Sheet, tile Replied; solo `docs/index.html`, +35/-8), el hallazgo de `services/reference-leads/` (sin herramientas, contactos de memoria, emails `NOT_FOUND`, regla vieja de duplicados, nunca escribió al master) y el sandbox `Prima-Eng/sdr-cockpit` (clonado solo lectura). Detalle en `docs/registro-cambios.md` y `app-cockpit-log.md`.
+- Esto cierra el pendiente del 10-23 de "confirmar con Zadrac" lo del servicio de Reference: no cumple la línea de escritura de `prima-reference-leads` porque no usa la skill; la duda de Deepline en su servicio también queda respondida (no usa Deepline).
+- **Pendientes:** transferir Sheet SDR + Apps Script (hoy dueño `ivan.vazquez@prima.ai`); decidir apagar la ruta de Reference (`REFERENCE_LEADS_API_KEY`) y revocar `IVzzVll` y el token de GitHub; accesos del sandbox con Jon (GitHub Packages `@prima-eng/*`, kubeconfig UAT); cambiar `ADMIN_EMAILS` a `aldahir.chiw@prima.ai` (con OK, regla de DESIGN.md); verificar dueños de la llave de OpenAI, del proyecto `prima-leads-sheet` y de Vercel.
+- El paso 2 del botón Reference queda en pausa.
+
 ## 2026-10-23 — Reglas del botón Reference + tope mensual de Deepline
 - **Tope mensual de Deepline** del workspace (Aldahir's Team) puesto en **60 créditos (~$6)**; llevaba 34.14 gastados en el periodo, quedaban 25.86.
 - **`prima-reference-leads`:** sección nueva "Cuando la dispara el botón del cockpit" (tope 5 cr por corrida sin OK, máx 10 empresas, máx 2 contactos sin banca, `requested_by` obligatorio, regla dura del master, sin syncs; solo en ese caso sus reglas ganan sobre las pausas de CLAUDE.md, committee y waterfall).

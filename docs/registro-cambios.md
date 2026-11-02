@@ -11,6 +11,50 @@ mismo Zadrac, es el nombre del proyecto/equipo SDR que él lleva.
 
 ---
 
+## 2026-11-01 — Salida de Zadrac (IVzzVll) y traspaso a Aldahir
+
+Zadrac salió de Prima el 30-oct; Aldahir queda como único dueño. `git fetch` del 2026-11-01: origin/main no trae commits nuevos (nada que pullear; `output/leads_master.csv` intacto). Esta entrada recoge lo que faltaba registrar de él.
+
+**a) 10 commits del 2026-10-22 que no estaban registrados (`838315e` → `424e637`)** — todos tocan solo `docs/index.html`; total +35/-8.
+
+| Commit | Cambio | +/- |
+|---|---|---|
+| `838315e` | Favoritos: chip que muestra aparte las cuentas con estrella | +9/-5 |
+| `5853921` | Auto-sync del SDR Sheet al cargar el cockpit, para que los FUPs del bot estén al día | +7/-0 |
+| `a316bc4` | El sync corre en segundo plano y luego recarga leads; no bloquea la carga inicial | +3/-3 |
+| `6c5e715` | Tile **Replied**: cuentas con respuesta real, sin rebotes | +18/-3 |
+| `28215d4` | Replied exige `tipo_respuesta` no vacío; excluye secuencias completadas | +3/-1 |
+| `6ee035a` | Replied usa el campo `estado`; excluye Bounce y Rechazado | +4/-3 |
+| `29d246e` | Replied = `respondio` true y no bounce; cuentan todas las demás respuestas | +1/-3 |
+| `01860f2` | Excluye `estado=Rechazado` del Replied | +3/-1 |
+| `d9cb83e` | Rechazado se trata como Bounce | +1/-1 |
+| `424e637` | Revert: quita la exclusión de Rechazado del Replied | +2/-4 |
+
+Estado final del tile Replied: `respondio` true y no bounce, con Rechazado contado como Bounce (`d9cb83e`); la exclusión extra de `01860f2` quedó revertida.
+
+**b) Hallazgo `services/reference-leads/` (leído en solo lectura)**
+- El Dockerfile solo copia `main.py`, y `load_skill()` nunca se llama: no usa `prima-reference-leads`.
+- Llama a `claude-opus-4-5` con prompt propio y sin herramientas (sin web ni Deepline): los contactos salen de memoria del modelo y los emails siempre quedan `NOT_FOUND`.
+- Duplicados con la regla vieja (no la igualada con `prima-generate-leads` del 2026-10-23).
+- Escribe al master por la API de contenidos de GitHub con el `sha`: no fuerza y no reintenta.
+- Corre en el proyecto GCP `zadrac-tests` con la llave de Anthropic y el token de GitHub de Zadrac.
+- Nunca ha escrito filas al master.
+
+**c) Sandbox:** Zadrac migró el cockpit a `Prima-Eng/sdr-cockpit` el 2026-10-29 (último commit; el primero de la migración es del 26-oct). Trae pipeline page, paneles LinkedIn msgs / sequence / reference leads y los módulos `syncSheet`, `approveDraft`, `generateLinkedInMsgs`, `requestReferenceLeads`.
+- Pendiente con Jon: acceso de lectura a `@prima-eng/*` en GitHub Packages (el CI falla) y kubeconfig de UAT para el `DATABASE_URL` y el sync inicial desde el CSV. Hoy carga vacía.
+- Clonado en solo lectura en `C:\Users\Aldahir Chiw\sdr-cockpit` (no se editó nada ahí). Resumen:
+  - Qué es: scaffold de `sandbox-app-template`; backend NestJS + GraphQL + Prisma/Postgres, frontend React + Vite, monorepo pnpm. Auth y cliente Ichigo, email por SES.
+  - Despliegue: no se despliega solo; `sandbox-control-plane` construye el `Dockerfile` raíz (apps UAT en `sdr-cockpit.uat.apps.prima.ai`). El CI solo hace lint, build y test.
+  - Env vars propias: `OPENAI_API_KEY`, `GOOGLE_SA_EMAIL`, `GOOGLE_SA_PRIVATE_KEY`, más `DATABASE_URL` y las `SES_*` que inyecta la plataforma.
+  - Pendientes del README: verificar esas env vars en UAT, repartir cuentas por dueño (las 298 están en `ivan.vazquez@prima.ai`), probar Sync Sheet extremo a extremo, y huecos vs cockpit original (warm intro, sort, admin view-as-user).
+  - Estructura: `backend/` (`prisma/` con 3 migraciones y `seed/sync-from-csv.ts`; `src/modules/` con approve-draft, email, files, health, hello, ichigo, linkedin-msgs, me, pipeline, reference-leads, sheet-sync), `frontend/` (`pages/PipelinePage.tsx`, componentes de LinkedIn y Reference), `.github/workflows/ci.yml`.
+  - Últimos 10 commits: todos de `IVzzVll`, 2026-10-26 a 2026-10-29 (fixes de build TS/lint, `sync-from-csv`, pin de `credential-provider-web-identity` 3.972.84, README); el más reciente es `17894f3` (docs: pending items y env vars).
+  - Quién toca qué: **Sheet SDR (Google Sheets API)** = `sheet-sync` y `approve-draft`; **OpenAI** (`gpt-4o-mini`) = `linkedin-msgs`; **Cloud Run** (`reference-leads-…run.app/run`) = `reference-leads`; **Supabase** = ningún módulo lo llama en código, solo el README (datos sembrados desde exports CSV de Supabase y secrets de sus Edge Functions).
+
+**d) Lo que queda a nombre de Zadrac:** Sheet "SDR Feedback" + Apps Script (dueño `ivan.vazquez@prima.ai`); servicio Cloud Run `reference-leads`; colaborador `IVzzVll` en este repo; `ADMIN_EMAILS` con su correo (`docs/index.html:638`).
+
+---
+
 ## 2026-10-22 — pull de Zadrac (IVzzVll): 13 commits del 19 y 20-oct (`f20ffee` → `10210a3`) + 1 que llegó con el pull (`f2ddb3a`)
 
 `git pull --rebase --autostash`, sin conflictos. Los 13 commits tocan solo 2 archivos (`docs/index.html` y la función nueva `supabase/functions/update-remitente/index.ts`); +203/-40 entre `be5bfb6` y `10210a3`. Ningún CSV de `output/`, ni este registro ni `app-cockpit-log.md`.

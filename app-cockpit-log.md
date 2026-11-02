@@ -11,6 +11,7 @@ _Memoria durable de la **app editable del cockpit de outreach** (Supabase + Verc
 - **URL en vivo:** `https://prima-gtm-skills.vercel.app`
 - **Stack (decidido, no re-evaluar):** Supabase (DB + Auth + RLS) · Vercel Hobby (hosting, gratis).
 - **Dónde vive el código:** repo `prima-gtm-skills`, archivo **`docs/index.html`** (se renombró de `cockpit-app.html` a `index.html` para que la raíz del sitio sirva el cockpit — ver aprendizaje #4). El backend vive en Supabase, no en el repo.
+- 2026-11-01: Zadrac salió de Prima (30-oct); Aldahir es el único dueño. Cockpit oficial sigue siendo Supabase + docs/index.html hasta que el del sandbox (Prima-Eng/sdr-cockpit) tenga datos.
 
 ---
 
@@ -254,6 +255,13 @@ IDEA PENDIENTE (canal engine): historial de noticias por cuenta que se ACUMULE (
 
 - **Prompt de arranque próxima sesión:**
   _"Cockpit EN VIVO (docs/index.html). Esta sesión cerró: news feed New/All split (<30d), In sequence ordenado por toque más reciente, View in pipeline con scroll+resalte, y la vista Needs contact (enlace discreto bajo los tiles, ~38 cuentas de TAM sin contacto). Lo que sigue es un canal NUEVO de ENGINE: enriquecer Needs contact (contacto+email) y refrescar noticias viejas, luego sync a Supabase (respaldar antes). También hay una feature a diseñar: agregar leads de otro source, categorizados por origen, con su propia entrada en el cockpit para pasarles solo los skills de enriquecimiento. Pendiente aparte (no arrancada): historial acumulado de noticias por cuenta (ver sesión 2026-08-30 parte 2). Paso a paso."_
+
+## 2026-11-01 — Traspaso de Zadrac
+
+- **Commits del 22-oct sobre `docs/index.html` (+35/-8, `838315e` → `424e637`):** Favoritos, auto-sync del SDR Sheet al cargar en segundo plano (`5853921`, `a316bc4`), tile Replied y sus fixes/revert sobre Rechazado (`6c5e715`, `28215d4`, `6ee035a`, `29d246e`, `01860f2`, `d9cb83e`, `424e637`). Detalle en `docs/registro-cambios.md`.
+- **Sandbox:** Zadrac migró el cockpit a `Prima-Eng/sdr-cockpit` el 2026-10-29 (pipeline page, paneles LinkedIn msgs / sequence / reference leads; módulos `syncSheet`, `approveDraft`, `generateLinkedInMsgs`, `requestReferenceLeads`). Pendiente con Jon: acceso de lectura a `@prima-eng/*` en GitHub Packages (el CI falla) y kubeconfig de UAT para el `DATABASE_URL` y el sync inicial desde el CSV; hoy carga vacía.
+- **Queda a nombre de Zadrac:** Sheet "SDR Feedback" + Apps Script (dueño `ivan.vazquez@prima.ai`), servicio Cloud Run, colaborador `IVzzVll` en el repo y `ADMIN_EMAILS` con su correo.
+- **Pendiente:** cambiar `ADMIN_EMAILS` (`docs/index.html:638`) a `aldahir.chiw@prima.ai`. Es cambio de lógica de la app: antes hay que leer `DESIGN.md`, explicar el impacto y esperar el OK de Aldahir (regla de CLAUDE.md); no se tocó.
 
 ## 2026-10-22 — Zadrac (Iván): LinkedIn no bloqueante, reasignar + `update-remitente`, token de reference-leads (13 commits del 19 y 20-oct, traídos vía pull el 2026-10-22)
 
